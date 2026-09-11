@@ -8,19 +8,23 @@
  * 4. Local development: http://localhost:3000
  */
 export function getBasePath(): string {
-  const isProduction = process.env.NODE_ENV === "production";
-  return process.env.NEXT_PUBLIC_BASE_PATH ?? (isProduction ? "/ironsync" : "");
+  return "";
 }
 
 export function getSiteUrl(): string {
-  const basePath = getBasePath();
   if (typeof window !== "undefined" && window.location.origin) {
-    return `${window.location.origin}${basePath}`;
+    return window.location.origin;
   }
   if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return `${process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")}${basePath}`;
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
   }
-  return `https://arbaazcodes.github.io/ironsync`;
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL.replace(/\/$/, "")}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
+  }
+  return "http://localhost:3000";
 }
 
 /**

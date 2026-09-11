@@ -58,8 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           if (currentSession?.user) {
-            const plan = await fetchUserActivePlan(currentSession.user.id);
-            setActivePlan(plan);
+            const { plan: syncedPlan } = await syncPendingBlueprintToDatabase(
+              currentSession.user.id,
+              currentSession.user.user_metadata?.full_name || currentSession.user.email?.split("@")[0]
+            );
+            if (mounted) {
+              setActivePlan(syncedPlan);
+            }
           }
         }
       } catch (err) {
