@@ -11,10 +11,6 @@ import {
   RefreshCw,
   Info,
   Flame,
-  Activity,
-  Zap,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 
 interface ExerciseCardProps {
@@ -49,7 +45,7 @@ export function ExerciseCard({
   };
 
   return (
-    <div className="group rounded-[20px] bg-card border border-white/[0.08] hover:border-accent/40 hover:shadow-card-hover transition-all duration-300 overflow-hidden">
+    <div className="group rounded-[20px] bg-card border border-border hover:border-accent/40 hover:shadow-card-hover transition-all duration-300 overflow-hidden">
       {/* Primary Card Body */}
       <div className="p-3.5 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Left: Thumbnail & Exercise Metadata */}
@@ -67,7 +63,7 @@ export function ExerciseCard({
           aria-label={`View execution guide for ${exercise.name}`}
         >
           {/* Athletic Image Thumbnail with Index Pill */}
-          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-surface-elevated shrink-0 border border-white/[0.08] group-hover:border-accent/50 transition-colors">
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-surface-elevated shrink-0 border border-border group-hover:border-accent/50 transition-colors">
             {/* Direct HTTPS Unsplash Athletic Visual */}
             <img
               src={media.thumbnailUrl}
@@ -79,7 +75,7 @@ export function ExerciseCard({
             <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-md bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center font-mono text-[10px] font-bold text-accent">
               {index + 1}
             </div>
-            <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[9px] font-mono font-semibold text-white/80">
+            <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[9px] font-mono font-semibold text-white/90">
               {media.durationMinutes}m
             </div>
           </div>
@@ -90,22 +86,22 @@ export function ExerciseCard({
               <span className="px-2 py-0.5 rounded-md bg-accent/10 border border-accent/30 text-[10px] font-mono font-bold uppercase tracking-wider text-accent">
                 {media.muscleGroup}
               </span>
-              <span className="px-1.5 py-0.5 rounded bg-surface-elevated border border-white/[0.06] text-[10px] font-mono text-primary-dim hidden sm:inline">
+              <span className="px-1.5 py-0.5 rounded bg-surface-elevated border border-border text-[10px] font-mono text-primary-dim hidden sm:inline">
                 {media.difficulty}
               </span>
             </div>
 
             <div className="flex items-center gap-1.5">
-              <h3 className="text-sm sm:text-base font-extrabold text-white tracking-tight group-hover:text-accent transition-colors truncate">
+              <h3 className="text-sm sm:text-base font-extrabold text-primary tracking-tight group-hover:text-accent transition-colors truncate">
                 {exercise.name}
               </h3>
             </div>
 
             {/* Sets, Reps, Rest & Calorie Burn */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-primary-muted">
-              <span className="text-white font-bold">{sets}</span>
+              <span className="text-primary font-bold">{sets}</span>
               <span className="text-primary-dim">&bull;</span>
-              <span className="text-white font-bold">{reps}</span>
+              <span className="text-primary font-bold">{reps}</span>
               <span className="text-primary-dim">&bull;</span>
               <span className="flex items-center gap-1 text-primary-dim">
                 <Clock className="w-3 h-3 text-accent" />
@@ -121,13 +117,13 @@ export function ExerciseCard({
         </div>
 
         {/* Right side: RPE Badge, Swap button, and Execution Details button */}
-        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/[0.06]">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
           {exercise.rpe ? (
             <span className="px-2.5 py-1 rounded-lg bg-surface-elevated border border-accent/40 text-accent font-mono text-xs font-bold shadow-sm">
               {exercise.rpe}
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded-lg bg-surface-elevated text-primary-dim font-mono text-[11px] border border-white/[0.06]">
+            <span className="px-2 py-0.5 rounded-lg bg-surface-elevated text-primary-dim font-mono text-[11px] border border-border">
               Tempo: {media.tempo}
             </span>
           )}
@@ -135,7 +131,7 @@ export function ExerciseCard({
           {onSwapClick && (
             <button
               onClick={() => onSwapClick(exercise, index)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-surface-elevated border border-white/[0.08] hover:border-accent/40 text-xs font-mono text-primary-muted hover:text-white transition-all focus:ring-2 focus:ring-accent active:scale-95"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-surface-elevated border border-border hover:border-accent/40 text-xs font-mono text-primary-muted hover:text-primary transition-all focus:ring-2 focus:ring-accent active:scale-95"
               title="Swap for a compatible biomechanical exercise"
             >
               <RefreshCw className="w-3.5 h-3.5 text-accent" />
@@ -156,7 +152,7 @@ export function ExerciseCard({
 
       {/* Fallback inline expandable details (if onDetailClick not provided) */}
       {!onDetailClick && expanded && (
-        <div className="p-4 sm:p-5 bg-black/40 border-t border-white/[0.08] space-y-4 animate-in slide-in-from-top-2 duration-200">
+        <div className="p-4 sm:p-5 bg-background-subtle border-t border-border space-y-4 animate-in slide-in-from-top-2 duration-200">
           {/* Target muscles */}
           <div>
             <span className="text-[10px] font-mono uppercase text-primary-dim tracking-wider block mb-1.5">
@@ -166,7 +162,7 @@ export function ExerciseCard({
               {media.targetMuscles.map((muscle, mIdx) => (
                 <span
                   key={mIdx}
-                  className="px-2.5 py-0.5 rounded-md bg-surface-elevated border border-white/[0.08] text-[11px] font-mono text-white"
+                  className="px-2.5 py-0.5 rounded-md bg-surface-elevated border border-border text-[11px] font-mono text-primary"
                 >
                   {muscle}
                 </span>

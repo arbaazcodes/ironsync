@@ -8,7 +8,7 @@ import { getMealMedia } from "@/lib/data/mealMedia";
 import { MealSwapModal } from "./MealSwapModal";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Clock, RefreshCw, ChevronDown, ChevronUp, ChefHat, Check, Flame, Utensils } from "lucide-react";
+import { Clock, RefreshCw, ChevronDown, ChevronUp, ChefHat, Utensils } from "lucide-react";
 
 interface MealCardProps {
   meal: DayMeal;
@@ -38,17 +38,17 @@ export function MealCard({
       <Card
         variant="elevated"
         padding="none"
-        className="group relative overflow-hidden border-white/[0.08] hover:border-accent/40 hover:shadow-card-hover transition-all duration-300"
+        className="group relative overflow-hidden border-border hover:border-accent/40 hover:shadow-card-hover transition-all duration-300"
       >
         {/* Visual Header Banner */}
-        <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-black border-b border-white/[0.08]">
+        <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-black border-b border-border">
           <img
             src={media.imageUrl}
             alt={meal.name}
-            className="w-full h-full object-cover brightness-[0.75] group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-cover brightness-[0.8] group-hover:scale-105 transition-transform duration-700"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#161616] via-[#161616]/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
           {/* Top badges */}
           <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
@@ -78,17 +78,17 @@ export function MealCard({
               <span className="text-base sm:text-lg font-extrabold text-white block leading-tight tracking-tight drop-shadow-sm">
                 {meal.name}
               </span>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-primary-dim mt-0.5">
-                <span className="flex items-center gap-1 text-white/80">
+              <div className="flex items-center gap-2 text-[11px] font-mono text-white/80 mt-0.5">
+                <span className="flex items-center gap-1 text-white">
                   <Clock className="w-3 h-3 text-accent" />
                   {media.prepTimeMinutes + media.cookTimeMinutes} mins total
                 </span>
                 <span>&bull;</span>
-                <span className="text-primary-muted">{media.dietTier}</span>
+                <span className="text-white/80">{media.dietTier}</span>
               </div>
             </div>
 
-            <span className="px-2.5 py-1 rounded-xl bg-accent text-white font-mono text-xs font-bold shadow-[0_0_12px_rgba(255,30,30,0.5)]">
+            <span className="px-2.5 py-1 rounded-xl bg-accent text-white font-mono text-xs font-bold shadow-accent-glow">
               {meal.calories} kcal
             </span>
           </div>
@@ -104,13 +104,13 @@ export function MealCard({
                 {meal.protein}g
               </span>
             </div>
-            <div className="p-2.5 rounded-xl bg-surface-elevated border border-white/[0.06]">
+            <div className="p-2.5 rounded-xl bg-surface-elevated border border-border">
               <span className="text-[10px] text-primary-dim uppercase block">Carbs</span>
-              <span className="text-sm font-extrabold text-white mt-0.5 block">
+              <span className="text-sm font-extrabold text-primary mt-0.5 block">
                 {meal.carbs}g
               </span>
             </div>
-            <div className="p-2.5 rounded-xl bg-surface-elevated border border-white/[0.06]">
+            <div className="p-2.5 rounded-xl bg-surface-elevated border border-border">
               <span className="text-[10px] text-primary-dim uppercase block">Fats</span>
               <span className="text-sm font-extrabold text-primary-muted mt-0.5 block">
                 {meal.fat}g
@@ -123,13 +123,13 @@ export function MealCard({
             <span className="text-[10px] font-mono uppercase text-primary-dim tracking-wider block">
               Scheduled Portions & Ingredients
             </span>
-            <ul className="space-y-1.5 text-xs text-white">
+            <ul className="space-y-1.5 text-xs text-primary">
               {meal.items.map((item, itemIdx) => (
                 <li
                   key={itemIdx}
-                  className="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-elevated border border-white/[0.06]"
+                  className="flex items-center justify-between py-2 px-3 rounded-xl bg-surface-elevated border border-border"
                 >
-                  <span className="font-semibold text-white">{item.name}</span>
+                  <span className="font-semibold text-primary">{item.name}</span>
                   <span className="font-mono text-primary-dim text-[11px] font-bold">
                     {item.portion}
                   </span>
@@ -139,7 +139,7 @@ export function MealCard({
           </div>
 
           {/* Expandable Recipe Button */}
-          <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs font-mono">
+          <div className="pt-2 border-t border-border flex items-center justify-between text-xs font-mono">
             <span className="text-primary-dim text-[11px] flex items-center gap-1.5">
               <Utensils className="w-3.5 h-3.5 text-accent" />
               Nutritional Precision
@@ -147,7 +147,7 @@ export function MealCard({
 
             <button
               onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-1 text-primary-muted hover:text-white transition-colors text-xs font-semibold"
+              className="flex items-center gap-1 text-primary-muted hover:text-primary transition-colors text-xs font-semibold"
             >
               <span>{expanded ? "Hide Recipe" : "View Recipe"}</span>
               {expanded ? <ChevronUp className="w-3.5 h-3.5 text-accent" /> : <ChevronDown className="w-3.5 h-3.5 text-accent" />}
@@ -156,7 +156,7 @@ export function MealCard({
 
           {/* Expandable Preparation Instructions */}
           {expanded && (
-            <div className="pt-3 border-t border-white/[0.08] space-y-3 bg-black/40 -mx-4 -mb-4 sm:-mx-5 sm:-mb-5 p-4 sm:p-5 rounded-b-[24px] animate-in slide-in-from-top-1 duration-150">
+            <div className="pt-3 border-t border-border space-y-3 bg-background-subtle -mx-4 -mb-4 sm:-mx-5 sm:-mb-5 p-4 sm:p-5 rounded-b-[24px] animate-in slide-in-from-top-1 duration-150">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="flex items-center gap-1.5 text-accent font-bold">
                   <ChefHat className="w-4 h-4 text-accent" />
@@ -176,7 +176,7 @@ export function MealCard({
                   {(media.ingredients?.length ? media.ingredients.map(i => `${i.item} (${i.amount})`) : fallbackRecipe.ingredients).map((ing, ingIdx) => (
                     <span
                       key={ingIdx}
-                      className="px-2.5 py-1 rounded-lg bg-surface-elevated border border-white/[0.08] text-[11px] font-mono text-white"
+                      className="px-2.5 py-1 rounded-lg bg-surface-elevated border border-border text-[11px] font-mono text-primary"
                     >
                       {ing}
                     </span>

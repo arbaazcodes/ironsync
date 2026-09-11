@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Metric } from "@/components/ui/Metric";
 import { Badge } from "@/components/ui/Badge";
-import { Sparkles, Calendar, Dumbbell, Flame, CheckCircle2, Zap } from "lucide-react";
+import { Calendar, Dumbbell, CheckCircle2, Zap } from "lucide-react";
 
 type GoalType = "muscle_gain" | "fat_loss" | "recomp";
 
@@ -69,18 +68,18 @@ export function BlueprintPreview() {
   return (
     <div className="relative w-full max-w-lg lg:max-w-none mx-auto">
       {/* Ferrari Red outer ambient glow */}
-      <div className="absolute -inset-2 bg-gradient-to-r from-accent/25 via-accent/10 to-transparent rounded-[32px] blur-2xl opacity-60 pointer-events-none" />
+      <div className="absolute -inset-2 bg-gradient-to-r from-accent/20 via-accent/10 to-transparent rounded-[32px] blur-2xl opacity-50 pointer-events-none" />
 
       {/* Main Blueprint Terminal Card */}
-      <div className="relative rounded-[28px] bg-card border border-white/[0.1] shadow-2xl p-5 sm:p-7 overflow-hidden group hover:border-accent/40 transition-colors duration-300">
+      <div className="relative rounded-[28px] bg-card border border-border shadow-card p-5 sm:p-7 overflow-hidden group hover:border-accent/40 transition-colors duration-300">
         {/* Subtle red corner spotlight */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-accent/10 blur-[60px] pointer-events-none rounded-full" />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-accent/5 blur-[60px] pointer-events-none rounded-full" />
 
         {/* Top bar with system status */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-accent shadow-[0_0_8px_rgba(255,30,30,0.9)] animate-pulse" />
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-white">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-primary">
               IRONSYNC BLUEPRINT ENGINE
             </span>
           </div>
@@ -91,7 +90,7 @@ export function BlueprintPreview() {
 
         {/* Goal switcher tabs */}
         <div className="pt-4 pb-2">
-          <div className="flex items-center gap-1.5 p-1 bg-surface-elevated rounded-2xl border border-white/[0.06]">
+          <div className="flex items-center gap-1.5 p-1 bg-surface-elevated rounded-2xl border border-border">
             {(
               [
                 { id: "muscle_gain", label: "Hypertrophy" },
@@ -105,7 +104,7 @@ export function BlueprintPreview() {
                 className={`flex-1 py-2 text-xs font-mono font-bold rounded-xl transition-all duration-200 ${
                   activeGoal === tab.id
                     ? "bg-accent text-white shadow-accent-glow"
-                    : "text-primary-muted hover:text-white"
+                    : "text-primary-muted hover:text-primary"
                 }`}
               >
                 {tab.label}
@@ -115,20 +114,20 @@ export function BlueprintPreview() {
         </div>
 
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 py-5 border-b border-white/[0.08]">
-          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-white/[0.06] text-center">
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 py-5 border-b border-border">
+          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-border text-center">
             <span className="text-[10px] font-mono uppercase tracking-wider text-primary-dim block">
               Daily Target
             </span>
-            <span className="text-xl sm:text-2xl font-extrabold text-white font-mono block mt-0.5">
+            <span className="text-xl sm:text-2xl font-extrabold text-primary font-mono block mt-0.5">
               {data.calories}
             </span>
-            <span className="text-[10px] font-mono text-accent block mt-0.5">
+            <span className="text-[10px] font-mono text-accent block mt-0.5 font-bold">
               KCAL / DAY
             </span>
           </div>
 
-          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-white/[0.06] text-center">
+          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-border text-center">
             <span className="text-[10px] font-mono uppercase tracking-wider text-primary-dim block">
               Protein Intake
             </span>
@@ -140,11 +139,11 @@ export function BlueprintPreview() {
             </span>
           </div>
 
-          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-white/[0.06] text-center">
+          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-border text-center">
             <span className="text-[10px] font-mono uppercase tracking-wider text-primary-dim block">
               Training Split
             </span>
-            <span className="text-xl sm:text-2xl font-extrabold text-white font-mono block mt-0.5">
+            <span className="text-xl sm:text-2xl font-extrabold text-primary font-mono block mt-0.5">
               {data.split}
             </span>
             <span className="text-[10px] font-mono text-primary-dim block mt-0.5">
@@ -158,11 +157,11 @@ export function BlueprintPreview() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="w-3.5 h-3.5 text-accent" />
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">
                 Periodized Schedule
               </span>
             </div>
-            <span className="text-[11px] font-mono text-accent">Auto-Adapting</span>
+            <span className="text-[11px] font-mono text-accent font-bold">Auto-Adapting</span>
           </div>
 
           <div className="space-y-2">
@@ -171,8 +170,8 @@ export function BlueprintPreview() {
                 key={index}
                 className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border transition-all ${
                   item.type === "recovery"
-                    ? "bg-surface-elevated/40 border-white/[0.04] text-primary-muted"
-                    : "bg-surface-elevated border-white/[0.08] hover:border-accent/40 text-white"
+                    ? "bg-surface-elevated/40 border-border/50 text-primary-muted"
+                    : "bg-surface-elevated border-border hover:border-accent/40 text-primary"
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -181,16 +180,16 @@ export function BlueprintPreview() {
                   </span>
                   <div className="flex items-center gap-2">
                     {item.type === "workout" ? (
-                      <Dumbbell className="w-3.5 h-3.5 text-white/80 shrink-0" />
+                      <Dumbbell className="w-3.5 h-3.5 text-primary-dim shrink-0" />
                     ) : (
                       <Zap className="w-3.5 h-3.5 text-accent shrink-0" />
                     )}
-                    <span className="text-xs sm:text-sm font-semibold tracking-tight">
+                    <span className="text-xs sm:text-sm font-bold tracking-tight">
                       {item.focus}
                     </span>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-black/60 border border-white/10 text-primary-dim">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-surface border border-border text-primary-dim">
                   {item.tag}
                 </span>
               </div>
@@ -199,12 +198,12 @@ export function BlueprintPreview() {
         </div>
 
         {/* Realistic Footer Detail */}
-        <div className="mt-4 pt-3.5 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-primary-dim font-mono">
-          <span className="flex items-center gap-1.5 text-white/90">
+        <div className="mt-4 pt-3.5 border-t border-border flex items-center justify-between text-[11px] text-primary-dim font-mono">
+          <span className="flex items-center gap-1.5 text-primary">
             <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
             Biomechanical Engine Active
           </span>
-          <span className="text-accent">Precision v2.4</span>
+          <span className="text-accent font-bold">Precision v2.4</span>
         </div>
       </div>
     </div>

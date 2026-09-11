@@ -107,14 +107,14 @@ export function WorkoutTimer({
   };
 
   return (
-    <div className={`p-5 sm:p-6 rounded-[24px] bg-surface border border-white/[0.08] shadow-card flex flex-col items-center justify-between space-y-4 ${className}`}>
+    <div className={`p-5 sm:p-6 rounded-[24px] bg-surface border border-border shadow-card flex flex-col items-center justify-between space-y-4 ${className}`}>
       {/* Header */}
-      <div className="w-full flex items-center justify-between border-b border-white/[0.06] pb-3">
+      <div className="w-full flex items-center justify-between border-b border-border pb-3">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
             <TimerIcon className="w-4 h-4 text-accent" />
           </div>
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">
             {mode === "rest" ? "Rest Interval" : "Set Stopwatch"}
           </span>
         </div>
@@ -122,17 +122,17 @@ export function WorkoutTimer({
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-1.5 rounded-lg text-primary-muted hover:text-white transition-colors"
+            className="p-1.5 rounded-lg text-primary-muted hover:text-primary transition-colors"
             title={soundEnabled ? "Mute beep" : "Enable sound"}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4 text-accent" /> : <VolumeX className="w-4 h-4 text-primary-dim" />}
           </button>
 
-          <div className="flex rounded-lg bg-background p-0.5 border border-white/[0.06]">
+          <div className="flex rounded-lg bg-background p-0.5 border border-border">
             <button
               onClick={() => { setMode("rest"); setIsRunning(false); setTimeLeft(duration); }}
               className={`px-2.5 py-1 text-[11px] font-mono rounded-md font-semibold transition-all ${
-                mode === "rest" ? "bg-accent text-white shadow-sm" : "text-primary-muted hover:text-white"
+                mode === "rest" ? "bg-accent text-white shadow-sm" : "text-primary-muted hover:text-primary"
               }`}
             >
               REST
@@ -140,7 +140,7 @@ export function WorkoutTimer({
             <button
               onClick={() => { setMode("stopwatch"); setIsRunning(false); setStopwatchSeconds(0); }}
               className={`px-2.5 py-1 text-[11px] font-mono rounded-md font-semibold transition-all ${
-                mode === "stopwatch" ? "bg-accent text-white shadow-sm" : "text-primary-muted hover:text-white"
+                mode === "stopwatch" ? "bg-accent text-white shadow-sm" : "text-primary-muted hover:text-primary"
               }`}
             >
               SET
@@ -157,7 +157,7 @@ export function WorkoutTimer({
             cx="64"
             cy="64"
             r={radius}
-            className="stroke-white/[0.08]"
+            className="stroke-black/10 dark:stroke-white/10"
             strokeWidth="8"
             fill="transparent"
           />
@@ -180,7 +180,7 @@ export function WorkoutTimer({
 
         {/* Center Digital Readout */}
         <div className="absolute flex flex-col items-center justify-center text-center">
-          <span className="text-3xl font-extrabold tracking-tight text-white font-mono tabular-nums">
+          <span className="text-3xl font-extrabold tracking-tight text-primary font-mono tabular-nums">
             {mode === "rest" ? formatTime(timeLeft) : formatTime(stopwatchSeconds)}
           </span>
           <span className="text-[10px] font-mono uppercase tracking-widest text-primary-dim mt-0.5">
@@ -199,7 +199,7 @@ export function WorkoutTimer({
               className={`px-2.5 py-1 text-xs font-mono rounded-lg border transition-all ${
                 duration === sec
                   ? "bg-accent/20 border-accent text-accent font-bold shadow-[0_0_12px_rgba(255,30,30,0.3)]"
-                  : "bg-surface-elevated border-white/[0.06] text-primary-muted hover:text-white"
+                  : "bg-surface-elevated border-border text-primary-muted hover:text-primary"
               }`}
             >
               {sec}s

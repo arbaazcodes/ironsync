@@ -2,12 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root, .light {
+  --background: #FFFFFF;
+  --background-subtle: #F8F9FA;
+  --surface: #FFFFFF;
+  --surface-elevated: #F4F4F5;
+  --surface-hover: #ECECEE;
+  --card-bg: #FFFFFF;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-hover: rgba(0, 0, 0, 0.16);
+  --primary-text: #09090B;
+  --secondary-text: #52525B;
+  --muted-text: #71717A;
+  --accent: #FF1E1E;
+  --accent-hover: #E01515;
+  --accent-muted: rgba(255, 30, 30, 0.08);
+  --accent-glow: rgba(255, 30, 30, 0.2);
+  --divider: rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 12px 30px -4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 30, 30, 0.35), 0 0 20px -4px rgba(255, 30, 30, 0.15);
+  color-scheme: light;
+}
+
+.dark {
   --background: #050505;
   --background-subtle: #101010;
   --surface: #161616;
   --surface-elevated: #1C1C1C;
   --surface-hover: #222222;
+  --card-bg: #161616;
   --border: rgba(255, 255, 255, 0.08);
   --border-subtle: rgba(255, 255, 255, 0.04);
   --border-hover: rgba(255, 255, 255, 0.16);
@@ -19,6 +43,8 @@
   --accent-muted: rgba(255, 30, 30, 0.12);
   --accent-glow: rgba(255, 30, 30, 0.28);
   --divider: rgba(255, 255, 255, 0.06);
+  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-card-hover: 0 14px 44px -4px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 30, 30, 0.35), 0 0 24px -4px rgba(255, 30, 30, 0.25);
   color-scheme: dark;
 }
 
@@ -36,6 +62,7 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Typography refinements */
@@ -55,7 +82,7 @@ p, li, .pretty-text {
 /* Custom subtle scrollbar */
 @supports (scrollbar-color: auto) {
   * {
-    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+    scrollbar-color: var(--border) transparent;
     scrollbar-width: thin;
   }
 }
@@ -69,11 +96,11 @@ p, li, .pretty-text {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--border);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 30, 30, 0.5);
+    background: var(--accent);
   }
 }
 
@@ -82,8 +109,6 @@ p, li, .pretty-text {
   background-color: rgba(255, 30, 30, 0.35);
   color: #FFFFFF;
 }
-
-
 
 /* Accessible focus ring */
 :focus-visible {

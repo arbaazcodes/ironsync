@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteLayout } from "@/components/layout/SiteLayout";
+import { AuthProvider } from "@/lib/context/AuthContext";
+import { ThemeProvider } from "@/lib/context/ThemeContext";
+import { MotionBackground } from "@/components/ui/MotionBackground";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,10 +37,8 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#050505",
+  themeColor: "#FFFFFF",
 };
-
-import { AuthProvider } from "@/lib/context/AuthContext";
 
 export default function RootLayout({
   children,
@@ -45,13 +46,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} dark`}>
-      <body className="font-sans antialiased bg-background text-primary min-h-screen flex flex-col selection:bg-accent/30 selection:text-white">
-        <AuthProvider>
-          <SiteLayout>{children}</SiteLayout>
-        </AuthProvider>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} light`}>
+      <body className="font-sans antialiased bg-background text-primary min-h-screen flex flex-col selection:bg-accent/30 selection:text-white relative">
+        <ThemeProvider>
+          <MotionBackground />
+          <AuthProvider>
+            <SiteLayout>{children}</SiteLayout>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
 }
-

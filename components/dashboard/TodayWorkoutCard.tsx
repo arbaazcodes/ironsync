@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Dumbbell, ArrowRight, CheckCircle2, Clock, Check, Flame } from "lucide-react";
+import { Dumbbell, ArrowRight, CheckCircle2, Clock, Check } from "lucide-react";
 import { SavedPlanData } from "@/lib/supabase/planSync";
 import { getExerciseDetails } from "@/lib/data/exerciseDetails";
 import { getExerciseMedia, CATEGORY_HERO_IMAGES } from "@/lib/data/exerciseMedia";
@@ -58,27 +58,27 @@ export function TodayWorkoutCard({ plan }: TodayWorkoutCardProps) {
     <Card
       variant="elevated"
       padding="none"
-      className="relative overflow-hidden border-white/[0.08] group hover:border-accent/40 transition-all duration-300"
+      className="relative overflow-hidden border-border group hover:border-accent/40 transition-all duration-300"
     >
       {/* Dynamic Atmospheric Hero Background */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <img
           src={bgImage}
           alt="Workout Focus"
-          className="w-full h-full object-cover brightness-[0.25] group-hover:scale-105 transition-transform duration-700"
+          className="w-full h-full object-cover brightness-[0.7] dark:brightness-[0.25] group-hover:scale-105 transition-transform duration-700"
           loading="lazy"
         />
-        {/* Cinematic dark gradient overlays for maximum contrast */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#161616] via-[#161616]/90 to-[#161616]/75" />
-        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/10 blur-[100px] pointer-events-none rounded-full" />
+        {/* Dynamic gradient overlays for maximum contrast in both light & dark themes */}
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/90 to-card/60 dark:from-[#161616] dark:via-[#161616]/90 dark:to-[#161616]/75" />
+        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/5 blur-[100px] pointer-events-none rounded-full" />
       </div>
 
       {/* Card Content */}
       <div className="relative z-10 p-5 sm:p-7 space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between pb-3.5 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-black/60 border border-white/10 flex items-center justify-center text-accent backdrop-blur-md shadow-sm">
+            <div className="w-10 h-10 rounded-2xl bg-surface-elevated border border-border flex items-center justify-center text-accent shadow-sm">
               <Dumbbell className="w-5 h-5 text-accent" />
             </div>
             <div>
@@ -92,12 +92,12 @@ export function TodayWorkoutCard({ plan }: TodayWorkoutCardProps) {
           </div>
 
           {completed ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold">
               <Check className="w-3.5 h-3.5" />
               Workout completed ✓
             </span>
           ) : (
-            <span className="px-2.5 py-1 rounded-lg bg-black/50 border border-white/10 text-xs font-mono text-primary-dim backdrop-blur-sm">
+            <span className="px-2.5 py-1 rounded-lg bg-surface-elevated border border-border text-xs font-mono text-primary-dim">
               Est: 55-65 mins
             </span>
           )}
@@ -105,7 +105,7 @@ export function TodayWorkoutCard({ plan }: TodayWorkoutCardProps) {
 
         {/* Title */}
         <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight uppercase">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight uppercase">
             {todayWorkout?.focus || "Systemic Training"}
           </h2>
           <p className="text-xs sm:text-sm text-primary-muted mt-1">
@@ -126,22 +126,22 @@ export function TodayWorkoutCard({ plan }: TodayWorkoutCardProps) {
               return (
                 <div
                   key={idx}
-                  className="p-3 rounded-2xl bg-black/40 border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all duration-200 hover:border-accent/40 hover:bg-black/60 backdrop-blur-sm"
+                  className="p-3 rounded-2xl bg-surface-elevated/80 border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all duration-200 hover:border-accent/40 hover:bg-surface-elevated"
                 >
                   <div className="flex items-center gap-3">
                     <img
                       src={media.thumbnailUrl}
                       alt={item.name}
-                      className="w-10 h-10 rounded-xl object-cover border border-white/10 shrink-0"
+                      className="w-10 h-10 rounded-xl object-cover border border-border shrink-0"
                     />
                     <div>
-                      <h3 className="text-xs sm:text-sm font-bold text-white">
+                      <h3 className="text-xs sm:text-sm font-bold text-primary">
                         {item.name}
                       </h3>
                       <div className="flex items-center gap-2 font-mono text-[11px] text-primary-dim mt-0.5">
-                        <span className="text-white font-semibold">{item.setsReps}</span>
+                        <span className="text-primary font-semibold">{item.setsReps}</span>
                         <span>&bull;</span>
-                        <span className="flex items-center gap-1 text-accent">
+                        <span className="flex items-center gap-1 text-accent font-medium">
                           <Clock className="w-3 h-3" />
                           {restText}
                         </span>
@@ -150,7 +150,7 @@ export function TodayWorkoutCard({ plan }: TodayWorkoutCardProps) {
                   </div>
 
                   <div className="flex items-center gap-2 self-start sm:self-center">
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-surface-elevated text-primary-dim font-mono border border-white/[0.06]">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-surface text-primary-dim font-mono border border-border">
                       {media.muscleGroup}
                     </span>
                     {item.rpe && (
@@ -169,7 +169,7 @@ export function TodayWorkoutCard({ plan }: TodayWorkoutCardProps) {
             )}
           </div>
         ) : (
-          <div className="p-6 rounded-2xl bg-black/40 border border-dashed border-white/10 text-center space-y-2 backdrop-blur-sm">
+          <div className="p-6 rounded-2xl bg-surface-elevated/50 border border-dashed border-border text-center space-y-2">
             <p className="text-xs text-primary-muted">
               {todayWorkout?.type === "recovery"
                 ? "Today is a scheduled active recovery day. Focus on hydration and mobility."
@@ -179,18 +179,18 @@ export function TodayWorkoutCard({ plan }: TodayWorkoutCardProps) {
         )}
 
         {/* Actions */}
-        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-white/[0.08]">
+        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border">
           <button
             onClick={handleToggleComplete}
             className={`px-4 py-2.5 rounded-xl border text-xs font-mono font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${
               completed
-                ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/25 shadow-sm"
-                : "bg-surface-elevated text-white border-white/[0.1] hover:border-accent/50 hover:bg-surface-hover"
+                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/25 shadow-sm"
+                : "bg-surface-elevated text-primary border-border hover:border-accent/50 hover:bg-surface-hover"
             }`}
           >
             {completed ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Workout completed ✓</span>
               </>
             ) : (
