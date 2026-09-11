@@ -16,11 +16,11 @@ export function Card({
   ...props
 }: CardProps) {
   const variants = {
-    default: "bg-surface border border-border",
+    default: "bg-surface border border-border shadow-card",
     elevated: "bg-surface-elevated border border-border shadow-card",
     interactive:
-      "bg-surface border border-border hover:border-border-hover hover:bg-surface-hover hover:shadow-card-hover transition-all duration-300",
-    flat: "bg-surface-elevated/60 border border-border-subtle",
+      "bg-surface border border-border hover:border-accent/40 hover:bg-surface-hover hover:shadow-card-hover transition-all duration-300",
+    flat: "bg-surface-subtle border border-border-subtle",
   };
 
   const paddings = {
@@ -33,10 +33,10 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-2xl relative overflow-hidden",
+        "rounded-[24px] relative overflow-hidden",
         variants[variant],
         paddings[padding],
-        hoverEffect && "hover:border-border-hover hover:shadow-card-hover transition-all duration-300",
+        hoverEffect && "hover:border-accent/40 hover:shadow-card-hover transition-all duration-300",
         className
       )}
       {...props}
@@ -44,4 +44,5 @@ export function Card({
       {children}
     </div>
   );
+
 }

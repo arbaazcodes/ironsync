@@ -278,27 +278,27 @@ export default function DashboardNutritionPage() {
             />
             <div
               style={{ width: `${carbsPct}%` }}
-              className="bg-sky-400 h-full transition-all duration-300"
+              className="bg-white/85 h-full transition-all duration-300"
               title={`Carbs: ${carbsPct}%`}
             />
             <div
               style={{ width: `${fatPct}%` }}
-              className="bg-amber-400 h-full transition-all duration-300"
+              className="bg-white/30 h-full transition-all duration-300"
               title={`Fat: ${fatPct}%`}
             />
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-primary-dim pt-1">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-accent" />
+            <span className="flex items-center gap-1.5 text-white">
+              <span className="w-2 h-2 rounded-full bg-accent shadow-[0_0_6px_rgba(255,30,30,0.8)]" />
               Protein: {activeProtein}g ({proteinPct}%)
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-sky-400" />
+            <span className="flex items-center gap-1.5 text-white/90">
+              <span className="w-2 h-2 rounded-full bg-white/85" />
               Carbs: {activeCarbs}g ({carbsPct}%)
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="flex items-center gap-1.5 text-primary-muted">
+              <span className="w-2 h-2 rounded-full bg-white/30" />
               Fat: {activeFat}g ({fatPct}%)
             </span>
           </div>

@@ -10,6 +10,7 @@ import { ExerciseSwapModal } from "@/components/dashboard/ExerciseSwapModal";
 import { ExerciseDetailDrawer } from "@/components/dashboard/ExerciseDetailDrawer";
 import { WorkoutExercise, WorkoutDayPlan } from "@/lib/types/onboarding";
 import { updatePlanSchedule } from "@/lib/supabase/planSync";
+import { WorkoutTimer } from "@/components/dashboard/WorkoutTimer";
 import {
   Dumbbell,
   Calendar,
@@ -22,6 +23,7 @@ import {
   RotateCcw,
   Save,
   ShieldCheck,
+  Timer,
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
@@ -40,6 +42,7 @@ export default function DashboardWorkoutPage() {
   const [pendingSwap, setPendingSwap] = useState<PendingWorkoutSwap | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [timerOpen, setTimerOpen] = useState(false);
 
   // Track workout page viewed
   useEffect(() => {
@@ -210,22 +213,43 @@ export default function DashboardWorkoutPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* 1. Header */}
-      <div className="space-y-1.5 pb-5 border-b border-border/70">
-        <div className="flex items-center gap-2">
-          <Badge variant="accent" size="sm">
-            WORKOUT
-          </Badge>
-          <span className="text-xs font-mono text-primary-dim">
-            {activePlan.trainingDays} Days / Week Cadence &bull; {activePlan.equipment ? activePlan.equipment.replace(/_/g, " ") : "gym"}
-          </span>
+      <div className="space-y-3 pb-5 border-b border-white/[0.08] flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Badge variant="accent" size="sm">
+              WORKOUT
+            </Badge>
+            <span className="text-xs font-mono text-primary-dim">
+              {activePlan.trainingDays} Days / Week Cadence &bull; {activePlan.equipment ? activePlan.equipment.replace(/_/g, " ") : "gym"}
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1 uppercase">
+            {activePlan.splitName}
+          </h1>
+          <p className="text-xs sm:text-sm text-primary-muted mt-0.5">
+            Engineered for mechanical tension, progressive overload, and systematic muscle group recovery.
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
-          {activePlan.splitName}
-        </h1>
-        <p className="text-xs sm:text-sm text-primary-muted">
-          Engineered for mechanical tension, progressive overload, and systematic muscle group recovery.
-        </p>
+
+        <button
+          onClick={() => setTimerOpen(!timerOpen)}
+          className={`px-4 py-2.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-2 transition-all self-start sm:self-auto shrink-0 shadow-sm ${
+            timerOpen
+              ? "bg-accent text-white border-accent shadow-accent-glow"
+              : "bg-card text-white border-white/[0.08] hover:border-accent/40 hover:bg-surface-elevated"
+          }`}
+        >
+          <Timer className="w-4 h-4 text-accent" />
+          <span>{timerOpen ? "Hide Rest Timer" : "Rest & Set Timer"}</span>
+        </button>
       </div>
+
+      {/* Rest Timer Companion */}
+      {timerOpen && (
+        <div className="animate-in slide-in-from-top-3 duration-300 max-w-md mx-auto w-full">
+          <WorkoutTimer defaultDuration={90} />
+        </div>
+      )}
 
       {/* 2. Swap Confirmation & Preview Banner */}
       {pendingSwap && (
@@ -241,7 +265,7 @@ export default function DashboardWorkoutPage() {
                 {pendingSwap.original.name}
               </span>
               <ArrowRight className="w-3.5 h-3.5 text-accent" />
-              <span className="text-primary font-bold text-sm">
+              <span className="text-white font-bold text-sm">
                 {pendingSwap.replacement.name}
               </span>
             </div>
@@ -276,7 +300,7 @@ export default function DashboardWorkoutPage() {
 
       {/* Temporary Notification Status */}
       {saveStatus && !pendingSwap && (
-        <div className="p-3 rounded-xl bg-surface border border-accent/30 text-xs font-mono text-primary flex items-center gap-2 animate-in fade-in">
+        <div className="p-3 rounded-xl bg-card border border-accent/30 text-xs font-mono text-white flex items-center gap-2 animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 text-accent shrink-0" />
           <span>{saveStatus}</span>
         </div>
@@ -285,8 +309,8 @@ export default function DashboardWorkoutPage() {
       {/* 3. Day Selector Tabs (reflects user's actual generated schedule) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs font-mono text-primary-dim px-1">
-          <span>SELECT TRAINING DAY</span>
-          <span>
+          <span className="uppercase tracking-wider">SELECT TRAINING DAY</span>
+          <span className="text-white font-bold">
             {Object.values(completedDays).filter(Boolean).length} / {activePlan.trainingDays} Complete
           </span>
         </div>
@@ -301,15 +325,15 @@ export default function DashboardWorkoutPage() {
               <button
                 key={idx}
                 onClick={() => setSelectedDayIdx(idx)}
-                className={`px-3.5 py-2.5 rounded-xl border text-xs font-semibold whitespace-nowrap transition-all duration-200 flex items-center gap-2 shrink-0 ${
+                className={`px-3.5 py-2.5 rounded-xl border text-xs font-mono font-bold whitespace-nowrap transition-all duration-200 flex items-center gap-2 shrink-0 ${
                   isSelected
-                    ? "bg-surface-elevated text-accent border-accent shadow-accent-glow"
+                    ? "bg-accent text-white border-accent shadow-accent-glow"
                     : isDayDone
-                    ? "bg-emerald-500/[0.06] text-primary border-emerald-500/30"
-                    : "bg-surface text-primary-muted border-border hover:border-border-hover hover:text-primary"
+                    ? "bg-emerald-500/[0.1] text-emerald-400 border-emerald-500/30"
+                    : "bg-card text-primary-muted border-white/[0.08] hover:border-accent/40 hover:text-white"
                 }`}
               >
-                <span className="font-mono font-bold">{day.dayName}</span>
+                <span className="font-bold">{day.dayName}</span>
                 <span>&bull;</span>
                 <span className="truncate max-w-[130px]">{day.focus}</span>
                 {isDayDone ? (
@@ -317,7 +341,7 @@ export default function DashboardWorkoutPage() {
                 ) : (
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      isWorkout ? "bg-accent" : "bg-primary-dim/40"
+                      isWorkout ? "bg-accent shadow-[0_0_6px_rgba(255,30,30,0.8)]" : "bg-primary-dim/40"
                     }`}
                   />
                 )}

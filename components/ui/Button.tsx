@@ -27,19 +27,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
+      "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50 disabled:pointer-events-none active:scale-[0.97]";
 
     const variants = {
       primary:
-        "bg-accent text-white font-semibold hover:bg-accent-hover shadow-accent-glow hover:shadow-accent-glow-lg border border-transparent",
+        "bg-accent text-white font-bold tracking-wide hover:bg-accent-hover shadow-accent-glow hover:shadow-accent-glow-lg border border-accent/40 hover:-translate-y-0.5",
       secondary:
-
-        "bg-surface-elevated text-primary border border-border hover:bg-surface-hover hover:border-border-hover shadow-card",
+        "bg-surface text-primary font-semibold border border-border hover:border-white/20 hover:bg-surface-elevated hover:-translate-y-0.5 shadow-card",
       outline:
-        "bg-transparent text-primary border border-border hover:bg-surface hover:border-border-hover",
+        "bg-transparent text-primary font-semibold border border-border hover:border-accent/60 hover:bg-surface hover:-translate-y-0.5",
       ghost:
         "bg-transparent text-primary-muted hover:text-primary hover:bg-surface border border-transparent",
     };
+
 
     const sizes = {
       sm: "text-xs px-3.5 py-1.5 gap-1.5",

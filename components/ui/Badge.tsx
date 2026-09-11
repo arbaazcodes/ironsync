@@ -17,10 +17,11 @@ export function Badge({
 }: BadgeProps) {
   const variants = {
     default: "bg-surface-elevated text-primary-muted border border-border",
-    accent: "bg-accent-muted text-accent border border-accent/25 font-semibold",
+    accent: "bg-accent/15 text-accent border border-accent/30 font-bold shadow-[0_0_14px_-2px_rgba(255,30,30,0.35)]",
     outline: "bg-transparent text-primary-muted border border-border",
     subtle: "bg-surface-elevated text-primary-muted border border-border-subtle",
   };
+
 
 
   const sizes = {

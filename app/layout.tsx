@@ -34,7 +34,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#F8FAFC",
+  themeColor: "#050505",
 };
 
 import { AuthProvider } from "@/lib/context/AuthContext";
@@ -45,9 +45,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} light`}>
-      <body className="font-sans antialiased bg-background text-primary min-h-screen flex flex-col selection:bg-accent/20 selection:text-primary">
-
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} dark`}>
+      <body className="font-sans antialiased bg-background text-primary min-h-screen flex flex-col selection:bg-accent/30 selection:text-white">
         <AuthProvider>
           <SiteLayout>{children}</SiteLayout>
         </AuthProvider>
@@ -55,3 +54,4 @@ export default function RootLayout({
     </html>
   );
 }
+
