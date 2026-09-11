@@ -3,22 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --background: #090A0D;
-  --surface: #12141A;
-  --surface-elevated: #161922;
-  --surface-hover: #1D212D;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-hover: rgba(255, 255, 255, 0.16);
-  --primary-text: #F4F5F7;
-  --secondary-text: #9CA3AF;
-  --muted-text: #6B7280;
-  --accent: #00E599;
-  --accent-hover: #00CC88;
-  --accent-muted: rgba(0, 229, 153, 0.12);
-  --accent-glow: rgba(0, 229, 153, 0.25);
-  color-scheme: dark;
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --surface-hover: #F1F5F9;
+  --border: #E2E8F0;
+  --border-subtle: #EDF2F7;
+  --border-hover: #CBD5E1;
+  --primary-text: #0F172A;
+  --secondary-text: #475569;
+  --muted-text: #64748B;
+  --accent: #059669;
+  --accent-hover: #047857;
+  --accent-muted: rgba(5, 150, 105, 0.10);
+  --accent-glow: rgba(5, 150, 105, 0.20);
+  color-scheme: light;
 }
+
 
 html {
   scroll-behavior: smooth;
@@ -49,7 +50,7 @@ p, li, .pretty-text {
 /* Custom subtle scrollbar */
 @supports (scrollbar-color: auto) {
   * {
-    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    scrollbar-color: rgba(15, 23, 42, 0.15) transparent;
     scrollbar-width: thin;
   }
 }
@@ -63,16 +64,17 @@ p, li, .pretty-text {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(15, 23, 42, 0.15);
     border-radius: 9999px;
   }
 }
 
 /* Selection styling */
 ::selection {
-  background-color: rgba(0, 229, 153, 0.25);
-  color: #FFFFFF;
+  background-color: rgba(5, 150, 105, 0.20);
+  color: #0F172A;
 }
+
 
 /* Accessible focus ring */
 :focus-visible {

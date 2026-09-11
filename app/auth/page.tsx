@@ -12,7 +12,8 @@ export const metadata = {
 
 export default function AuthPage() {
   return (
-    <div className="min-h-screen bg-background text-primary flex flex-col justify-between selection:bg-accent/25 selection:text-white relative">
+    <div className="min-h-screen bg-background text-primary flex flex-col justify-between selection:bg-accent/20 selection:text-primary relative">
+
       {/* Ambient background light */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-accent/[0.04] blur-[140px] pointer-events-none rounded-full" />
 

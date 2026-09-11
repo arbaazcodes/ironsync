@@ -29,9 +29,10 @@ export function Hero() {
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-primary tracking-tight leading-[1.08] max-w-2xl">
               Build a fitness plan that{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-primary-muted">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
                 actually fits your life.
               </span>
+
             </h1>
 
             {/* Supporting Copy */}

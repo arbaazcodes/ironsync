@@ -50,7 +50,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-primary flex flex-col md:flex-row relative selection:bg-accent/25 selection:text-white">
+    <div className="min-h-screen bg-background text-primary flex flex-col md:flex-row relative selection:bg-accent/20 selection:text-primary">
+
       {/* ========================================================================= */}
       {/* DESKTOP SIDEBAR */}
       {/* ========================================================================= */}

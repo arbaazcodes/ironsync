@@ -25,7 +25,8 @@ export function OnboardingShell({ children }: OnboardingShellProps) {
   const canContinue = isStepValid(currentStep);
 
   return (
-    <div className="min-h-screen bg-background text-primary flex flex-col justify-between selection:bg-accent/25 selection:text-white relative">
+    <div className="min-h-screen bg-background text-primary flex flex-col justify-between selection:bg-accent/20 selection:text-primary relative">
+
       {/* Ambient background light */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-accent/[0.03] blur-[140px] pointer-events-none rounded-full" />
 

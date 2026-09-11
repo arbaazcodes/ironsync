@@ -11,37 +11,38 @@ const config: Config = {
     extend: {
       colors: {
         background: {
-          DEFAULT: "#090A0D",
-          subtle: "#0D0F14",
+          DEFAULT: "#F8FAFC",
+          subtle: "#F1F5F9",
         },
         surface: {
-          DEFAULT: "#12141A",
-          elevated: "#161922",
-          hover: "#1D212D",
+          DEFAULT: "#FFFFFF",
+          elevated: "#FFFFFF",
+          hover: "#F8FAFC",
         },
         border: {
-          DEFAULT: "rgba(255, 255, 255, 0.08)",
-          subtle: "rgba(255, 255, 255, 0.05)",
-          hover: "rgba(255, 255, 255, 0.16)",
-          active: "rgba(255, 255, 255, 0.24)",
+          DEFAULT: "#E2E8F0",
+          subtle: "#EDF2F7",
+          hover: "#CBD5E1",
+          active: "#94A3B8",
         },
         primary: {
-          DEFAULT: "#F4F5F7",
-          muted: "#9CA3AF",
-          dim: "#6B7280",
+          DEFAULT: "#0F172A",
+          muted: "#475569",
+          dim: "#64748B",
         },
         accent: {
-          DEFAULT: "#00E599",
-          hover: "#00CC88",
-          muted: "rgba(0, 229, 153, 0.12)",
-          glow: "rgba(0, 229, 153, 0.25)",
+          DEFAULT: "#059669",
+          hover: "#047857",
+          muted: "rgba(5, 150, 105, 0.10)",
+          glow: "rgba(5, 150, 105, 0.20)",
         },
         status: {
           success: "#10B981",
-          warning: "#F59E0B",
-          error: "#EF4444",
+          warning: "#D97706",
+          error: "#DC2626",
         },
       },
+
       fontFamily: {
         sans: [
           "var(--font-sans)",
@@ -64,11 +65,12 @@ const config: Config = {
         ],
       },
       boxShadow: {
-        "card": "0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06)",
-        "card-hover": "0 8px 30px -4px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.12)",
-        "accent-glow": "0 0 24px -4px rgba(0, 229, 153, 0.3)",
-        "accent-glow-lg": "0 0 40px -6px rgba(0, 229, 153, 0.4)",
+        "card": "0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(226, 232, 240, 0.8)",
+        "card-hover": "0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(5, 150, 105, 0.3)",
+        "accent-glow": "0 0 24px -4px rgba(5, 150, 105, 0.25)",
+        "accent-glow-lg": "0 0 40px -6px rgba(5, 150, 105, 0.35)",
       },
+
       maxWidth: {
         "screen-custom": "1280px",
       },

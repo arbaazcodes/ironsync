@@ -19,8 +19,9 @@ export function Badge({
     default: "bg-surface-elevated text-primary-muted border border-border",
     accent: "bg-accent-muted text-accent border border-accent/25 font-semibold",
     outline: "bg-transparent text-primary-muted border border-border",
-    subtle: "bg-white/[0.04] text-primary-muted border border-white/[0.06]",
+    subtle: "bg-surface-elevated text-primary-muted border border-border-subtle",
   };
+
 
   const sizes = {
     sm: "text-[11px] px-2 py-0.5 tracking-wider uppercase font-medium",
