@@ -2,13 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowRight, Activity } from "lucide-react";
+import { Menu, X, ArrowRight, Activity, LogIn } from "lucide-react";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/lib/context/AuthContext";
+
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,7 +67,15 @@ export function Navbar() {
         </nav>
 
         {/* Desktop Right CTA */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
+          <Link
+            href={user ? "/dashboard" : "/auth"}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-muted hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-surface border border-transparent hover:border-border"
+          >
+            <LogIn className="w-3.5 h-3.5 text-accent" />
+            <span>{user ? "Dashboard" : "Log in"}</span>
+          </Link>
+
           <Button
             href="/onboarding"
             variant="primary"
@@ -99,6 +111,19 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+
+            <Link
+              href={user ? "/dashboard" : "/auth"}
+              onClick={() => setMobileMenuOpen(false)}
+              className="text-base font-medium text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <LogIn className="w-4 h-4 text-accent" />
+                {user ? "Go to Dashboard" : "Log in to Account"}
+              </span>
+              <ArrowRight className="w-4 h-4 text-primary-dim" />
+            </Link>
+
             <div className="pt-2">
               <Button
                 href="/onboarding"
@@ -117,3 +142,4 @@ export function Navbar() {
     </header>
   );
 }
+
