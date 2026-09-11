@@ -45,23 +45,108 @@ export const ShareControls: React.FC<ShareControlsProps> = ({
 
 Build your own deterministic blueprint at ${siteUrl}`;
 
-  // Fetch the 1080x1920 PNG blob from the server
+  // Generate high-resolution 1080x1920 PNG client-side via HTML5 canvas
   const fetchCardBlob = async (): Promise<Blob> => {
-    const response = await fetch("/api/share-card", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plan,
-        userName: athlete,
-      }),
+    return new Promise((resolve, reject) => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1080;
+        canvas.height = 1920;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas context unavailable");
+
+        // Background
+        ctx.fillStyle = "#080A0E";
+        ctx.fillRect(0, 0, 1080, 1920);
+
+        // Glow accent
+        const glow = ctx.createRadialGradient(900, 300, 50, 900, 300, 700);
+        glow.addColorStop(0, "rgba(0, 229, 153, 0.22)");
+        glow.addColorStop(1, "transparent");
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, 1080, 1920);
+
+        // Brand
+        ctx.font = "bold 56px sans-serif";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText("IRON", 80, 160);
+        ctx.fillStyle = "#00E599";
+        ctx.fillText("SYNC", 250, 160);
+
+        ctx.font = "bold 28px monospace";
+        ctx.fillStyle = "#9CA3AF";
+        ctx.fillText(`BLUEPRINT SPEC v${plan.version || 1}.0`, 80, 260);
+
+        // Goal
+        ctx.font = "900 64px sans-serif";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(formattedGoal.toUpperCase(), 80, 370);
+
+        // Nutrition Metric Box
+        ctx.fillStyle = "#12141A";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.lineWidth = 2;
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(80, 440, 920, 480, 32);
+        } else {
+          ctx.rect(80, 440, 920, 480);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = "bold 32px monospace";
+        ctx.fillStyle = "#9CA3AF";
+        ctx.fillText("DAILY TARGET CALORIES", 120, 520);
+        ctx.font = "900 84px sans-serif";
+        ctx.fillStyle = "#00E599";
+        ctx.fillText(`${caloriesStr} kcal`, 120, 620);
+
+        ctx.font = "bold 32px monospace";
+        ctx.fillStyle = "#9CA3AF";
+        ctx.fillText("TARGET PROTEIN", 120, 720);
+        ctx.font = "900 72px sans-serif";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(`${plan.protein || 160}g / day`, 120, 810);
+
+        // Training Box
+        ctx.fillStyle = "#12141A";
+        if (typeof ctx.roundRect === "function") {
+          ctx.roundRect(80, 960, 920, 460, 32);
+        } else {
+          ctx.rect(80, 960, 920, 460);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = "bold 32px monospace";
+        ctx.fillStyle = "#9CA3AF";
+        ctx.fillText("TRAINING ARCHITECTURE", 120, 1040);
+        ctx.font = "900 56px sans-serif";
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(plan.splitName || "Standard Split", 120, 1120);
+
+        ctx.font = "28px sans-serif";
+        ctx.fillStyle = "#9CA3AF";
+        ctx.fillText(`${plan.trainingDays} Days / Week Cadence`, 120, 1180);
+
+        // Footer
+        ctx.font = "bold 32px monospace";
+        ctx.fillStyle = "#00E599";
+        ctx.fillText("Built with IronSync", 80, 1800);
+        ctx.font = "24px monospace";
+        ctx.fillStyle = "#6B7280";
+        ctx.fillText(siteUrl, 80, 1840);
+
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Canvas blob generation failed"));
+        }, "image/png");
+      } catch (e) {
+        reject(e);
+      }
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to render share image (Status: ${response.status})`);
-    }
-
-    return await response.blob();
   };
+
 
   // Download 1080x1920 PNG Image
   const handleDownload = async () => {

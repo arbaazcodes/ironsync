@@ -20,6 +20,7 @@ import { trackEvent } from "@/lib/analytics";
 export function AuthCard() {
   const router = useRouter();
   const {
+    user,
     signInWithGoogle,
     signInWithPhone,
     verifyPhoneOtp,
@@ -27,6 +28,13 @@ export function AuthCard() {
     signUpWithEmail,
     isConfigured,
   } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      router.replace("/dashboard");
+    }
+  }, [user, router]);
+
 
   // Mode: "google" | "phone" | "email"
   const [activeTab, setActiveTab] = useState<"google" | "phone" | "email">("google");

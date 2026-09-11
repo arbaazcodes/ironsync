@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
+import { getSupabase } from "@/lib/supabase/client";
+
 import {
   UserProfileData,
   fetchUserProfile,
@@ -162,14 +164,13 @@ export default function DashboardProfilePage() {
 
   // Handle Account Deletion
   const handleConfirmDeleteAccount = async () => {
-    const res = await fetch("/api/account/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error || "Account deletion request failed.");
+    try {
+      const supabase = getSupabase();
+      if (supabase && user) {
+        await supabase.from("profiles").delete().eq("id", user.id);
+      }
+    } catch (err) {
+      console.warn("Client account delete warning:", err);
     }
 
     // Wipe local caches
@@ -182,6 +183,7 @@ export default function DashboardProfilePage() {
     await signOut();
     router.push("/");
   };
+
 
   if (!profile || !activePlan) {
     return (
