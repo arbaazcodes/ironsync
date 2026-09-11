@@ -1,12 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { Badge } from "@/components/ui/Badge";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Bot, Sparkles } from "lucide-react";
+import { AiCoachDrawer } from "./AiCoachDrawer";
 
 export function DashboardHeader() {
   const { user, activePlan, signOut } = useAuth();
+  const [isCoachOpen, setIsCoachOpen] = useState(false);
 
   // Get appropriate greeting based on client time
   const currentHour = new Date().getHours();
@@ -58,7 +60,20 @@ export function DashboardHeader() {
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
+        <button
+          onClick={() => setIsCoachOpen(true)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-accent/10 hover:bg-accent/20 border border-accent/30 text-accent font-mono text-xs font-bold transition-all shadow-[0_0_12px_rgba(255,30,30,0.15)] group"
+          title="Open AI Fitness Coach"
+        >
+          <Bot className="w-3.5 h-3.5 text-accent group-hover:scale-110 transition-transform" />
+          <span>AI Coach</span>
+          <span className="flex h-1.5 w-1.5 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent"></span>
+          </span>
+        </button>
+
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface border border-border text-xs font-mono text-primary-muted">
           <UserIcon className="w-3.5 h-3.5 text-accent" />
           <span className="max-w-[140px] truncate text-primary font-semibold">
@@ -75,6 +90,8 @@ export function DashboardHeader() {
           <LogOut className="w-4 h-4" />
         </button>
       </div>
+
+      <AiCoachDrawer isOpen={isCoachOpen} onClose={() => setIsCoachOpen(false)} />
     </div>
   );
 }

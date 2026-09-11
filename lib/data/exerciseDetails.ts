@@ -609,24 +609,55 @@ function generateFallbackDetail(exerciseName: string): StructuredExerciseDetail 
   };
 }
 
+import { getExerciseLibraryItem } from "./exerciseLibrary";
+
 /**
  * Normalizes an exercise name and returns structured execution cues and metadata.
  */
 export function getExerciseDetails(exerciseName: string): StructuredExerciseDetail {
   const normalized = exerciseName.toLowerCase().trim();
 
-  // 1. Direct match in knowledge base
+  // 1. Direct match in curated knowledge base
   if (EXERCISE_KNOWLEDGE_BASE[normalized]) {
     return EXERCISE_KNOWLEDGE_BASE[normalized];
   }
 
-  // 2. Substring match in knowledge base
+  // 2. Substring match in curated knowledge base
   for (const [key, details] of Object.entries(EXERCISE_KNOWLEDGE_BASE)) {
     if (normalized.includes(key) || key.includes(normalized)) {
       return details;
     }
   }
 
-  // 3. Fallback safe standard
+  // 3. Match from expanded 168+ Exercise Library
+  const libItem = getExerciseLibraryItem(exerciseName);
+  if (libItem) {
+    return {
+      primaryMuscles: libItem.targetMuscles,
+      defaultRest: libItem.mechanics === "Compound" ? "120 sec" : "75 sec",
+      equipment: libItem.equipment,
+      difficulty: libItem.difficulty,
+      executionCue: libItem.instructions[1] || libItem.instructions[0],
+      commonMistake: "Rushing the eccentric phase or using momentum instead of muscular control.",
+      formCues: [
+        `Tempo: ${libItem.tempo} under strict muscular tension`,
+        `Targeting: ${libItem.targetMuscles.join(", ")}`,
+        `Maintain continuous mechanical tension through a 2-second eccentric return`,
+      ],
+      commonMistakes: [
+        "Using swinging momentum or loose spinal positioning",
+        "Shortening the active range of motion at turnaround",
+      ],
+      executionSteps: {
+        setup: libItem.instructions[0] || "Establish a stable, balanced starting position with core engaged.",
+        movement: libItem.instructions[1] || "Drive through the concentric phase under muscular control.",
+        returnPhase: libItem.instructions[2] || "Control the eccentric lowering phase over 2-3 seconds.",
+        breathing: libItem.breathingCue || "Inhale on lowering phase; exhale forcefully on working drive.",
+      },
+      videoUrl: libItem.videoUrl,
+    };
+  }
+
+  // 4. Fallback safe standard
   return generateFallbackDetail(exerciseName);
 }

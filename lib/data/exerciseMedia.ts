@@ -345,14 +345,37 @@ export const EXERCISE_MEDIA_MAP: Record<string, ExerciseMediaItem> = {
   },
 };
 
+import { getExerciseLibraryItem } from "./exerciseLibrary";
+
 /**
  * Resolves high-resolution media details for any exercise name dynamically.
- * Features fuzzy matching and fallback to category-specific imagery.
+ * Features fuzzy matching against the 168+ exercise library and fallback to category-specific imagery.
  */
 export function getExerciseMedia(exerciseName: string, categoryFallback?: string): ExerciseMediaItem {
   const normalized = exerciseName.toLowerCase().trim();
 
-  // 1. Direct match
+  // 1. Direct match in expanded 168+ Exercise Library
+  const libItem = getExerciseLibraryItem(normalized);
+  if (libItem) {
+    return {
+      id: libItem.id,
+      exerciseName: libItem.name,
+      muscleGroup: libItem.muscleGroup,
+      targetMuscles: libItem.targetMuscles,
+      secondaryMuscles: libItem.secondaryMuscles,
+      equipment: libItem.equipment,
+      difficulty: libItem.difficulty,
+      imageUrl: libItem.imageUrl,
+      thumbnailUrl: libItem.thumbnailUrl,
+      videoUrl: libItem.videoUrl,
+      durationMinutes: libItem.durationMinutes,
+      caloriesBurnEstimate: libItem.caloriesBurnEstimate,
+      tempo: libItem.tempo,
+      timeUnderTension: libItem.timeUnderTension,
+    };
+  }
+
+  // 2. Direct match in local map
   if (EXERCISE_MEDIA_MAP[normalized]) {
     return EXERCISE_MEDIA_MAP[normalized];
   }
