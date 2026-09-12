@@ -343,6 +343,69 @@ export type Database = {
           }
         ];
       };
+      members: {
+        Row: {
+          id: string;
+          member_id: string;
+          full_name: string;
+          phone: string;
+          email: string | null;
+          pin_hash: string;
+          status: string;
+          fitness_goal: string;
+          plan_id: string | null;
+          start_date: string;
+          expiry_date: string | null;
+          date_of_birth: string | null;
+          gender: string | null;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          last_login_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          member_id: string;
+          full_name: string;
+          phone: string;
+          email?: string | null;
+          pin_hash: string;
+          status?: string;
+          fitness_goal?: string;
+          plan_id?: string | null;
+          start_date?: string;
+          expiry_date?: string | null;
+          date_of_birth?: string | null;
+          gender?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          last_login_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          member_id?: string;
+          full_name?: string;
+          phone?: string;
+          email?: string | null;
+          pin_hash?: string;
+          status?: string;
+          fitness_goal?: string;
+          plan_id?: string | null;
+          start_date?: string;
+          expiry_date?: string | null;
+          date_of_birth?: string | null;
+          gender?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          last_login_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

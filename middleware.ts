@@ -1,6 +1,26 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function isMemberSessionValidEdge(cookieVal?: string): boolean {
+  if (!cookieVal || !cookieVal.includes(".")) return false;
+  try {
+    const [payloadPart] = cookieVal.split(".");
+    const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonStr = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const payload = JSON.parse(jsonStr);
+    if (!payload.id || !payload.memberId) return false;
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -8,50 +28,82 @@ export async function middleware(request: NextRequest) {
     },
   });
 
+  const pathname = request.nextUrl.pathname;
+
+  // Check Supabase session (Admin Auth)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
-    return response;
+  let adminUser = null;
+
+  if (supabaseUrl && supabaseKey) {
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    adminUser = user;
   }
 
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({
-          request,
-        });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options)
-        );
-      },
-    },
-  });
+  // Member session cookie check
+  const memberCookie = request.cookies.get("ironsync_member_session")?.value;
+  const hasValidMemberSession = isMemberSessionValidEdge(memberCookie);
 
-  // IMPORTANT: Avoid running custom code between createServerClient and getUser().
-  // getUser() validates the token against Supabase and refreshes it if needed.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
-
-  // Protect /dashboard routes: redirect unauthenticated requests to /auth
-  if (!user && pathname.startsWith("/dashboard")) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/auth";
-    redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
+  // 1. Guard /admin routes -> Requires Admin Auth
+  if (pathname.startsWith("/admin")) {
+    if (!adminUser) {
+      // If user is a member trying to access /admin, redirect to member dashboard
+      if (hasValidMemberSession) {
+        const memberDashUrl = request.nextUrl.clone();
+        memberDashUrl.pathname = "/member/dashboard";
+        return NextResponse.redirect(memberDashUrl);
+      }
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/login";
+      redirectUrl.searchParams.set("tab", "admin");
+      redirectUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
-  // Redirect authenticated users away from /auth (except /auth/callback) to /dashboard
-  if (user && pathname.startsWith("/auth") && !pathname.startsWith("/auth/callback")) {
+  // 2. Guard /member routes -> Requires Member Session or Admin Preview
+  if (pathname.startsWith("/member")) {
+    if (!hasValidMemberSession && !adminUser) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/login";
+      redirectUrl.searchParams.set("tab", "member");
+      redirectUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  // 3. Handle /dashboard routes
+  if (pathname.startsWith("/dashboard")) {
+    if (adminUser) {
+      return response;
+    }
+    if (hasValidMemberSession) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/member/dashboard";
+      return NextResponse.redirect(redirectUrl);
+    }
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
+    redirectUrl.pathname = "/login";
     return NextResponse.redirect(redirectUrl);
   }
 

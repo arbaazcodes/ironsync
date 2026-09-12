@@ -366,5 +366,60 @@ create trigger on_reminder_preferences_updated
   before update on public.reminder_preferences
   for each row execute procedure public.handle_updated_at();
 
+-- ==============================================================================
+-- 8. Members Table (Gym Member Management & Access Control)
+-- ==============================================================================
+create table if not exists public.members (
+  id uuid primary key default gen_random_uuid(),
+  member_id text not null unique, -- format: 'IS-2026-0001'
+  full_name text not null check (length(full_name) <= 120),
+  phone text not null,
+  email text,
+  pin_hash text not null, -- salted scrypt hash (salt:hash), NEVER plaintext
+  status text default 'active' check (status in ('active', 'inactive', 'suspended', 'expired')) not null,
+  fitness_goal text default 'muscle_gain' not null,
+  plan_id uuid references public.plans(id) on delete set null,
+  start_date date default current_date not null,
+  expiry_date date,
+  date_of_birth date,
+  gender text,
+  notes text,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  last_login_at timestamp with time zone
+);
 
+create index if not exists idx_members_member_id on public.members(member_id);
+create index if not exists idx_members_status on public.members(status);
+create index if not exists idx_members_created_by on public.members(created_by);
+create index if not exists idx_members_plan_id on public.members(plan_id);
 
+alter table public.members enable row level security;
+
+-- Admin RLS: Admins can view/manage members created by their organization
+drop policy if exists "Admins can view own gym members" on public.members;
+create policy "Admins can view own gym members"
+  on public.members for select
+  using (auth.uid() = created_by);
+
+drop policy if exists "Admins can insert gym members" on public.members;
+create policy "Admins can insert gym members"
+  on public.members for insert
+  with check (auth.uid() = created_by);
+
+drop policy if exists "Admins can update gym members" on public.members;
+create policy "Admins can update gym members"
+  on public.members for update
+  using (auth.uid() = created_by)
+  with check (auth.uid() = created_by);
+
+drop policy if exists "Admins can delete gym members" on public.members;
+create policy "Admins can delete gym members"
+  on public.members for delete
+  using (auth.uid() = created_by);
+
+drop trigger if exists on_members_updated on public.members;
+create trigger on_members_updated
+  before update on public.members
+  for each row execute procedure public.handle_updated_at();
