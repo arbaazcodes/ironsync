@@ -6,15 +6,15 @@ let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = nu
 export function isSupabaseConfigured(): boolean {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   return Boolean(
     url &&
     key &&
     url.trim().length > 0 &&
     key.trim().length > 0 &&
     !url.includes("your-project") &&
-    key !== "your-anon-key-here"
+    !key.includes("your-")
   );
 }
 
