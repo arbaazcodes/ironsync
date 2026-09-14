@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useOnboarding } from "@/lib/context/OnboardingContext";
+import { useAuth } from "@/lib/context/AuthContext";
 import { generateBlueprint } from "@/lib/engine";
 import { Metric } from "@/components/ui/Metric";
 import { Badge } from "@/components/ui/Badge";
@@ -17,21 +19,43 @@ import {
   Calendar,
   ShieldCheck,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 
-import { cachePendingBlueprint } from "@/lib/supabase/planSync";
+import { cachePendingBlueprint, syncPendingBlueprintToDatabase } from "@/lib/supabase/planSync";
 import { trackEvent } from "@/lib/analytics";
 
 export function StepPreview() {
+  const router = useRouter();
+  const { user } = useAuth();
   const { data, calculatedBlueprint } = useOnboarding();
+  const [isSaving, setIsSaving] = useState(false);
 
   // Fallback if accessed directly
   const blueprint = calculatedBlueprint || generateBlueprint(data);
 
-  React.useEffect(() => {
+  useEffect(() => {
     cachePendingBlueprint(data, blueprint);
     trackEvent("blueprint_preview_viewed", { goal: data.goal });
   }, [data, blueprint]);
+
+  const handleUnlock = async () => {
+    trackEvent("auth_started", { source: "preview_unlock_cta" });
+    if (user) {
+      setIsSaving(true);
+      try {
+        await syncPendingBlueprintToDatabase(
+          user.id,
+          user.user_metadata?.full_name || user.email?.split("@")[0]
+        );
+      } catch (err) {
+        console.warn("Could not sync blueprint to Supabase:", err);
+      }
+      router.push("/dashboard");
+    } else {
+      router.push("/login?next=/dashboard");
+    }
+  };
 
   const goalTitleMap: Record<string, string> = {
     muscle_gain: "Muscle Gain",
@@ -253,17 +277,24 @@ export function StepPreview() {
             </p>
           </div>
 
-          <div className="pt-2 flex justify-center">
+          <div className="pt-2 flex flex-col items-center justify-center gap-3">
             <Button
-              href="/auth"
+              onClick={handleUnlock}
+              disabled={isSaving}
               variant="primary"
               size="lg"
-              icon={<ArrowRight className="w-5 h-5" />}
-              className="w-full sm:w-auto px-8 py-4 font-bold text-base"
-              onClick={() => trackEvent("auth_started", { source: "preview_unlock_cta" })}
+              icon={isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+              className="w-full sm:w-auto px-8 py-4 font-bold text-base shadow-accent-glow"
             >
-              Unlock My Blueprint
+              {isSaving ? "Saving Your Plan..." : "Unlock My Blueprint"}
             </Button>
+
+            <Link
+              href={user ? "/dashboard" : "/login?next=/dashboard"}
+              className="text-xs font-mono text-primary-dim hover:text-accent transition-colors underline underline-offset-4 pt-1"
+            >
+              Skip to Dashboard without saving &rarr;
+            </Link>
           </div>
 
           <div className="flex items-center justify-center gap-4 text-xs font-mono text-primary-dim pt-2">

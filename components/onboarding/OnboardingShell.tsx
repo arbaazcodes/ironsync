@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Activity, ArrowLeft, ArrowRight, Clock } from "lucide-react";
 import { useOnboarding } from "@/lib/context/OnboardingContext";
+import { useAuth } from "@/lib/context/AuthContext";
 import { ProgressBar } from "@/components/onboarding/ProgressBar";
 import { Button } from "@/components/ui/Button";
 
@@ -19,6 +20,8 @@ export function OnboardingShell({ children }: OnboardingShellProps) {
     isStepValid,
     approximateTimeRemaining,
   } = useOnboarding();
+  const { user } = useAuth();
+  const skipDestination = user ? "/dashboard" : "/login?next=/dashboard";
 
   // Screen 6 is Calculating, Screen 7 is Blueprint Preview
   const isQuestionScreen = currentStep >= 1 && currentStep <= 5;
@@ -47,26 +50,35 @@ export function OnboardingShell({ children }: OnboardingShellProps) {
             </span>
           </Link>
 
-          {/* Right: Step Indicator & Time */}
-          {isQuestionScreen && (
-            <div className="flex items-center gap-4 text-xs font-mono text-primary-muted">
-              <span className="font-semibold text-primary">
-                Step {currentStep} of 6
-              </span>
-              <span className="text-border">|</span>
-              <span className="flex items-center gap-1.5 text-primary-dim">
-                <Clock className="w-3.5 h-3.5 text-accent" />
-                {approximateTimeRemaining}
-              </span>
-            </div>
-          )}
+          {/* Right: Step Indicator & Skip Button */}
+          <div className="flex items-center gap-3">
+            {isQuestionScreen && (
+              <div className="hidden sm:flex items-center gap-3 text-xs font-mono text-primary-muted">
+                <span className="font-semibold text-primary">
+                  Step {currentStep} of 6
+                </span>
+                <span className="text-border">|</span>
+                <span className="flex items-center gap-1.5 text-primary-dim">
+                  <Clock className="w-3.5 h-3.5 text-accent" />
+                  {approximateTimeRemaining}
+                </span>
+              </div>
+            )}
 
-          {currentStep === 7 && (
-            <div className="text-xs font-mono text-accent flex items-center gap-1.5 font-semibold">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse-subtle" />
-              Blueprint Ready
-            </div>
-          )}
+            {currentStep === 7 && (
+              <div className="text-xs font-mono text-accent flex items-center gap-1.5 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-accent animate-pulse-subtle" />
+                Blueprint Ready
+              </div>
+            )}
+
+            <Link
+              href={skipDestination}
+              className="text-xs font-mono uppercase tracking-wider text-primary-dim hover:text-accent transition-colors px-2.5 py-1 rounded-lg border border-border/60 hover:border-border flex items-center gap-1"
+            >
+              Skip to Dashboard
+            </Link>
+          </div>
         </div>
 
         {/* Progress Bar under header */}
@@ -99,15 +111,29 @@ export function OnboardingShell({ children }: OnboardingShellProps) {
       {isQuestionScreen && (
         <footer className="sticky bottom-0 z-30 w-full bg-background/95 backdrop-blur-md border-t border-border/80 py-4 shadow-2xl">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-            <button
-              onClick={prevStep}
-              className="text-xs font-mono text-primary-dim hover:text-primary transition-colors hidden sm:inline-flex items-center gap-1"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={prevStep}
+                className="text-xs font-mono text-primary-dim hover:text-primary transition-colors hidden sm:inline-flex items-center gap-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back
+              </button>
+              <Link
+                href={skipDestination}
+                className="text-xs font-mono text-primary-dim hover:text-accent transition-colors underline underline-offset-4 sm:hidden"
+              >
+                Skip to Dashboard
+              </Link>
+            </div>
 
-            <div className="w-full sm:w-auto flex justify-end">
+            <div className="w-full sm:w-auto flex justify-end gap-3 items-center">
+              <Link
+                href={skipDestination}
+                className="text-xs font-mono text-primary-dim hover:text-accent transition-colors hidden sm:inline-block px-3 py-2"
+              >
+                Skip to Dashboard
+              </Link>
               <Button
                 onClick={nextStep}
                 disabled={!canContinue}

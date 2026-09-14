@@ -86,7 +86,45 @@ export async function middleware(request: NextRequest) {
     }
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
+    redirectUrl.searchParams.set("next", "/dashboard");
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // 4. Handle logged-in user visiting /login
+  if (pathname === "/login" && adminUser) {
+    const tab = request.nextUrl.searchParams.get("tab");
+    if (!tab || tab === "athlete") {
+      // Check if user has an active plan in Supabase
+      if (supabaseUrl && supabaseKey) {
+        try {
+          const supabase = createServerClient(supabaseUrl, supabaseKey, {
+            cookies: {
+              getAll() {
+                return request.cookies.getAll();
+              },
+              setAll() {},
+            },
+          });
+          const { data: plan } = await supabase
+            .from("plans")
+            .select("id")
+            .eq("user_id", adminUser.id)
+            .eq("status", "active")
+            .limit(1)
+            .maybeSingle();
+
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = plan ? "/dashboard" : "/onboarding";
+          redirectUrl.search = "";
+          return NextResponse.redirect(redirectUrl);
+        } catch {
+          const redirectUrl = request.nextUrl.clone();
+          redirectUrl.pathname = "/dashboard";
+          redirectUrl.search = "";
+          return NextResponse.redirect(redirectUrl);
+        }
+      }
+    }
   }
 
   return response;

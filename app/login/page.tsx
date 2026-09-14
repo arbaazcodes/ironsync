@@ -4,6 +4,8 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/AuthContext";
+import { getSupabase } from "@/lib/supabase/client";
+import { getPostLoginRedirect } from "@/lib/auth/postLoginRedirect";
 import {
   ShieldCheck,
   Lock,
@@ -23,12 +25,27 @@ import {
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab") === "admin" ? "admin" : "member";
+  const tabParam = searchParams.get("tab");
+  const initialTab: "athlete" | "member" | "admin" =
+    tabParam === "admin" ? "admin" : tabParam === "member" ? "member" : "athlete";
   const redirectTarget = searchParams.get("next") || null;
 
-  const [activeTab, setActiveTab] = useState<"member" | "admin">(initialTab);
+  const [activeTab, setActiveTab] = useState<"athlete" | "member" | "admin">(initialTab);
 
-  // Member Form State
+  // Common Auth Context
+  const { user, signInWithEmail, signUpWithEmail, signInWithGoogle, isConfigured } = useAuth();
+
+  // Athlete Form State (Default Self-Serve)
+  const [athleteMode, setAthleteMode] = useState<"signin" | "signup">("signin");
+  const [athleteName, setAthleteName] = useState("");
+  const [athleteEmail, setAthleteEmail] = useState("");
+  const [athletePassword, setAthletePassword] = useState("");
+  const [showAthletePassword, setShowAthletePassword] = useState(false);
+  const [athleteLoading, setAthleteLoading] = useState(false);
+  const [athleteError, setAthleteError] = useState<string | null>(null);
+  const [athleteSuccess, setAthleteSuccess] = useState<string | null>(null);
+
+  // Member Form State (Gym issued ID + 4-digit PIN)
   const [memberId, setMemberId] = useState("");
   const [memberPin, setMemberPin] = useState("");
   const [showMemberPin, setShowMemberPin] = useState(false);
@@ -36,29 +53,119 @@ function LoginContent() {
   const [memberError, setMemberError] = useState<string | null>(null);
 
   // Admin Form State
-  const { user, signInWithEmail, signInWithGoogle, isConfigured } = useAuth();
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
 
-  // If already logged in as Admin, redirect to /admin
-  useEffect(() => {
-    if (user && activeTab === "admin") {
-      router.push(redirectTarget || "/admin");
-    }
-  }, [user, activeTab, redirectTarget, router]);
-
-  // Sync tab with URL if param changes
+  // Sync tab with URL if query parameter changes
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab === "admin" || tab === "member") {
+    if (tab === "admin" || tab === "member" || tab === "athlete") {
       setActiveTab(tab);
     }
   }, [searchParams]);
 
-  // Handle Member Login
+  // If already logged in, redirect accordingly
+  useEffect(() => {
+    if (!user) return;
+
+    if (activeTab === "admin") {
+      router.push(redirectTarget || "/admin");
+    } else if (activeTab === "athlete") {
+      if (redirectTarget) {
+        router.push(redirectTarget);
+      } else {
+        getPostLoginRedirect(user.id).then((dest) => router.push(dest));
+      }
+    }
+  }, [user, activeTab, redirectTarget, router]);
+
+  // Handle Athlete Submit (Sign In or Sign Up)
+  const handleAthleteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAthleteError(null);
+    setAthleteSuccess(null);
+
+    const cleanEmail = athleteEmail.trim();
+    if (!cleanEmail) {
+      setAthleteError("Please enter your email address.");
+      return;
+    }
+    if (!athletePassword || athletePassword.length < 6) {
+      setAthleteError("Password must be at least 6 characters.");
+      return;
+    }
+
+    try {
+      setAthleteLoading(true);
+
+      if (athleteMode === "signup") {
+        const { error, requiresEmailConfirmation } = await signUpWithEmail(
+          cleanEmail,
+          athletePassword,
+          athleteName.trim() || undefined
+        );
+
+        if (error) {
+          setAthleteError(error.message || "Failed to create account.");
+          setAthleteLoading(false);
+          return;
+        }
+
+        if (requiresEmailConfirmation) {
+          setAthleteSuccess("Account created! Please check your email to confirm your account.");
+          setAthleteLoading(false);
+          return;
+        }
+
+        router.push(redirectTarget || "/onboarding");
+      } else {
+        const { error } = await signInWithEmail(cleanEmail, athletePassword);
+
+        if (error) {
+          setAthleteError(error.message || "Invalid email or password.");
+          setAthleteLoading(false);
+          return;
+        }
+
+        if (redirectTarget) {
+          router.push(redirectTarget);
+        } else {
+          const supabase = getSupabase();
+          let currentUserId: string | null = null;
+          if (supabase) {
+            const { data: authData } = await supabase.auth.getUser();
+            currentUserId = authData.user?.id || null;
+          }
+          const destination = await getPostLoginRedirect(currentUserId, supabase);
+          router.push(destination);
+        }
+      }
+    } catch (err: any) {
+      setAthleteError(err?.message || "Authentication error. Please try again.");
+      setAthleteLoading(false);
+    }
+  };
+
+  // Handle Athlete Google Login
+  const handleGoogleAthleteLogin = async () => {
+    setAthleteError(null);
+    try {
+      setAthleteLoading(true);
+      const { error } = await signInWithGoogle();
+      if (error) {
+        setAthleteError(error.message || "Google sign in failed.");
+        setAthleteLoading(false);
+      }
+    } catch (err: any) {
+      setAthleteError(err?.message || "Google sign in failed.");
+      setAthleteLoading(false);
+    }
+  };
+
+  // Handle Member Login (ID + 4-digit PIN)
   const handleMemberLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setMemberError(null);
@@ -91,7 +198,6 @@ function LoginContent() {
         return;
       }
 
-      // Success: redirect to member dashboard
       router.push(redirectTarget || "/member/dashboard");
     } catch (err: any) {
       setMemberError(err?.message || "Connection error. Please try again.");
@@ -131,8 +237,8 @@ function LoginContent() {
     }
   };
 
-  // Handle Admin Google OAuth
-  const handleGoogleLogin = async () => {
+  // Handle Admin Google Login
+  const handleGoogleAdminLogin = async () => {
     setAdminError(null);
     try {
       setAdminLoading(true);
@@ -165,7 +271,7 @@ function LoginContent() {
                 Iron<span className="text-[#FF1E1E]">Sync</span>
               </span>
               <span className="hidden sm:inline-block ml-2.5 text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded-full bg-white/[0.06] text-white/60 border border-white/[0.08]">
-                Gym Portal
+                Portal
               </span>
             </div>
           </Link>
@@ -180,40 +286,66 @@ function LoginContent() {
       </header>
 
       {/* Main Authentication Container */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12 z-10">
+      <main className="flex-1 flex items-center justify-center px-4 py-10 z-10">
         <div className="w-full max-w-md space-y-6">
           {/* Top Pill / Platform Badge */}
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs font-mono text-white/70">
               <ShieldCheck className="w-3.5 h-3.5 text-[#FF1E1E]" />
-              Secure Dual-Role Authentication
+              Secure Unified Authentication
             </div>
             <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
-              {activeTab === "member" ? "Member Access" : "Admin Portal"}
+              {activeTab === "athlete"
+                ? athleteMode === "signin"
+                  ? "Athlete Sign In"
+                  : "Create Athlete Account"
+                : activeTab === "member"
+                ? "Member Access"
+                : "Admin Portal"}
             </h1>
             <p className="text-xs sm:text-sm text-white/50 max-w-sm mx-auto">
-              {activeTab === "member"
-                ? "Enter your credentials to access your assigned workouts, nutrition blueprint, and coach."
-                : "Sign in with your verified administrator credentials to manage gym members and programs."}
+              {activeTab === "athlete"
+                ? athleteMode === "signin"
+                  ? "Enter your credentials to access your workout blueprint and dashboard."
+                  : "Create an account to save your personalized blueprint and tracking."
+                : activeTab === "member"
+                ? "Enter your Member ID and 4-digit PIN issued by your gym front desk."
+                : "Sign in with your administrator credentials to manage members and plans."}
             </p>
           </div>
 
-          {/* Role Switcher Tabs */}
-          <div className="grid grid-cols-2 p-1 bg-[#121212] border border-white/[0.08] rounded-xl">
+          {/* 3-Role Switcher Tabs */}
+          <div className="grid grid-cols-3 p-1 bg-[#121212] border border-white/[0.08] rounded-xl gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("athlete");
+                setAthleteError(null);
+                setAthleteSuccess(null);
+              }}
+              className={`py-2 px-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 ${
+                activeTab === "athlete"
+                  ? "bg-[#FF1E1E] text-white shadow-lg shadow-[#FF1E1E]/25"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>Athlete</span>
+            </button>
             <button
               type="button"
               onClick={() => {
                 setActiveTab("member");
                 setMemberError(null);
               }}
-              className={`py-2.5 px-4 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${
+              className={`py-2 px-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 ${
                 activeTab === "member"
                   ? "bg-[#FF1E1E] text-white shadow-lg shadow-[#FF1E1E]/25"
                   : "text-white/60 hover:text-white"
               }`}
             >
-              <User className="w-4 h-4" />
-              Member Login
+              <User className="w-3.5 h-3.5 shrink-0" />
+              <span>Member</span>
             </button>
             <button
               type="button"
@@ -221,20 +353,214 @@ function LoginContent() {
                 setActiveTab("admin");
                 setAdminError(null);
               }}
-              className={`py-2.5 px-4 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 ${
+              className={`py-2 px-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 ${
                 activeTab === "admin"
                   ? "bg-[#FF1E1E] text-white shadow-lg shadow-[#FF1E1E]/25"
                   : "text-white/60 hover:text-white"
               }`}
             >
-              <Lock className="w-4 h-4" />
-              Admin Portal
+              <Lock className="w-3.5 h-3.5 shrink-0" />
+              <span>Admin</span>
             </button>
           </div>
 
           {/* Card Container */}
           <div className="bg-[#121212]/90 border border-white/[0.1] rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl relative">
-            {/* TAB 1: MEMBER LOGIN */}
+            {/* TAB 1: ATHLETE LOGIN / SIGNUP (DEFAULT SELF-SERVE) */}
+            {activeTab === "athlete" && (
+              <div className="space-y-5">
+                {/* Sign In vs Sign Up Toggle */}
+                <div className="flex items-center justify-between p-1 bg-black/40 border border-white/[0.08] rounded-lg text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAthleteMode("signin");
+                      setAthleteError(null);
+                      setAthleteSuccess(null);
+                    }}
+                    className={`flex-1 py-1.5 rounded-md transition-colors text-center ${
+                      athleteMode === "signin"
+                        ? "bg-white/[0.1] text-white font-bold"
+                        : "text-white/50 hover:text-white"
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAthleteMode("signup");
+                      setAthleteError(null);
+                      setAthleteSuccess(null);
+                    }}
+                    className={`flex-1 py-1.5 rounded-md transition-colors text-center ${
+                      athleteMode === "signup"
+                        ? "bg-white/[0.1] text-white font-bold"
+                        : "text-white/50 hover:text-white"
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                </div>
+
+                {athleteError && (
+                  <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-start gap-2.5 leading-relaxed">
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{athleteError}</span>
+                  </div>
+                )}
+
+                {athleteSuccess && (
+                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-start gap-2.5 leading-relaxed">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{athleteSuccess}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleAthleteSubmit} className="space-y-4">
+                  {athleteMode === "signup" && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-mono uppercase tracking-wider text-white/70">
+                        Full Name
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/40">
+                          <User className="w-4 h-4" />
+                        </div>
+                        <input
+                          type="text"
+                          value={athleteName}
+                          onChange={(e) => setAthleteName(e.target.value)}
+                          placeholder="Alex Morgan"
+                          autoComplete="name"
+                          className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/[0.12] rounded-xl text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-[#FF1E1E] focus:ring-1 focus:ring-[#FF1E1E] transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Email Field */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono uppercase tracking-wider text-white/70">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/40">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="email"
+                        value={athleteEmail}
+                        onChange={(e) => setAthleteEmail(e.target.value)}
+                        placeholder="athlete@example.com"
+                        required
+                        autoComplete="email"
+                        className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/[0.12] rounded-xl text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-[#FF1E1E] focus:ring-1 focus:ring-[#FF1E1E] transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono uppercase tracking-wider text-white/70 flex items-center justify-between">
+                      <span>Password</span>
+                      <span className="text-[10px] text-white/40">Min. 6 chars</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/40">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <input
+                        type={showAthletePassword ? "text" : "password"}
+                        value={athletePassword}
+                        onChange={(e) => setAthletePassword(e.target.value)}
+                        placeholder="••••••••••••"
+                        required
+                        autoComplete={athleteMode === "signup" ? "new-password" : "current-password"}
+                        className="w-full pl-10 pr-11 py-2.5 bg-black/40 border border-white/[0.12] rounded-xl text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-[#FF1E1E] focus:ring-1 focus:ring-[#FF1E1E] transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAthletePassword(!showAthletePassword)}
+                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-white/40 hover:text-white/80 transition-colors"
+                        aria-label={showAthletePassword ? "Hide password" : "Show password"}
+                      >
+                        {showAthletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={athleteLoading}
+                    className="w-full py-3.5 px-4 bg-[#FF1E1E] hover:bg-[#E01818] active:scale-[0.99] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#FF1E1E]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {athleteLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {athleteMode === "signup" ? "Creating Account..." : "Signing In..."}
+                      </>
+                    ) : (
+                      <>
+                        {athleteMode === "signup" ? "Create Account & Start" : "Sign In to Dashboard"}
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* Google OAuth Option */}
+                {isConfigured && (
+                  <>
+                    <div className="relative my-4 flex items-center justify-center">
+                      <div className="border-t border-white/[0.08] w-full" />
+                      <span className="bg-[#121212] px-3 text-[11px] font-mono uppercase tracking-wider text-white/40 absolute">
+                        or
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleGoogleAthleteLogin}
+                      disabled={athleteLoading}
+                      className="w-full py-3 px-4 bg-white/[0.05] hover:bg-white/[0.09] active:scale-[0.99] border border-white/[0.1] text-white font-semibold text-xs tracking-wider rounded-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        />
+                      </svg>
+                      Continue with Google
+                    </button>
+                  </>
+                )}
+
+                <div className="pt-2 border-t border-white/[0.06] text-center">
+                  <Link
+                    href="/onboarding"
+                    className="text-xs text-white/50 hover:text-white transition-colors underline underline-offset-4"
+                  >
+                    Want to create your personalized plan first? Go to onboarding &rarr;
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: MEMBER LOGIN (ID + 4-DIGIT PIN) */}
             {activeTab === "member" && (
               <form onSubmit={handleMemberLogin} className="space-y-5">
                 {memberError && (
@@ -301,7 +627,7 @@ function LoginContent() {
                     </button>
                   </div>
                   <p className="text-[11px] text-white/40 font-mono">
-                    4-digit PIN from your gym admin
+                    4-digit PIN from your gym front desk
                   </p>
                 </div>
 
@@ -309,7 +635,7 @@ function LoginContent() {
                 <button
                   type="submit"
                   disabled={memberLoading}
-                  className="w-full py-3.5 px-4 bg-[#FF1E1E] hover:bg-[#E01818] active:scale-[0.99] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#FF1E1E]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 px-4 bg-[#FF1E1E] hover:bg-[#E01818] active:scale-[0.99] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#FF1E1E]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {memberLoading ? (
                     <>
@@ -324,17 +650,15 @@ function LoginContent() {
                   )}
                 </button>
 
-                {/* Helper notice */}
                 <div className="pt-2 border-t border-white/[0.06] text-center">
                   <p className="text-[11px] text-white/45 leading-relaxed">
-                    Member IDs and PINs are issued directly by your gym administrator upon enrolment.
-                    Need assistance? Contact your gym front desk.
+                    Member IDs and PINs are issued directly by your gym administrator upon enrollment.
                   </p>
                 </div>
               </form>
             )}
 
-            {/* TAB 2: ADMIN LOGIN */}
+            {/* TAB 3: ADMIN LOGIN */}
             {activeTab === "admin" && (
               <form onSubmit={handleAdminLogin} className="space-y-5">
                 {adminError && (
@@ -398,7 +722,7 @@ function LoginContent() {
                 <button
                   type="submit"
                   disabled={adminLoading}
-                  className="w-full py-3.5 px-4 bg-[#FF1E1E] hover:bg-[#E01818] active:scale-[0.99] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#FF1E1E]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 px-4 bg-[#FF1E1E] hover:bg-[#E01818] active:scale-[0.99] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#FF1E1E]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {adminLoading ? (
                     <>
@@ -425,9 +749,9 @@ function LoginContent() {
 
                     <button
                       type="button"
-                      onClick={handleGoogleLogin}
+                      onClick={handleGoogleAdminLogin}
                       disabled={adminLoading}
-                      className="w-full py-3 px-4 bg-white/[0.05] hover:bg-white/[0.09] active:scale-[0.99] border border-white/[0.1] text-white font-semibold text-xs tracking-wider rounded-xl transition-all flex items-center justify-center gap-2.5"
+                      className="w-full py-3 px-4 bg-white/[0.05] hover:bg-white/[0.09] active:scale-[0.99] border border-white/[0.1] text-white font-semibold text-xs tracking-wider rounded-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                     >
                       <svg className="w-4 h-4" viewBox="0 0 24 24">
                         <path
@@ -465,7 +789,7 @@ function LoginContent() {
 
       {/* Footer */}
       <footer className="w-full border-t border-white/[0.08] py-4 text-center text-xs font-mono text-white/40">
-        <span>IronSync Gym Management System &bull; Cryptographically Verified &bull; 2026</span>
+        <span>IronSync Fitness &bull; Cryptographically Verified &bull; 2026</span>
       </footer>
     </div>
   );

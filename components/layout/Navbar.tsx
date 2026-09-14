@@ -12,7 +12,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -70,13 +70,31 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
 
-          <Link
-            href={user ? "/dashboard" : "/auth"}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-muted hover:text-primary transition-colors px-3 py-1.5 rounded-xl hover:bg-surface border border-transparent hover:border-border"
-          >
-            <LogIn className="w-3.5 h-3.5 text-accent" />
-            <span>{user ? "Dashboard" : "Log in"}</span>
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-muted hover:text-primary transition-colors px-3 py-1.5 rounded-xl hover:bg-surface border border-transparent hover:border-border"
+              >
+                <LogIn className="w-3.5 h-3.5 text-accent" />
+                <span>Dashboard</span>
+              </Link>
+              <button
+                onClick={() => signOut()}
+                className="text-xs font-mono text-primary-dim hover:text-accent transition-colors px-2 py-1 cursor-pointer"
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-muted hover:text-primary transition-colors px-3.5 py-1.5 rounded-xl hover:bg-surface border border-border/60 hover:border-border"
+            >
+              <LogIn className="w-3.5 h-3.5 text-accent" />
+              <span>Log in</span>
+            </Link>
+          )}
 
           <Button
             href="/onboarding"
@@ -85,7 +103,7 @@ export function Navbar() {
             icon={<ArrowRight className="w-4 h-4" />}
             className="font-bold text-xs uppercase tracking-wider shadow-accent-glow"
           >
-            Create My Blueprint
+            {user ? "Start Plan" : "Get Started"}
           </Button>
         </div>
 
@@ -119,17 +137,42 @@ export function Navbar() {
               </Link>
             ))}
 
-            <Link
-              href={user ? "/dashboard" : "/auth"}
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-base font-semibold text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
-            >
-              <span className="flex items-center gap-2">
-                <LogIn className="w-4 h-4 text-accent" />
-                {user ? "Go to Dashboard" : "Log in to Account"}
-              </span>
-              <ArrowRight className="w-4 h-4 text-primary-dim" />
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-base font-semibold text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <LogIn className="w-4 h-4 text-accent" />
+                    Go to Dashboard
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-primary-dim" />
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut();
+                  }}
+                  className="text-left text-sm font-mono text-primary-dim hover:text-accent py-2 border-b border-border/50 cursor-pointer"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-base font-semibold text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <LogIn className="w-4 h-4 text-accent" />
+                  Log in to Account
+                </span>
+                <ArrowRight className="w-4 h-4 text-primary-dim" />
+              </Link>
+            )}
 
             <div className="pt-2">
               <Button
@@ -140,7 +183,7 @@ export function Navbar() {
                 icon={<ArrowRight className="w-4 h-4" />}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Create My Blueprint
+                {user ? "Start Plan" : "Get Started"}
               </Button>
             </div>
           </nav>

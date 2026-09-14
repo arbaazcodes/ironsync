@@ -17,10 +17,9 @@ export default function DashboardLayout({
   const { user, isLoading, activePlan, isConfigured } = useAuth();
 
   useEffect(() => {
-    // If Supabase is configured and authentication is required:
-    // If done loading, no user and no local active plan, redirect to /auth
+    // If done loading, no user and no local active plan, redirect to login
     if (!isLoading && !user && !activePlan) {
-      router.replace("/auth");
+      router.replace("/login?next=/dashboard");
     }
   }, [isLoading, user, activePlan, router]);
 
@@ -52,7 +51,7 @@ export default function DashboardLayout({
               size="md"
               icon={<ArrowRight className="w-4 h-4" />}
             >
-              Start Personalization Funnel
+              Complete Onboarding
             </Button>
           </div>
         </div>

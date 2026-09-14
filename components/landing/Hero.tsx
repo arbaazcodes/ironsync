@@ -4,10 +4,13 @@ import React, { useEffect } from "react";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/Button";
 import { BlueprintPreview } from "@/components/landing/BlueprintPreview";
-import { ArrowRight, ShieldCheck, Zap, Activity } from "lucide-react";
+import { ArrowRight, ShieldCheck, Zap, Activity, LogIn } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export function Hero() {
+  const { user } = useAuth();
+
   useEffect(() => {
     trackEvent("landing_view", { source: "hero" });
   }, []);
@@ -59,16 +62,17 @@ export function Hero() {
                 className="w-full sm:w-auto font-extrabold text-sm uppercase tracking-wider py-3.5 px-8 shadow-accent-glow"
                 onClick={() => trackEvent("blueprint_started", { entry_source: "hero_cta" })}
               >
-                Create My Blueprint
+                Start Plan
               </Button>
 
               <Button
-                href="#features"
+                href={user ? "/dashboard" : "/login"}
                 variant="secondary"
                 size="lg"
+                icon={<LogIn className="w-4 h-4 text-accent" />}
                 className="w-full sm:w-auto font-bold text-sm uppercase tracking-wider py-3.5 px-6"
               >
-                See Architecture
+                {user ? "Dashboard" : "Log In"}
               </Button>
             </div>
 
