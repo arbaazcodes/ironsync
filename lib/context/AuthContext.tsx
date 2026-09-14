@@ -22,12 +22,15 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
-  signInWithEmail: (email: string, pass: string) => Promise<{ error: Error | null }>;
+  signInWithEmail: (
+    email: string,
+    pass: string
+  ) => Promise<{ error: Error | null; user?: User | null }>;
   signUpWithEmail: (
     email: string,
     pass: string,
     name?: string
-  ) => Promise<{ error: Error | null; requiresEmailConfirmation?: boolean }>;
+  ) => Promise<{ error: Error | null; requiresEmailConfirmation?: boolean; user?: User | null }>;
   signOut: () => Promise<void>;
   refreshPlan: () => Promise<void>;
 }
@@ -177,10 +180,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithEmail = async (email: string, pass: string): Promise<{ error: Error | null }> => {
+  const signInWithEmail = async (
+    email: string,
+    pass: string
+  ): Promise<{ error: Error | null; user?: User | null }> => {
     const supabase = getSupabase();
     if (!supabase) {
-      return { error: new Error("Supabase is not configured.") };
+      return {
+        error: new Error(
+          "Supabase environment variables missing. Please configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)."
+        ),
+      };
     }
 
     try {
@@ -190,6 +200,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes("invalid login credentials")) {
+          return { error: new Error("Invalid email or password. Please check your credentials.") };
+        }
+        if (msg.includes("email not confirmed")) {
+          return {
+            error: new Error("Email not confirmed. Please check your email to confirm, then sign in."),
+          };
+        }
         return { error: new Error(error.message) };
       }
 
@@ -203,7 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setActivePlan(syncedPlan);
       }
 
-      return { error: null };
+      return { error: null, user: data.user };
     } catch (err: unknown) {
       return { error: err instanceof Error ? err : new Error("Failed to sign in with email.") };
     }
@@ -213,10 +232,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     pass: string,
     name?: string
-  ): Promise<{ error: Error | null; requiresEmailConfirmation?: boolean }> => {
+  ): Promise<{ error: Error | null; requiresEmailConfirmation?: boolean; user?: User | null }> => {
     const supabase = getSupabase();
     if (!supabase) {
-      return { error: new Error("Supabase is not configured.") };
+      return {
+        error: new Error(
+          "Supabase environment variables missing. Please configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)."
+        ),
+      };
     }
 
     try {
@@ -234,13 +257,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes("already registered") || msg.includes("already exists")) {
+          return {
+            error: new Error("Account already exists. Please sign in instead."),
+          };
+        }
         return { error: new Error(error.message) };
       }
 
-      // Supabase returns an empty identities array if the user is already registered
+      // Supabase returns an empty identities array if user is already registered (when email confirmation is enabled)
       if (data.user && data.user.identities && data.user.identities.length === 0) {
         return {
-          error: new Error("An account with this email already exists. Please sign in instead."),
+          error: new Error("Account already exists. Please sign in instead."),
         };
       }
 
@@ -253,7 +282,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setActivePlan(syncedPlan);
       }
 
-      return { error: null, requiresEmailConfirmation };
+      return { error: null, requiresEmailConfirmation, user: data.user };
     } catch (err: unknown) {
       return { error: err instanceof Error ? err : new Error("Failed to create account.") };
     }

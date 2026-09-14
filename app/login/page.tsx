@@ -59,6 +59,16 @@ function LoginContent() {
   const [adminLoading, setAdminLoading] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
 
+  // Check URL error parameter from callbacks
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      setAthleteError(
+        "Authentication link was invalid or has expired. Please sign in with your email and password."
+      );
+    }
+  }, [searchParams]);
+
   // Sync tab with URL if query parameter changes
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -88,6 +98,13 @@ function LoginContent() {
     setAthleteError(null);
     setAthleteSuccess(null);
 
+    if (!isConfigured) {
+      setAthleteError(
+        "Supabase env missing: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) must be configured."
+      );
+      return;
+    }
+
     const cleanEmail = athleteEmail.trim();
     if (!cleanEmail) {
       setAthleteError("Please enter your email address.");
@@ -102,7 +119,7 @@ function LoginContent() {
       setAthleteLoading(true);
 
       if (athleteMode === "signup") {
-        const { error, requiresEmailConfirmation } = await signUpWithEmail(
+        const { error, requiresEmailConfirmation, user: newUser } = await signUpWithEmail(
           cleanEmail,
           athletePassword,
           athleteName.trim() || undefined
@@ -115,14 +132,16 @@ function LoginContent() {
         }
 
         if (requiresEmailConfirmation) {
-          setAthleteSuccess("Account created! Please check your email to confirm your account.");
+          setAthleteSuccess("Check your email to confirm, then sign in.");
+          setAthleteMode("signin");
           setAthleteLoading(false);
           return;
         }
 
+        // Session exists -> redirect to /onboarding
         router.push(redirectTarget || "/onboarding");
       } else {
-        const { error } = await signInWithEmail(cleanEmail, athletePassword);
+        const { error, user: signedInUser } = await signInWithEmail(cleanEmail, athletePassword);
 
         if (error) {
           setAthleteError(error.message || "Invalid email or password.");
@@ -134,8 +153,8 @@ function LoginContent() {
           router.push(redirectTarget);
         } else {
           const supabase = getSupabase();
-          let currentUserId: string | null = null;
-          if (supabase) {
+          let currentUserId = signedInUser?.id || user?.id || null;
+          if (!currentUserId && supabase) {
             const { data: authData } = await supabase.auth.getUser();
             currentUserId = authData.user?.id || null;
           }
@@ -152,6 +171,10 @@ function LoginContent() {
   // Handle Athlete Google Login
   const handleGoogleAthleteLogin = async () => {
     setAthleteError(null);
+    if (!isConfigured) {
+      setAthleteError("Supabase env missing: Configure Supabase keys to use Google authentication.");
+      return;
+    }
     try {
       setAthleteLoading(true);
       const { error } = await signInWithGoogle();
@@ -210,6 +233,11 @@ function LoginContent() {
     e.preventDefault();
     setAdminError(null);
 
+    if (!isConfigured) {
+      setAdminError("Supabase env missing: Configure Supabase keys to access the admin portal.");
+      return;
+    }
+
     const cleanEmail = adminEmail.trim();
     if (!cleanEmail) {
       setAdminError("Please enter your admin email address.");
@@ -240,6 +268,10 @@ function LoginContent() {
   // Handle Admin Google Login
   const handleGoogleAdminLogin = async () => {
     setAdminError(null);
+    if (!isConfigured) {
+      setAdminError("Supabase env missing: Configure Supabase keys to use Google authentication.");
+      return;
+    }
     try {
       setAdminLoading(true);
       const { error } = await signInWithGoogle();
@@ -366,6 +398,25 @@ function LoginContent() {
 
           {/* Card Container */}
           <div className="bg-[#121212]/90 border border-white/[0.1] rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl relative">
+            {/* Supabase Env Missing Warning */}
+            {!isConfigured && (
+              <div className="mb-5 p-4 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs space-y-2">
+                <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-red-300">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>Supabase Env Missing</span>
+                </div>
+                <p className="text-white/80 leading-relaxed">
+                  Authentication requires Supabase environment variables configured in your deployment settings.
+                </p>
+                <div className="p-2.5 rounded-lg bg-black/60 border border-white/[0.08] font-mono text-[11px] text-white/70 space-y-1">
+                  <div className="text-white/40">Public variables read by IronSync:</div>
+                  <div className="text-accent">&bull; NEXT_PUBLIC_SUPABASE_URL</div>
+                  <div className="text-accent">&bull; NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY)</div>
+                  <div className="text-white/40">&bull; NEXT_PUBLIC_SITE_URL (optional)</div>
+                </div>
+              </div>
+            )}
+
             {/* TAB 1: ATHLETE LOGIN / SIGNUP (DEFAULT SELF-SERVE) */}
             {activeTab === "athlete" && (
               <div className="space-y-5">
@@ -404,15 +455,29 @@ function LoginContent() {
                 </div>
 
                 {athleteError && (
-                  <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-start gap-2.5 leading-relaxed">
-                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                    <span>{athleteError}</span>
+                  <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex flex-col gap-2 leading-relaxed">
+                    <div className="flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>{athleteError}</span>
+                    </div>
+                    {athleteError.includes("Account already exists") && athleteMode === "signup" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAthleteMode("signin");
+                          setAthleteError(null);
+                        }}
+                        className="text-left font-bold text-white underline underline-offset-4 hover:text-accent transition-colors pl-6"
+                      >
+                        Sign in instead &rarr;
+                      </button>
+                    )}
                   </div>
                 )}
 
                 {athleteSuccess && (
-                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-start gap-2.5 leading-relaxed">
-                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2.5 leading-relaxed font-medium">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-400" />
                     <span>{athleteSuccess}</span>
                   </div>
                 )}
@@ -421,7 +486,7 @@ function LoginContent() {
                   {athleteMode === "signup" && (
                     <div className="space-y-1.5">
                       <label className="text-xs font-mono uppercase tracking-wider text-white/70">
-                        Full Name
+                        Full Name (Optional)
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-white/40">
@@ -476,6 +541,7 @@ function LoginContent() {
                         onChange={(e) => setAthletePassword(e.target.value)}
                         placeholder="••••••••••••"
                         required
+                        minLength={6}
                         autoComplete={athleteMode === "signup" ? "new-password" : "current-password"}
                         className="w-full pl-10 pr-11 py-2.5 bg-black/40 border border-white/[0.12] rounded-xl text-white text-sm placeholder:text-white/25 focus:outline-none focus:border-[#FF1E1E] focus:ring-1 focus:ring-[#FF1E1E] transition-colors"
                       />
@@ -493,7 +559,7 @@ function LoginContent() {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={athleteLoading}
+                    disabled={athleteLoading || !isConfigured}
                     className="w-full py-3.5 px-4 bg-[#FF1E1E] hover:bg-[#E01818] active:scale-[0.99] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#FF1E1E]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {athleteLoading ? (
@@ -721,7 +787,7 @@ function LoginContent() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={adminLoading}
+                  disabled={adminLoading || !isConfigured}
                   className="w-full py-3.5 px-4 bg-[#FF1E1E] hover:bg-[#E01818] active:scale-[0.99] text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#FF1E1E]/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {adminLoading ? (
