@@ -13,9 +13,11 @@ export async function middleware(request: NextRequest) {
 
   // Check Supabase session (Admin Auth)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawKey1 = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const rawKey2 = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
   const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    (rawKey1 && (rawKey1.startsWith("eyJ") || rawKey1.startsWith("sb_publishable")) ? rawKey1 : null) ||
+    (rawKey2 && (rawKey2.startsWith("eyJ") || rawKey2.startsWith("sb_publishable")) ? rawKey2 : null);
 
   let adminUser = null;
 

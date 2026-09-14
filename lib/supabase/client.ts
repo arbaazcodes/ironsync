@@ -3,19 +3,47 @@ import type { Database } from "@/lib/types/database.types";
 
 let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
-export function isSupabaseConfigured(): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  return Boolean(
-    url &&
-    key &&
-    url.trim().length > 0 &&
-    key.trim().length > 0 &&
-    !url.includes("your-project") &&
-    !key.includes("your-")
+export function isValidSupabaseUrl(url?: string): boolean {
+  const targetUrl = url || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!targetUrl) return false;
+  const trimmed = targetUrl.trim();
+  return (
+    trimmed.startsWith("https://") &&
+    trimmed.includes(".supabase.co") &&
+    !trimmed.includes("your-project")
   );
+}
+
+export function getValidSupabaseKey(): string | null {
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
+
+  // Accept either key if it starts with 'eyJ' or 'sb_publishable'
+  if (anonKey && (anonKey.startsWith("eyJ") || anonKey.startsWith("sb_publishable"))) {
+    return anonKey;
+  }
+  if (publishableKey && (publishableKey.startsWith("eyJ") || publishableKey.startsWith("sb_publishable"))) {
+    return publishableKey;
+  }
+  return null;
+}
+
+export function isSupabaseConfigured(): boolean {
+  return isValidSupabaseUrl() && getValidSupabaseKey() !== null;
+}
+
+export function getSupabaseConfigDiagnostics(): {
+  isConfigured: boolean;
+  missingUrl: boolean;
+  missingKey: boolean;
+} {
+  const hasUrl = isValidSupabaseUrl();
+  const hasKey = getValidSupabaseKey() !== null;
+  return {
+    isConfigured: hasUrl && hasKey,
+    missingUrl: !hasUrl,
+    missingKey: !hasKey,
+  };
 }
 
 /**
@@ -27,14 +55,12 @@ export function getSupabase() {
     return null;
   }
 
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const key = getValidSupabaseKey()!;
 
   if (!clientInstance) {
     clientInstance = createBrowserClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      key!
+      key
     );
   }
 
@@ -44,3 +70,4 @@ export function getSupabase() {
 export function createClient() {
   return getSupabase();
 }
+

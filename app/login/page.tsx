@@ -33,7 +33,14 @@ function LoginContent() {
   const [activeTab, setActiveTab] = useState<"athlete" | "member" | "admin">(initialTab);
 
   // Common Auth Context
-  const { user, signInWithEmail, signUpWithEmail, signInWithGoogle, isConfigured } = useAuth();
+  const {
+    user,
+    signInWithEmail,
+    signUpWithEmail,
+    signInWithGoogle,
+    isConfigured,
+    diagnostics,
+  } = useAuth();
 
   // Athlete Form State (Default Self-Serve)
   const [athleteMode, setAthleteMode] = useState<"signin" | "signup">("signin");
@@ -409,10 +416,18 @@ function LoginContent() {
                   Authentication requires Supabase environment variables configured in your deployment settings.
                 </p>
                 <div className="p-2.5 rounded-lg bg-black/60 border border-white/[0.08] font-mono text-[11px] text-white/70 space-y-1">
-                  <div className="text-white/40">Public variables read by IronSync:</div>
-                  <div className="text-accent">&bull; NEXT_PUBLIC_SUPABASE_URL</div>
-                  <div className="text-accent">&bull; NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY)</div>
-                  <div className="text-white/40">&bull; NEXT_PUBLIC_SITE_URL (optional)</div>
+                  <div className="text-white/50 font-semibold mb-1">Missing required configuration:</div>
+                  {diagnostics?.missingUrl && (
+                    <div className="text-red-400 font-bold">
+                      &bull; NEXT_PUBLIC_SUPABASE_URL (missing or invalid - expected https://*.supabase.co)
+                    </div>
+                  )}
+                  {diagnostics?.missingKey && (
+                    <div className="text-red-400 font-bold">
+                      &bull; NEXT_PUBLIC_SUPABASE_ANON_KEY / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (missing or invalid - must start with eyJ or sb_publishable)
+                    </div>
+                  )}
+                  <div className="text-white/40 pt-1">&bull; NEXT_PUBLIC_SITE_URL (optional)</div>
                 </div>
               </div>
             )}

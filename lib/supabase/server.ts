@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/types/database.types";
-import { isSupabaseConfigured } from "./client";
+import { isSupabaseConfigured, getValidSupabaseKey } from "./client";
 
 /**
  * Creates a Server Supabase client using @supabase/ssr.
@@ -13,14 +13,11 @@ export async function createServerSupabaseClient() {
   }
 
   const cookieStore = await cookies();
-
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = getValidSupabaseKey()!;
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    key!,
+    key,
     {
       cookies: {
         getAll() {

@@ -2,7 +2,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { getSupabase, isSupabaseConfigured } from "../supabase/client";
+import {
+  getSupabase,
+  isSupabaseConfigured,
+  getSupabaseConfigDiagnostics,
+} from "../supabase/client";
 import {
   SavedPlanData,
   syncPendingBlueprintToDatabase,
@@ -19,6 +23,10 @@ interface AuthContextType {
   isLoading: boolean;
   activePlan: SavedPlanData | null;
   isConfigured: boolean;
+  diagnostics: {
+    missingUrl: boolean;
+    missingKey: boolean;
+  };
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signInWithPhone: (phone: string) => Promise<{ error: Error | null }>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
@@ -42,7 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activePlan, setActivePlan] = useState<SavedPlanData | null>(null);
-  const isConfigured = isSupabaseConfigured();
+  const diagnostics = getSupabaseConfigDiagnostics();
+  const isConfigured = diagnostics.isConfigured;
 
   // Load initial session on mount
   useEffect(() => {
@@ -327,6 +336,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         activePlan,
         isConfigured,
+        diagnostics,
         signInWithGoogle,
         signInWithPhone,
         verifyPhoneOtp,
