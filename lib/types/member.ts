@@ -13,6 +13,7 @@ export interface GymMember {
   status: MemberStatus;
   fitnessGoal: string;
   planId?: string | null;
+  planTemplateKey?: string | null;
   startDate: string; // ISO date string "YYYY-MM-DD"
   expiryDate?: string | null; // ISO date string "YYYY-MM-DD"
   dateOfBirth?: string | null;

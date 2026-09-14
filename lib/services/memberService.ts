@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { getSupabase } from "../supabase/client";
+import { createServiceClient } from "../supabase/admin";
 import {
   GymMember,
   CreateMemberInput,
@@ -17,46 +17,95 @@ import {
 import { getGymPlanTemplate, GYM_PLAN_TEMPLATES } from "../data/gymPlans";
 import { generateMealPlan } from "../engine/mealGenerator";
 
-// In-memory fallback cache to ensure zero-downtime during testing, local runs, or initial setup
+// In-memory fallback store is ONLY used in non-production environments when explicitly enabled
 const MEMORY_MEMBERS: Map<string, GymMember> = new Map();
+
+function isMemoryFallbackAllowed(): boolean {
+  return (
+    process.env.ALLOW_MEMORY_MEMBERS === "true" &&
+    process.env.NODE_ENV !== "production"
+  );
+}
+
+function isUuid(str?: string | null): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+}
+
+function mapRowToMember(row: any): GymMember {
+  return {
+    id: row.id,
+    memberId: row.member_id,
+    fullName: row.full_name,
+    phone: row.phone,
+    email: row.email,
+    pinHash: row.pin_hash,
+    status: row.status as MemberStatus,
+    fitnessGoal: row.fitness_goal,
+    planId: row.plan_template_key || row.plan_id || null,
+    planTemplateKey: row.plan_template_key || null,
+    startDate: row.start_date,
+    expiryDate: row.expiry_date,
+    dateOfBirth: row.date_of_birth,
+    gender: row.gender,
+    notes: row.notes,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastLoginAt: row.last_login_at,
+  };
+}
 
 /**
  * Returns the current maximum sequence number for the given year to safely increment Member IDs.
+ * Queries PostgreSQL ordered by member_id descending for fast, non-racy allocation.
  */
 export async function getNextMemberSequence(year: number = 2026): Promise<number> {
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   let maxSeq = 0;
 
-  // 1. Check database if connected
   if (supabase) {
     try {
       const { data, error } = await supabase
         .from("members")
         .select("member_id")
-        .like("member_id", `IS-${year}-%`);
+        .like("member_id", `IS-${year}-%`)
+        .order("member_id", { ascending: false })
+        .limit(1);
 
-      if (!error && Array.isArray(data)) {
-        for (const row of data) {
-          const seq = parseMemberIdSequence(row.member_id);
-          if (seq && seq > maxSeq) maxSeq = seq;
-        }
+      if (!error && Array.isArray(data) && data.length > 0) {
+        const seq = parseMemberIdSequence(data[0].member_id);
+        if (seq && seq > maxSeq) maxSeq = seq;
+        return maxSeq + 1;
+      } else if (!error && Array.isArray(data) && data.length === 0) {
+        return 1;
+      } else if (error) {
+        console.error("Error querying latest member sequence from Supabase:", error);
       }
     } catch (err) {
-      // Fall through to memory store
+      console.error("Failed to query member sequence:", err);
     }
   }
 
-  // 2. Check in-memory store
-  for (const member of MEMORY_MEMBERS.values()) {
-    const seq = parseMemberIdSequence(member.memberId);
-    if (seq && seq > maxSeq) maxSeq = seq;
+  if (isMemoryFallbackAllowed()) {
+    for (const member of MEMORY_MEMBERS.values()) {
+      const seq = parseMemberIdSequence(member.memberId);
+      if (seq && seq > maxSeq) maxSeq = seq;
+    }
+    return maxSeq + 1;
+  }
+
+  if (!supabase) {
+    throw new Error(
+      "Supabase service client is not configured. SUPABASE_SERVICE_ROLE_KEY is required for member operations."
+    );
   }
 
   return maxSeq + 1;
 }
 
 /**
- * Creates a new gym member.
+ * Creates a new gym member and persists directly to Supabase PostgreSQL.
  * Returns the created member and the raw temporary PIN (displayed ONCE to the admin).
  */
 export async function createMember(
@@ -73,24 +122,25 @@ export async function createMember(
     throw new Error("A valid phone number is required.");
   }
 
-  // 1. Generate next Member ID on server
-  const nextSeq = await getNextMemberSequence(2026);
-  const memberId = formatMemberId(nextSeq, 2026);
-
-  // 2. Generate or validate PIN
-  const rawPin = input.pin && /^\d{4}$/.test(input.pin.trim())
-    ? input.pin.trim()
-    : generateRandomPin();
-
-  // 3. Hash PIN securely (NEVER store plaintext)
+  // 1. Generate PIN and secure hash
+  const rawPin =
+    input.pin && /^\d{4}$/.test(input.pin.trim())
+      ? input.pin.trim()
+      : generateRandomPin();
   const pinHash = hashPin(rawPin);
 
   const now = new Date().toISOString();
   const startDate = input.startDate || now.split("T")[0];
-  // Default expiry date: 1 year from start date if omitted
-  const expiryDate = input.expiryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const expiryDate =
+    input.expiryDate ||
+    new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const assignedPlanId = input.planId || GYM_PLAN_TEMPLATES[0].id;
+  const isPlanUuid = isUuid(assignedPlanId);
+
+  // Helper to attempt insert with retry
+  let nextSeq = await getNextMemberSequence(2026);
+  let memberId = formatMemberId(nextSeq, 2026);
 
   const newMember: GymMember = {
     id: crypto.randomUUID(),
@@ -102,6 +152,7 @@ export async function createMember(
     status: "active",
     fitnessGoal: input.fitnessGoal || "muscle_gain",
     planId: assignedPlanId,
+    planTemplateKey: isPlanUuid ? null : assignedPlanId,
     startDate,
     expiryDate,
     dateOfBirth: input.dateOfBirth || null,
@@ -113,43 +164,109 @@ export async function createMember(
     lastLoginAt: null,
   };
 
-  // 4. Persist to Supabase if available
-  const supabase = getSupabase();
-  if (supabase) {
-    try {
-      await supabase.from("members").insert({
-        id: newMember.id,
-        member_id: newMember.memberId,
-        full_name: newMember.fullName,
-        phone: newMember.phone,
-        email: newMember.email,
-        pin_hash: newMember.pinHash,
-        status: newMember.status,
-        fitness_goal: newMember.fitnessGoal,
-        plan_id: newMember.planId?.startsWith("plan-") ? null : newMember.planId,
-        start_date: newMember.startDate,
-        expiry_date: newMember.expiryDate,
-        date_of_birth: newMember.dateOfBirth,
-        gender: newMember.gender,
-        notes: newMember.notes,
-        created_by: newMember.createdBy,
-        created_at: newMember.createdAt,
-        updated_at: newMember.updatedAt,
-      });
-    } catch (err) {
-      console.warn("Could not insert member into Supabase table (using memory cache fallback):", err);
+  const supabase = createServiceClient();
+  if (!supabase) {
+    if (isMemoryFallbackAllowed()) {
+      MEMORY_MEMBERS.set(newMember.id, newMember);
+      MEMORY_MEMBERS.set(newMember.memberId.toUpperCase(), newMember);
+      return { member: newMember, rawPin };
     }
+    throw new Error(
+      "Cannot create member: Supabase service client is not configured. Please ensure SUPABASE_SERVICE_ROLE_KEY is set."
+    );
   }
 
-  // 5. Store in memory fallback
-  MEMORY_MEMBERS.set(newMember.id, newMember);
-  MEMORY_MEMBERS.set(newMember.memberId.toUpperCase(), newMember);
+  // Build insert payload
+  const buildPayload = (mId: string, includePlanTemplateKey: boolean = true) => {
+    const payload: Record<string, any> = {
+      id: newMember.id,
+      member_id: mId,
+      full_name: newMember.fullName,
+      phone: newMember.phone,
+      email: newMember.email,
+      pin_hash: newMember.pinHash,
+      status: newMember.status,
+      fitness_goal: newMember.fitnessGoal,
+      plan_id: isPlanUuid ? assignedPlanId : null,
+      start_date: newMember.startDate,
+      expiry_date: newMember.expiryDate,
+      date_of_birth: newMember.dateOfBirth,
+      gender: newMember.gender,
+      notes: newMember.notes,
+      created_by: newMember.createdBy,
+      created_at: newMember.createdAt,
+      updated_at: newMember.updatedAt,
+    };
+
+    if (includePlanTemplateKey) {
+      payload.plan_template_key = isPlanUuid ? null : assignedPlanId;
+    }
+
+    return payload;
+  };
+
+  // Attempt database insert with unique-constraint retry and backward-compatible column handling
+  let insertSuccess = false;
+  let attemptPayload = buildPayload(memberId, true);
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { error } = await supabase.from("members").insert(attemptPayload as any);
+
+    if (!error) {
+      insertSuccess = true;
+      break;
+    }
+
+    // Check if error is due to missing plan_template_key column (schema migration pending)
+    if (
+      error.message?.includes("plan_template_key") ||
+      error.code === "42703" ||
+      error.code === "PGRST204"
+    ) {
+      console.warn(
+        "public.members table does not have plan_template_key column yet. Retrying without it..."
+      );
+      attemptPayload = buildPayload(attemptPayload.member_id, false);
+      const retryWithoutColumn = await supabase.from("members").insert(attemptPayload as any);
+      if (!retryWithoutColumn.error) {
+        insertSuccess = true;
+        break;
+      }
+    }
+
+    // Check if error is unique constraint collision on member_id (error code 23505)
+    if (error.code === "23505" || error.message?.includes("duplicate key")) {
+      console.warn(`Member ID collision for ${memberId}. Incrementing sequence and retrying...`);
+      nextSeq = await getNextMemberSequence(2026);
+      memberId = formatMemberId(nextSeq, 2026);
+      newMember.memberId = memberId;
+      attemptPayload = buildPayload(memberId, true);
+      continue;
+    }
+
+    // Other fatal error
+    console.error("Database insert error in createMember:", error);
+    if (!isMemoryFallbackAllowed()) {
+      throw new Error(`Failed to save member to database: ${error.message}`);
+    }
+    break;
+  }
+
+  if (!insertSuccess && !isMemoryFallbackAllowed()) {
+    throw new Error("Failed to persist member in database after retries.");
+  }
+
+  // Update memory store if fallback allowed
+  if (isMemoryFallbackAllowed()) {
+    MEMORY_MEMBERS.set(newMember.id, newMember);
+    MEMORY_MEMBERS.set(newMember.memberId.toUpperCase(), newMember);
+  }
 
   return { member: newMember, rawPin };
 }
 
 /**
- * Retrieves members for the admin directory with search and status filtering.
+ * Retrieves members for the admin directory with search and status filtering directly from PostgreSQL.
  */
 export async function getMembers(
   optionsOrUserId?: any,
@@ -160,7 +277,7 @@ export async function getMembers(
       ? optionsOrUserId
       : maybeFilters || {};
 
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   let membersList: GymMember[] = [];
 
   if (supabase) {
@@ -173,34 +290,25 @@ export async function getMembers(
 
       const { data, error } = await query;
       if (!error && Array.isArray(data)) {
-        membersList = data.map((row: any) => ({
-          id: row.id,
-          memberId: row.member_id,
-          fullName: row.full_name,
-          phone: row.phone,
-          email: row.email,
-          pinHash: row.pin_hash,
-          status: row.status,
-          fitnessGoal: row.fitness_goal,
-          planId: row.plan_id,
-          startDate: row.start_date,
-          expiryDate: row.expiry_date,
-          dateOfBirth: row.date_of_birth,
-          gender: row.gender,
-          notes: row.notes,
-          createdBy: row.created_by,
-          createdAt: row.created_at,
-          updatedAt: row.updated_at,
-          lastLoginAt: row.last_login_at,
-        }));
+        membersList = data.map(mapRowToMember);
+      } else if (error) {
+        console.error("Error retrieving members from Supabase:", error);
+        if (!isMemoryFallbackAllowed()) {
+          throw new Error(`Failed to retrieve members: ${error.message}`);
+        }
       }
-    } catch (err) {
-      // Use memory fallback
+    } catch (err: any) {
+      console.error("Exception fetching members:", err);
+      if (!isMemoryFallbackAllowed()) {
+        throw err;
+      }
     }
+  } else if (!isMemoryFallbackAllowed()) {
+    throw new Error("Supabase service client is not configured (SUPABASE_SERVICE_ROLE_KEY missing).");
   }
 
-  // Fallback / merge with memory store
-  if (membersList.length === 0) {
+  // Fallback to memory store ONLY if allowed and list is empty
+  if (membersList.length === 0 && isMemoryFallbackAllowed()) {
     const uniqueMap = new Map<string, GymMember>();
     for (const member of MEMORY_MEMBERS.values()) {
       uniqueMap.set(member.id, member);
@@ -225,7 +333,9 @@ export async function getMembers(
     membersList = membersList.filter((m) => m.status === filters.status);
   }
 
-  return membersList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return membersList.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 }
 
 /**
@@ -234,44 +344,28 @@ export async function getMembers(
 export async function getMemberById(id: string): Promise<GymMember | null> {
   if (!id) return null;
 
-  // Check in-memory store
-  const mem = MEMORY_MEMBERS.get(id) || MEMORY_MEMBERS.get(id.toUpperCase());
-  if (mem) return mem;
-
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   if (supabase) {
     try {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      const query = isUuid
+      const isUuidFormat = isUuid(id);
+      const query = isUuidFormat
         ? supabase.from("members").select("*").eq("id", id)
         : supabase.from("members").select("*").eq("member_id", id.toUpperCase());
 
       const { data, error } = await query.maybeSingle();
       if (!error && data) {
-        return {
-          id: data.id,
-          memberId: data.member_id,
-          fullName: data.full_name,
-          phone: data.phone,
-          email: data.email,
-          pinHash: data.pin_hash,
-          status: data.status as MemberStatus,
-          fitnessGoal: data.fitness_goal,
-          planId: data.plan_id,
-          startDate: data.start_date,
-          expiryDate: data.expiry_date,
-          dateOfBirth: data.date_of_birth,
-          gender: data.gender,
-          notes: data.notes,
-          createdBy: data.created_by,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-          lastLoginAt: data.last_login_at,
-        };
+        return mapRowToMember(data);
+      }
+      if (error) {
+        console.error(`Error finding member by id ${id}:`, error);
       }
     } catch (err) {
-      // Memory fallback
+      console.error(`Exception finding member by id ${id}:`, err);
     }
+  }
+
+  if (isMemoryFallbackAllowed()) {
+    return MEMORY_MEMBERS.get(id) || MEMORY_MEMBERS.get(id.toUpperCase()) || null;
   }
 
   return null;
@@ -297,7 +391,7 @@ export async function getMemberByMemberId(
   if (!memberId) return null;
   const cleanId = memberId.trim().toUpperCase();
 
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -307,38 +401,26 @@ export async function getMemberByMemberId(
         .maybeSingle();
 
       if (!error && data) {
-        return {
-          id: data.id,
-          memberId: data.member_id,
-          fullName: data.full_name,
-          phone: data.phone,
-          email: data.email,
-          pinHash: data.pin_hash,
-          status: data.status as MemberStatus,
-          fitnessGoal: data.fitness_goal,
-          planId: data.plan_id,
-          startDate: data.start_date,
-          expiryDate: data.expiry_date,
-          dateOfBirth: data.date_of_birth,
-          gender: data.gender,
-          notes: data.notes,
-          createdBy: data.created_by,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-          lastLoginAt: data.last_login_at,
-        };
+        return mapRowToMember(data);
+      }
+      if (error) {
+        console.error(`Error querying member ${cleanId}:`, error);
       }
     } catch (err) {
-      // Memory fallback
+      console.error(`Exception querying member ${cleanId}:`, err);
     }
   }
 
-  const memoryMatch = MEMORY_MEMBERS.get(cleanId);
-  return memoryMatch || null;
+  if (isMemoryFallbackAllowed()) {
+    const memoryMatch = MEMORY_MEMBERS.get(cleanId);
+    return memoryMatch || null;
+  }
+
+  return null;
 }
 
 /**
- * Resets a member's PIN.
+ * Resets a member's PIN in PostgreSQL.
  * Generates a new 4-digit PIN, updates pin_hash, invalidates the old PIN.
  * Returns the raw new PIN to be displayed ONCE to the admin.
  */
@@ -351,35 +433,43 @@ export async function resetMemberPin(
     throw new Error("Member not found.");
   }
 
-  const newPin = customPin && /^\d{4}$/.test(customPin.trim())
-    ? customPin.trim()
-    : generateRandomPin();
+  const newPin =
+    customPin && /^\d{4}$/.test(customPin.trim())
+      ? customPin.trim()
+      : generateRandomPin();
   const newPinHash = hashPin(newPin);
   const now = new Date().toISOString();
 
   member.pinHash = newPinHash;
   member.updatedAt = now;
 
-  MEMORY_MEMBERS.set(member.id, member);
-  MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
-
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   if (supabase) {
-    try {
-      await supabase
-        .from("members")
-        .update({ pin_hash: newPinHash, updated_at: now })
-        .eq("member_id", member.memberId);
-    } catch (err) {
-      // Handled
+    const { error } = await supabase
+      .from("members")
+      .update({ pin_hash: newPinHash, updated_at: now })
+      .eq("member_id", member.memberId);
+
+    if (error) {
+      console.error("Error resetting member PIN in Supabase:", error);
+      if (!isMemoryFallbackAllowed()) {
+        throw new Error(`Failed to reset PIN in database: ${error.message}`);
+      }
     }
+  } else if (!isMemoryFallbackAllowed()) {
+    throw new Error("Supabase service client is not configured (SUPABASE_SERVICE_ROLE_KEY missing).");
+  }
+
+  if (isMemoryFallbackAllowed()) {
+    MEMORY_MEMBERS.set(member.id, member);
+    MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
   }
 
   return { success: true, member, newPin };
 }
 
 /**
- * Updates a member's status ('active' | 'inactive' | 'suspended' | 'expired').
+ * Updates a member's status ('active' | 'inactive' | 'suspended' | 'expired') in PostgreSQL.
  */
 export async function updateMemberStatus(
   idOrMemberId: string,
@@ -395,26 +485,33 @@ export async function updateMemberStatus(
   member.status = newStatus;
   member.updatedAt = now;
 
-  MEMORY_MEMBERS.set(member.id, member);
-  MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
-
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   if (supabase) {
-    try {
-      await supabase
-        .from("members")
-        .update({ status: newStatus, updated_at: now })
-        .eq("member_id", member.memberId);
-    } catch (err) {
-      // Handled
+    const { error } = await supabase
+      .from("members")
+      .update({ status: newStatus, updated_at: now })
+      .eq("member_id", member.memberId);
+
+    if (error) {
+      console.error("Error updating member status in Supabase:", error);
+      if (!isMemoryFallbackAllowed()) {
+        throw new Error(`Failed to update status in database: ${error.message}`);
+      }
     }
+  } else if (!isMemoryFallbackAllowed()) {
+    throw new Error("Supabase service client is not configured.");
+  }
+
+  if (isMemoryFallbackAllowed()) {
+    MEMORY_MEMBERS.set(member.id, member);
+    MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
   }
 
   return member;
 }
 
 /**
- * Assigns or switches a plan for a member.
+ * Assigns or switches a plan for a member in PostgreSQL.
  */
 export async function assignPlanToMember(
   idOrMemberId: string,
@@ -427,29 +524,57 @@ export async function assignPlanToMember(
   }
 
   const now = new Date().toISOString();
+  const isPlanUuid = isUuid(planId);
   member.planId = planId;
+  member.planTemplateKey = isPlanUuid ? null : planId;
   member.updatedAt = now;
 
-  MEMORY_MEMBERS.set(member.id, member);
-  MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
-
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   if (supabase) {
-    try {
-      await supabase
-        .from("members")
-        .update({ plan_id: planId.startsWith("plan-") ? null : planId, updated_at: now })
-        .eq("member_id", member.memberId);
-    } catch (err) {
-      // Handled
+    const updatePayload: Record<string, any> = {
+      plan_id: isPlanUuid ? planId : null,
+      plan_template_key: isPlanUuid ? null : planId,
+      updated_at: now,
+    };
+
+    const { error } = await supabase
+      .from("members")
+      .update(updatePayload as any)
+      .eq("member_id", member.memberId);
+
+    if (error) {
+      // Handle missing plan_template_key column fallback
+      if (
+        error.message?.includes("plan_template_key") ||
+        error.code === "42703" ||
+        error.code === "PGRST204"
+      ) {
+        const retry = await supabase
+          .from("members")
+          .update({ plan_id: isPlanUuid ? planId : null, updated_at: now } as any)
+          .eq("member_id", member.memberId);
+
+        if (retry.error && !isMemoryFallbackAllowed()) {
+          throw new Error(`Failed to assign plan: ${retry.error.message}`);
+        }
+      } else if (!isMemoryFallbackAllowed()) {
+        throw new Error(`Failed to assign plan in database: ${error.message}`);
+      }
     }
+  } else if (!isMemoryFallbackAllowed()) {
+    throw new Error("Supabase service client is not configured.");
+  }
+
+  if (isMemoryFallbackAllowed()) {
+    MEMORY_MEMBERS.set(member.id, member);
+    MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
   }
 
   return member;
 }
 
 /**
- * Updates general fields on a member record.
+ * Updates general fields on a member record in PostgreSQL.
  */
 export async function updateMember(
   idOrMemberId: string,
@@ -464,42 +589,72 @@ export async function updateMember(
   if (input.email !== undefined) member.email = input.email ? input.email.trim() : null;
   if (input.status !== undefined) member.status = input.status;
   if (input.fitnessGoal !== undefined) member.fitnessGoal = input.fitnessGoal;
-  if (input.planId !== undefined) member.planId = input.planId;
+  if (input.planId !== undefined) {
+    member.planId = input.planId;
+    member.planTemplateKey = isUuid(input.planId) ? null : input.planId;
+  }
   if (input.expiryDate !== undefined) member.expiryDate = input.expiryDate;
   if (input.notes !== undefined) member.notes = input.notes;
   member.updatedAt = now;
 
-  MEMORY_MEMBERS.set(member.id, member);
-  MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
-
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   if (supabase) {
-    try {
-      await supabase
-        .from("members")
-        .update({
-          full_name: member.fullName,
-          phone: member.phone,
-          email: member.email,
-          status: member.status,
-          fitness_goal: member.fitnessGoal,
-          plan_id: member.planId?.startsWith("plan-") ? null : member.planId,
-          expiry_date: member.expiryDate,
-          notes: member.notes,
-          updated_at: now,
-        })
-        .eq("member_id", member.memberId);
-    } catch (err) {
-      // Handled
+    const isPlanUuid = input.planId !== undefined ? isUuid(input.planId) : false;
+    const dbUpdate: Record<string, any> = {
+      full_name: member.fullName,
+      phone: member.phone,
+      email: member.email,
+      status: member.status,
+      fitness_goal: member.fitnessGoal,
+      expiry_date: member.expiryDate,
+      notes: member.notes,
+      updated_at: now,
+    };
+
+    if (input.planId !== undefined) {
+      dbUpdate.plan_id = isPlanUuid ? input.planId : null;
+      dbUpdate.plan_template_key = isPlanUuid ? null : input.planId;
     }
+
+    const { error } = await supabase
+      .from("members")
+      .update(dbUpdate as any)
+      .eq("member_id", member.memberId);
+
+    if (error) {
+      // Retry without plan_template_key if column not yet added
+      if (
+        error.message?.includes("plan_template_key") ||
+        error.code === "42703" ||
+        error.code === "PGRST204"
+      ) {
+        delete dbUpdate.plan_template_key;
+        const retry = await supabase
+          .from("members")
+          .update(dbUpdate as any)
+          .eq("member_id", member.memberId);
+        if (retry.error && !isMemoryFallbackAllowed()) {
+          throw new Error(`Failed to update member: ${retry.error.message}`);
+        }
+      } else if (!isMemoryFallbackAllowed()) {
+        throw new Error(`Failed to update member in database: ${error.message}`);
+      }
+    }
+  } else if (!isMemoryFallbackAllowed()) {
+    throw new Error("Supabase service client is not configured.");
+  }
+
+  if (isMemoryFallbackAllowed()) {
+    MEMORY_MEMBERS.set(member.id, member);
+    MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
   }
 
   return member;
 }
 
 /**
- * Authenticates a member using Member ID + 4-digit PIN.
- * Returns member if successful; throws or returns null if invalid.
+ * Authenticates a member using Member ID + 4-digit PIN against PostgreSQL.
+ * Returns member if successful; returns error object if invalid.
  */
 export async function authenticateMember(
   memberId: string,
@@ -517,19 +672,31 @@ export async function authenticateMember(
   // Check member status
   if (member.status !== "active") {
     if (member.status === "expired") {
-      return { success: false, error: "Your gym membership plan has expired. Please see the front desk." };
+      return {
+        success: false,
+        error: "Your gym membership plan has expired. Please see the front desk.",
+      };
     }
     if (member.status === "suspended") {
-      return { success: false, error: "Your membership account is suspended. Please contact gym management." };
+      return {
+        success: false,
+        error: "Your membership account is suspended. Please contact gym management.",
+      };
     }
-    return { success: false, error: "Your membership account is currently inactive." };
+    return {
+      success: false,
+      error: "Your membership account is currently inactive.",
+    };
   }
 
   // Check expiry date if set
   if (member.expiryDate) {
     const today = new Date().toISOString().split("T")[0];
     if (member.expiryDate < today) {
-      return { success: false, error: "Your gym membership plan has expired. Please see the front desk." };
+      return {
+        success: false,
+        error: "Your gym membership plan has expired. Please see the front desk.",
+      };
     }
   }
 
@@ -539,13 +706,11 @@ export async function authenticateMember(
     return { success: false, error: "Invalid Member ID or PIN." };
   }
 
-  // Update last_login_at
+  // Update last_login_at in PostgreSQL
   const now = new Date().toISOString();
   member.lastLoginAt = now;
-  MEMORY_MEMBERS.set(member.id, member);
-  MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
 
-  const supabase = getSupabase();
+  const supabase = createServiceClient();
   if (supabase) {
     try {
       await supabase
@@ -553,8 +718,13 @@ export async function authenticateMember(
         .update({ last_login_at: now })
         .eq("member_id", member.memberId);
     } catch (err) {
-      // Handled
+      console.warn("Could not update last_login_at:", err);
     }
+  }
+
+  if (isMemoryFallbackAllowed()) {
+    MEMORY_MEMBERS.set(member.id, member);
+    MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
   }
 
   return { success: true, member };
@@ -563,12 +733,15 @@ export async function authenticateMember(
 /**
  * Retrieves complete Member Dashboard payload (member profile + assigned workout/nutrition plan).
  */
-export async function getMemberDashboardData(memberId: string): Promise<MemberDashboardData | null> {
+export async function getMemberDashboardData(
+  memberId: string
+): Promise<MemberDashboardData | null> {
   const member = await getMemberByMemberId(memberId, false);
   if (!member) return null;
 
   // Resolve assigned plan template or default
-  const template = getGymPlanTemplate(member.planId || "plan-hypertrophy-ppl") || GYM_PLAN_TEMPLATES[0];
+  const templateKey = member.planTemplateKey || member.planId || "plan-hypertrophy-ppl";
+  const template = getGymPlanTemplate(templateKey) || GYM_PLAN_TEMPLATES[0];
   const meals = generateMealPlan("non_vegetarian", template.calories, 4);
 
   return {

@@ -1,25 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-
-function isMemberSessionValidEdge(cookieVal?: string): boolean {
-  if (!cookieVal || !cookieVal.includes(".")) return false;
-  try {
-    const [payloadPart] = cookieVal.split(".");
-    const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonStr = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    const payload = JSON.parse(jsonStr);
-    if (!payload.id || !payload.memberId) return false;
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { verifyMemberSessionTokenEdge } from "@/lib/security/memberSessionEdge";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -60,9 +41,10 @@ export async function middleware(request: NextRequest) {
     adminUser = user;
   }
 
-  // Member session cookie check
+  // Member session cookie check (timing-safe HMAC-SHA256 verification)
   const memberCookie = request.cookies.get("ironsync_member_session")?.value;
-  const hasValidMemberSession = isMemberSessionValidEdge(memberCookie);
+  const memberSession = await verifyMemberSessionTokenEdge(memberCookie);
+  const hasValidMemberSession = memberSession !== null;
 
   // 1. Guard /admin routes -> Requires Admin Auth
   if (pathname.startsWith("/admin")) {

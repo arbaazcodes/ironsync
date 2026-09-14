@@ -379,6 +379,7 @@ create table if not exists public.members (
   status text default 'active' check (status in ('active', 'inactive', 'suspended', 'expired')) not null,
   fitness_goal text default 'muscle_gain' not null,
   plan_id uuid references public.plans(id) on delete set null,
+  plan_template_key text, -- Gym blueprint template key (e.g. 'plan-hypertrophy-ppl')
   start_date date default current_date not null,
   expiry_date date,
   date_of_birth date,
@@ -394,6 +395,7 @@ create index if not exists idx_members_member_id on public.members(member_id);
 create index if not exists idx_members_status on public.members(status);
 create index if not exists idx_members_created_by on public.members(created_by);
 create index if not exists idx_members_plan_id on public.members(plan_id);
+create index if not exists idx_members_plan_template_key on public.members(plan_template_key);
 
 alter table public.members enable row level security;
 

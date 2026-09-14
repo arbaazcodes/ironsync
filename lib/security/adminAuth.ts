@@ -12,13 +12,20 @@ export interface AdminSessionUser {
  * Returns the admin user object or null if unauthenticated.
  */
 export async function getAdminUser(): Promise<AdminSessionUser | null> {
-  // If Supabase is not configured (offline mode / local testing fallback)
+  // Only allow dev bypass if explicitly enabled and NOT in production
+  if (process.env.ALLOW_DEV_ADMIN === "true" && process.env.NODE_ENV !== "production") {
+    if (!isSupabaseConfigured()) {
+      return {
+        id: "admin-local-dev",
+        email: "admin@ironsync.local",
+        role: "admin",
+      };
+    }
+  }
+
+  // If Supabase is not configured, deny access
   if (!isSupabaseConfigured()) {
-    return {
-      id: "admin-local-dev",
-      email: "admin@ironsync.local",
-      role: "admin",
-    };
+    return null;
   }
 
   try {

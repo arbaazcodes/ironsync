@@ -5,12 +5,20 @@ export const MEMBER_COOKIE_NAME = "ironsync_member_session";
 const SESSION_DURATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 function getSecretKey(): string {
-  // Use dedicated secret or fall back securely to supabase keys / application salt
-  return (
-    process.env.MEMBER_SESSION_SECRET ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "ironsync-gym-platform-member-secret-salt-2026"
-  );
+  const secret = process.env.MEMBER_SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL SECURITY CONFIGURATION ERROR: MEMBER_SESSION_SECRET environment variable is missing in production. " +
+        "Please configure MEMBER_SESSION_SECRET in your production deployment settings."
+      );
+    }
+    return (
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      "ironsync-gym-platform-member-secret-salt-2026"
+    );
+  }
+  return secret;
 }
 
 /**

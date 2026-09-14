@@ -354,6 +354,7 @@ export type Database = {
           status: string;
           fitness_goal: string;
           plan_id: string | null;
+          plan_template_key?: string | null;
           start_date: string;
           expiry_date: string | null;
           date_of_birth: string | null;
@@ -374,6 +375,7 @@ export type Database = {
           status?: string;
           fitness_goal?: string;
           plan_id?: string | null;
+          plan_template_key?: string | null;
           start_date?: string;
           expiry_date?: string | null;
           date_of_birth?: string | null;
@@ -394,6 +396,7 @@ export type Database = {
           status?: string;
           fitness_goal?: string;
           plan_id?: string | null;
+          plan_template_key?: string | null;
           start_date?: string;
           expiry_date?: string | null;
           date_of_birth?: string | null;
@@ -429,5 +432,6 @@ export type PlanMealRow = Database["public"]["Tables"]["plan_meals"]["Row"];
 export type CheckInRow = Database["public"]["Tables"]["check_ins"]["Row"];
 export type ExportRow = Database["public"]["Tables"]["exports"]["Row"];
 export type ReminderPreferencesRow = Database["public"]["Tables"]["reminder_preferences"]["Row"];
+export type MemberRow = Database["public"]["Tables"]["members"]["Row"];
 
 
