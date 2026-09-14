@@ -300,6 +300,9 @@ function LoginContent() {
                       {showMemberPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  <p className="text-[11px] text-white/40 font-mono">
+                    4-digit PIN from your gym admin
+                  </p>
                 </div>
 
                 {/* Submit Button */}
