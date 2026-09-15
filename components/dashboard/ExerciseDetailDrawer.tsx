@@ -45,6 +45,7 @@ export function ExerciseDetailDrawer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [showTimer, setShowTimer] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   // Close on ESC & manage body lock
   useEffect(() => {
@@ -71,6 +72,7 @@ export function ExerciseDetailDrawer({
     setIsPlaying(false);
     setIsMuted(true);
     setShowTimer(false);
+    setVideoError(false);
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
@@ -145,6 +147,10 @@ export function ExerciseDetailDrawer({
             src={media.imageUrl}
             alt={exercise.name}
             className="w-full h-full object-cover brightness-75"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop";
+            }}
           />
           {/* High contrast gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
@@ -303,8 +309,8 @@ export function ExerciseDetailDrawer({
               <span>{activeVideoUrl ? "Muted by Default" : "HD Movement Guide"}</span>
             </div>
 
-            {activeVideoUrl ? (
-              <div className="relative rounded-2xl overflow-hidden bg-black border border-border shadow-lg aspect-video flex items-center justify-center group">
+            {activeVideoUrl && !videoError ? (
+              <div className="relative rounded-2xl overflow-hidden bg-black border border-border shadow-lg aspect-video w-full max-w-full flex items-center justify-center group">
                 <video
                   ref={videoRef}
                   src={activeVideoUrl}
@@ -314,6 +320,7 @@ export function ExerciseDetailDrawer({
                   onEnded={() => setIsPlaying(false)}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
+                  onError={() => setVideoError(true)}
                   className="w-full h-full object-cover"
                   aria-label={`Exercise demonstration video for ${exercise.name}`}
                 />
@@ -364,10 +371,14 @@ export function ExerciseDetailDrawer({
                 </div>
               </div>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden bg-black border border-border shadow-lg aspect-video flex items-center justify-center group">
+              <div className="relative rounded-2xl overflow-hidden bg-black border border-border shadow-lg aspect-video w-full max-w-full flex items-center justify-center group">
                 <img
                   src={media.imageUrl}
                   alt={exercise.name}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop";
+                  }}
                   className="w-full h-full object-cover brightness-[0.4] group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />

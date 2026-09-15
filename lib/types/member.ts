@@ -18,6 +18,12 @@ export interface GymMember {
   expiryDate?: string | null; // ISO date string "YYYY-MM-DD"
   dateOfBirth?: string | null;
   gender?: string | null;
+  age?: number | null;
+  height?: number | null;
+  weight?: number | null;
+  experience?: string | null;
+  dietType?: string | null;
+  daysPerWeek?: number | null;
   notes?: string | null;
   createdBy?: string | null;
   createdAt: string;
@@ -36,6 +42,12 @@ export interface CreateMemberInput {
   expiryDate?: string;
   dateOfBirth?: string;
   gender?: string;
+  age?: number;
+  height?: number;
+  weight?: number;
+  experience?: string;
+  dietType?: string;
+  daysPerWeek?: number;
   notes?: string;
 }
 
@@ -47,6 +59,13 @@ export interface UpdateMemberInput {
   fitnessGoal?: string;
   planId?: string | null;
   expiryDate?: string | null;
+  gender?: string | null;
+  age?: number | null;
+  height?: number | null;
+  weight?: number | null;
+  experience?: string | null;
+  dietType?: string | null;
+  daysPerWeek?: number | null;
   notes?: string | null;
 }
 
@@ -84,6 +103,13 @@ export interface MemberDashboardData {
     startDate: string;
     expiryDate?: string | null;
     fitnessGoal: string;
+    gender?: string | null;
+    age?: number | null;
+    height?: number | null;
+    weight?: number | null;
+    experience?: string | null;
+    dietType?: string | null;
+    daysPerWeek?: number | null;
   };
   assignedPlan: {
     id: string;

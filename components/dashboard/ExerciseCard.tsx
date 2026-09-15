@@ -70,6 +70,10 @@ export function ExerciseCard({
               alt={exercise.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-90 group-hover:brightness-100"
               loading="lazy"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=400&auto=format&fit=crop";
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
             <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-md bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center font-mono text-[10px] font-bold text-accent">

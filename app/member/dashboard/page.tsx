@@ -571,7 +571,17 @@ export default function MemberDashboardPage() {
       )}
 
       {/* AI Coach Drawer Component */}
-      <AiCoachDrawer isOpen={isCoachOpen} onClose={() => setIsCoachOpen(false)} />
+      <AiCoachDrawer
+        isOpen={isCoachOpen}
+        onClose={() => setIsCoachOpen(false)}
+        memberData={data}
+        onPlanUpdated={() => {
+          fetch("/api/member/dashboard")
+            .then((r) => r.json())
+            .then((d) => setData(d))
+            .catch(console.error);
+        }}
+      />
     </div>
   );
 }

@@ -15,7 +15,9 @@ import {
   parseMemberIdSequence,
 } from "../security/pinSecurity";
 import { getGymPlanTemplate, GYM_PLAN_TEMPLATES } from "../data/gymPlans";
+import { generateBlueprint } from "../engine/index";
 import { generateMealPlan } from "../engine/mealGenerator";
+import { DietType } from "../types/onboarding";
 
 // In-memory fallback store is ONLY used in non-production environments when explicitly enabled
 const MEMORY_MEMBERS: Map<string, GymMember> = new Map();
@@ -33,6 +35,13 @@ function isUuid(str?: string | null): boolean {
 }
 
 function mapRowToMember(row: any): GymMember {
+  let parsedNotesProfile: any = {};
+  if (row.notes && typeof row.notes === "string" && row.notes.trim().startsWith("{")) {
+    try {
+      parsedNotesProfile = JSON.parse(row.notes);
+    } catch {}
+  }
+
   return {
     id: row.id,
     memberId: row.member_id,
@@ -47,7 +56,13 @@ function mapRowToMember(row: any): GymMember {
     startDate: row.start_date,
     expiryDate: row.expiry_date,
     dateOfBirth: row.date_of_birth,
-    gender: row.gender,
+    gender: row.gender || parsedNotesProfile.gender || null,
+    age: row.age != null ? Number(row.age) : (parsedNotesProfile.age != null ? Number(parsedNotesProfile.age) : null),
+    height: row.height != null ? Number(row.height) : (parsedNotesProfile.height != null ? Number(parsedNotesProfile.height) : null),
+    weight: row.weight != null ? Number(row.weight) : (parsedNotesProfile.weight != null ? Number(parsedNotesProfile.weight) : null),
+    experience: row.experience || parsedNotesProfile.experience || "intermediate",
+    dietType: row.diet_type || parsedNotesProfile.dietType || "non_vegetarian",
+    daysPerWeek: row.days_per_week != null ? Number(row.days_per_week) : (parsedNotesProfile.daysPerWeek != null ? Number(parsedNotesProfile.daysPerWeek) : 4),
     notes: row.notes,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -594,6 +609,13 @@ export async function updateMember(
     member.planTemplateKey = isUuid(input.planId) ? null : input.planId;
   }
   if (input.expiryDate !== undefined) member.expiryDate = input.expiryDate;
+  if (input.gender !== undefined) member.gender = input.gender;
+  if (input.age !== undefined) member.age = input.age;
+  if (input.height !== undefined) member.height = input.height;
+  if (input.weight !== undefined) member.weight = input.weight;
+  if (input.experience !== undefined) member.experience = input.experience;
+  if (input.dietType !== undefined) member.dietType = input.dietType;
+  if (input.daysPerWeek !== undefined) member.daysPerWeek = input.daysPerWeek;
   if (input.notes !== undefined) member.notes = input.notes;
   member.updatedAt = now;
 
@@ -607,6 +629,13 @@ export async function updateMember(
       status: member.status,
       fitness_goal: member.fitnessGoal,
       expiry_date: member.expiryDate,
+      gender: member.gender,
+      age: member.age,
+      height: member.height,
+      weight: member.weight,
+      experience: member.experience,
+      diet_type: member.dietType,
+      days_per_week: member.daysPerWeek,
       notes: member.notes,
       updated_at: now,
     };
@@ -742,7 +771,34 @@ export async function getMemberDashboardData(
   // Resolve assigned plan template or default
   const templateKey = member.planTemplateKey || member.planId || "plan-hypertrophy-ppl";
   const template = getGymPlanTemplate(templateKey) || GYM_PLAN_TEMPLATES[0];
-  const meals = generateMealPlan("non_vegetarian", template.calories, 4);
+
+  const diet = (member.dietType as DietType) || "non_vegetarian";
+  let blueprint = template.blueprint;
+
+  // If member has specific profile attributes (weight, height, age, diet, days, or custom goal),
+  // dynamically calculate the deterministic blueprint from their physical profile!
+  if (member.weight || member.height || member.age || member.dietType || member.fitnessGoal) {
+    const calculated = generateBlueprint({
+      gender: (member.gender as any) || "male",
+      age: member.age || 26,
+      weightKg: member.weight ? Number(member.weight) : 78,
+      heightCm: member.height ? Number(member.height) : 178,
+      goal: (member.fitnessGoal as any) || template.goal || "muscle_gain",
+      daysPerWeek: member.daysPerWeek || template.trainingDays || 4,
+      sessionDuration: 60,
+      equipment: "commercial_gym",
+      experience: (member.experience as any) || "intermediate",
+      dietType: diet,
+      mealsPerDay: 4,
+      budget: "balanced",
+      allergies: [],
+      deliverables: ["workout", "nutrition"],
+      trainingTime: "evening",
+    });
+    blueprint = calculated;
+  }
+
+  const meals = generateMealPlan(diet, blueprint.macros.calories, 4);
 
   return {
     member: {
@@ -755,20 +811,27 @@ export async function getMemberDashboardData(
       startDate: member.startDate,
       expiryDate: member.expiryDate,
       fitnessGoal: member.fitnessGoal,
+      gender: member.gender,
+      age: member.age,
+      height: member.height,
+      weight: member.weight,
+      experience: member.experience,
+      dietType: member.dietType,
+      daysPerWeek: member.daysPerWeek,
     },
     assignedPlan: {
       id: template.id,
       version: 1,
-      goal: template.goal,
-      splitName: template.splitName,
-      calories: template.calories,
-      protein: template.protein,
-      carbs: template.carbs,
-      fat: template.fat,
-      trainingDays: template.trainingDays,
-      schedule: template.blueprint.schedule,
-      recoveryProtocol: template.blueprint.recoveryProtocol,
-      dietStrategyNotes: template.blueprint.dietStrategyNotes,
+      goal: member.fitnessGoal || template.goal,
+      splitName: blueprint.splitName || template.splitName,
+      calories: blueprint.macros.calories,
+      protein: blueprint.macros.protein,
+      carbs: blueprint.macros.carbs,
+      fat: blueprint.macros.fat,
+      trainingDays: member.daysPerWeek || template.trainingDays,
+      schedule: blueprint.schedule,
+      recoveryProtocol: blueprint.recoveryProtocol,
+      dietStrategyNotes: blueprint.dietStrategyNotes,
       meals,
     },
   };

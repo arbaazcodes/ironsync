@@ -184,3 +184,165 @@ export function generateMealPlan(
     };
   });
 }
+
+export interface WeekDietDay {
+  dayName: string;
+  dayShort: string;
+  dayIndex: number;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  focus: string;
+  meals: DayMeal[];
+}
+
+const DAY_NAMES = [
+  { short: "MON", full: "Monday", focus: "Kinetic Ignition & High Glycogen" },
+  { short: "TUE", full: "Tuesday", focus: "Hypertrophic Volume & Cellular Hydration" },
+  { short: "WED", full: "Wednesday", focus: "Metabolic Optimization & Recovery" },
+  { short: "THU", full: "Thursday", focus: "Posterior Chain Energy Density" },
+  { short: "FRI", full: "Friday", focus: "Athletic Power & Protein Loading" },
+  { short: "SAT", full: "Saturday", focus: "Weekend High Performance Fuel" },
+  { short: "SUN", full: "Sunday", focus: "Systemic Tissue Reset & Digestive Balance" },
+];
+
+/**
+ * Generates a complete 7-day personalized weekly diet chart tailored to caloric targets and dietary tier.
+ */
+export function generateWeeklyDietChart(
+  dietType: DietType | null,
+  totalCalories: number,
+  mealsCount: number = 4
+): WeekDietDay[] {
+  const baseMeals = generateMealPlan(dietType, totalCalories, mealsCount);
+  const diet = dietType || "non_vegetarian";
+
+  return DAY_NAMES.map((d, dayIdx) => {
+    // Generate slight daily ingredient rotation
+    const dayMeals = baseMeals.map((meal, mIdx) => {
+      let variantName = meal.name;
+      let variantItems = [...meal.items];
+
+      if (diet === "vegetarian") {
+        if (meal.name.includes("Lunch")) {
+          const proteins = [
+            "Low-Fat Grilled Paneer Tikka (160g)",
+            "Tofu & Edamame Quinoa Bowl (180g)",
+            "Spiced Chana Masala with Brown Rice (200g)",
+            "Paneer & Bell Pepper Skillet (150g)",
+            "Yellow Dal Tadka & Soya Chunks (180g)",
+            "Palak Paneer with Whole Wheat Rotis (170g)",
+            "Sprouted Green Moong & Cottage Cheese Bowl (160g)",
+          ];
+          variantItems = [
+            { name: proteins[dayIdx % proteins.length], portion: "1 portion" },
+            { name: "Complex Carbohydrate Staple", portion: "150g" },
+            { name: "Fresh Garden Cucumber & Tomato Salad", portion: "1 bowl" },
+          ];
+        } else if (meal.name.includes("Dinner")) {
+          const dinners = [
+            "High-Protein Soya Bhurji with 2 Phulkas",
+            "Mixed Lentil Khichdi with Curd",
+            "Tofu Vegetable Green Curry with Quinoa",
+            "Methi Paneer with Multigrain Roti",
+            "Rajma Bowl with Steamed Jasmine Rice",
+            "Grilled Paneer & Roasted Veggie Medley",
+            "Warm Moong Dal Khichdi with Steamed Greens",
+          ];
+          variantItems = [
+            { name: dinners[dayIdx % dinners.length], portion: "1 plate" },
+            { name: "Steamed Seasonal Greens", portion: "1 cup" },
+          ];
+        }
+      } else if (diet === "vegan") {
+        if (meal.name.includes("Lunch")) {
+          const veganLunches = [
+            "Pan-Seared Organic Tofu with Basmati Rice",
+            "Tempeh Stir-Fry with Broccoli and Edamame",
+            "Spiced Chickpea & Quinoa Bowl",
+            "Lentil Bolognese with Gluten-Free Pasta",
+            "Crispy Sesame Tofu & Bok Choy",
+            "Black Bean & Sweet Potato Protein Skillet",
+            "Tofu Scramble with Sautéed Spinach & Brown Rice",
+          ];
+          variantItems = [
+            { name: veganLunches[dayIdx % veganLunches.length], portion: "1 portion" },
+            { name: "Fresh Avocado & Citrus Greens", portion: "1 small bowl" },
+          ];
+        }
+      } else if (diet === "eggetarian") {
+        if (meal.name.includes("Lunch")) {
+          const eggLunches = [
+            "Herbed Boiled Eggs with Dal and Rice",
+            "Egg Bhurji Wrap with Whole Wheat Tortilla",
+            "Paneer & Egg White Salad Bowl",
+            "Egg Curry with Brown Basmati Rice",
+            "Boiled Egg Whites & Sweet Potato Mash",
+            "High-Protein Egg White Frittata with Greens",
+            "Classic 3-Egg Omelet with Avocado & Multigrain Toast",
+          ];
+          variantItems = [
+            { name: eggLunches[dayIdx % eggLunches.length], portion: "1 serving" },
+            { name: "Cucumber, Tomato & Mint Salad", portion: "1 bowl" },
+          ];
+        }
+      } else {
+        // Non-vegetarian
+        if (meal.name.includes("Lunch")) {
+          const nonVegLunches = [
+            "Pan-Grilled Chicken Breast with Fragrant Rice",
+            "Herbed Chicken Breast with Quinoa & Asparagus",
+            "Grilled White Fish Fillet with Lemon & Rice",
+            "Tender Chicken Tikka with Steamed Greens",
+            "Ground Lean Turkey with Sweet Potato Mash",
+            "Baked Atlantic Salmon with Jasmine Rice",
+            "Roasted Chicken Bowl with Roasted Bell Peppers",
+          ];
+          variantItems = [
+            { name: nonVegLunches[dayIdx % nonVegLunches.length], portion: "1 portion" },
+            { name: "Steamed Broccoli & Olive Oil Drizzle", portion: "1 cup" },
+          ];
+        } else if (meal.name.includes("Dinner")) {
+          const nonVegDinners = [
+            "Baked Salmon or Chicken Fillet with Sweet Potato",
+            "Grilled Chicken Skewers with Greek Salad",
+            "Pan-Seared White Fish with Roasted Asparagus",
+            "Herb-Crusted Chicken Fillet with Steamed Rice",
+            "Baked Cod Fillet with Garlic Spinach & Quinoa",
+            "Tenderloin Strips or Chicken with Roasted Veggies",
+            "Slow-Cooked Chicken Broth with Shredded Breast & Greens",
+          ];
+          variantItems = [
+            { name: nonVegDinners[dayIdx % nonVegDinners.length], portion: "1 serving" },
+            { name: "Steamed Seasonal Greens", portion: "1 cup" },
+          ];
+        }
+      }
+
+      return {
+        ...meal,
+        id: `week-${d.short.toLowerCase()}-${mIdx + 1}`,
+        items: variantItems,
+      };
+    });
+
+    const totCals = dayMeals.reduce((acc, m) => acc + m.calories, 0);
+    const totProtein = dayMeals.reduce((acc, m) => acc + m.protein, 0);
+    const totCarbs = dayMeals.reduce((acc, m) => acc + m.carbs, 0);
+    const totFat = dayMeals.reduce((acc, m) => acc + m.fat, 0);
+
+    return {
+      dayName: d.full,
+      dayShort: d.short,
+      dayIndex: dayIdx,
+      totalCalories: totCals,
+      totalProtein: totProtein,
+      totalCarbs: totCarbs,
+      totalFat: totFat,
+      focus: d.focus,
+      meals: dayMeals,
+    };
+  });
+}
+

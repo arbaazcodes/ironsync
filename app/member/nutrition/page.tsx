@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { MemberDashboardData } from "@/lib/types/member";
 import { MealCard } from "@/components/dashboard/MealCard";
+import { WeekDietChart } from "@/components/dashboard/WeekDietChart";
 import { DayMeal } from "@/lib/engine/mealGenerator";
 import {
   Apple,
@@ -13,12 +14,14 @@ import {
   Loader2,
   Info,
   Utensils,
+  Calendar,
 } from "lucide-react";
 
 export default function MemberNutritionPage() {
   const [data, setData] = useState<MemberDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [meals, setMeals] = useState<DayMeal[]>([]);
+  const [activeTab, setActiveTab] = useState<"today" | "week">("today");
 
   useEffect(() => {
     async function loadData() {
@@ -58,21 +61,50 @@ export default function MemberNutritionPage() {
   }
 
   const assignedPlan = data?.assignedPlan;
+  const member = data?.member;
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-xs font-mono text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold">
-          <Apple className="w-3.5 h-3.5" />
-          Nutritional Periodization Protocol
+      {/* Header with Tab Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-mono text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold">
+            <Apple className="w-3.5 h-3.5" />
+            Nutritional Periodization Protocol
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-primary mt-1">
+            Daily Fuel Strategy
+          </h1>
+          <p className="text-xs sm:text-sm text-primary-muted">
+            Target calories, macronutrient distribution, recipes, and isocaloric swap alternatives.
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-primary mt-1">
-          Daily Fuel Strategy
-        </h1>
-        <p className="text-xs sm:text-sm text-primary-muted">
-          Target calories, macronutrient distribution, recipes, and isocaloric swap alternatives.
-        </p>
+
+        {/* View Switcher: Today's Protocol vs 7-Day Week Chart */}
+        <div className="flex items-center p-1 rounded-2xl bg-surface-elevated border border-border shrink-0 self-start sm:self-auto">
+          <button
+            onClick={() => setActiveTab("today")}
+            className={`py-2 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === "today"
+                ? "bg-accent text-white shadow-accent-glow"
+                : "text-primary-muted hover:text-primary"
+            }`}
+          >
+            <Utensils className="w-3.5 h-3.5" />
+            <span>Today&apos;s Protocol</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("week")}
+            className={`py-2 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === "week"
+                ? "bg-accent text-white shadow-accent-glow"
+                : "text-primary-muted hover:text-primary"
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>7-Day Week Chart</span>
+          </button>
+        </div>
       </div>
 
       {/* Macro Overview Card */}
@@ -111,47 +143,54 @@ export default function MemberNutritionPage() {
         )}
       </div>
 
-      {/* Meals Grid */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold uppercase tracking-wider text-primary">
-            Prescribed Daily Meals
-          </h2>
-          <span className="text-xs font-mono text-primary-dim">
-            {meals.length} Meals Structured
-          </span>
-        </div>
+      {activeTab === "week" ? (
+        <WeekDietChart
+          dietType={(member?.dietType as any) || "non_vegetarian"}
+          totalCalories={assignedPlan?.calories || 2400}
+          mealsCount={4}
+        />
+      ) : (
+        /* Meals Grid */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold uppercase tracking-wider text-primary">
+              Prescribed Daily Meals
+            </h2>
+            <span className="text-xs font-mono text-primary-dim">
+              {meals.length} Meals Structured &bull; {assignedPlan?.calories || 2400} kcal
+            </span>
+          </div>
 
-        {meals.length === 0 ? (
-          <div className="p-8 sm:p-12 rounded-3xl bg-card border border-border shadow-sm text-center space-y-4">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-              <Utensils className="w-7 h-7" />
+          {meals.length === 0 ? (
+            <div className="p-8 sm:p-12 rounded-3xl bg-card border border-border shadow-sm text-center space-y-4">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <Utensils className="w-7 h-7" />
+              </div>
+              <div className="max-w-md mx-auto space-y-2">
+                <h3 className="text-lg font-bold uppercase text-primary">
+                  Personalized Meals Coming Soon
+                </h3>
+                <p className="text-xs text-primary-muted leading-relaxed">
+                  Your assigned daily targets are active above:{" "}
+                  <span className="text-primary font-bold">{assignedPlan?.calories || 2600} kcal</span> and{" "}
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{assignedPlan?.protein || 180}g protein</span>.
+                </p>
+              </div>
             </div>
-            <div className="max-w-md mx-auto space-y-2">
-              <h3 className="text-lg font-bold uppercase text-primary">
-                Personalized Meals Coming Soon
-              </h3>
-              <p className="text-xs text-primary-muted leading-relaxed">
-                Your assigned daily targets are active above:{" "}
-                <span className="text-primary font-bold">{assignedPlan?.calories || 2600} kcal</span> and{" "}
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{assignedPlan?.protein || 180}g protein</span>.
-                Your gym trainer or front desk can assign custom meal plans tailored to your food preferences.
-              </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {meals.map((meal, index) => (
+                <MealCard
+                  key={index}
+                  meal={meal}
+                  index={index}
+                  onSwapMeal={handleSwapMeal}
+                />
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {meals.map((meal, index) => (
-              <MealCard
-                key={index}
-                meal={meal}
-                index={index}
-                onSwapMeal={handleSwapMeal}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
