@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Printer,
   ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 
 interface Message {
@@ -38,11 +39,11 @@ interface AiCoachDrawerProps {
   onPlanUpdated?: () => void;
 }
 
-const QUICK_QUESTIONS = [
-  "Swap an exercise from today's workout",
-  "Easier variation for main compound lift",
-  "Quick high-protein vegetarian dinner",
-  "Optimal post-workout recovery meal timing",
+const COACH_CHIPS = [
+  "Today’s workout",
+  "Diet today",
+  "I’m sore",
+  "Swap this lift",
 ];
 
 export function AiCoachDrawer({
@@ -53,6 +54,20 @@ export function AiCoachDrawer({
 }: AiCoachDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Gemini capability detection
+  const [hasGeminiKey, setHasGeminiKey] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/coach")
+      .then((res) => res.json())
+      .then((data) => {
+        setHasGeminiKey(Boolean(data.hasGeminiKey));
+      })
+      .catch(() => {
+        setHasGeminiKey(false);
+      });
+  }, []);
 
   // View state: "chat" | "diet_chart"
   const [activeView, setActiveView] = useState<"chat" | "diet_chart">("chat");
@@ -111,10 +126,13 @@ export function AiCoachDrawer({
       {
         id: "welcome-auto",
         sender: "coach",
-        text: `### ⚡ IRONSYNC AI COACH INITIALIZED
-Coach active for **${memberName}**. Your current protocol is calibrated to **${calories} kcal** and **${protein}g protein**. Today's directive is **${todayWorkoutName}**.
+        text: `### ⚡ IRONSYNC COACH
+Standing by on the floor for **${memberName}**.
+- **Calorie Anchor**: **${calories} kcal/day**
+- **Protein Floor**: **${protein}g protein/day**
+- **Today's Session**: **${todayWorkoutName}**
 
-Ask for tactical exercise swaps, joint-friendly regressions, high-protein nutrition, or use the protocol actions below.`,
+Ask for form cues, today's meals, tactical lift swaps, or tap a chip below. Let's work.`,
         timestamp: "Just now",
       },
     ]);
@@ -173,14 +191,18 @@ Ask for tactical exercise swaps, joint-friendly regressions, high-protein nutrit
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: query,
+          history: messages.slice(-8).map((m) => ({ sender: m.sender, text: m.text })),
           context: {
             memberName,
             goal: fitnessGoal,
             calories,
             protein,
+            carbs: plan?.carbs || 280,
+            fat: plan?.fat || 65,
             split: splitName,
             diet: dietType,
             todayWorkout: todayWorkoutName,
+            todayExercises: todayScheduleItem?.exercises?.map((e) => e.name) || [],
             experienceLevel: formExperience,
             daysPerWeek: formDays,
             weightKg: formWeight,
@@ -189,6 +211,9 @@ Ask for tactical exercise swaps, joint-friendly regressions, high-protein nutrit
       });
 
       const data = await response.json();
+      if (data.isBasicMode !== undefined) {
+        setHasGeminiKey(!data.isBasicMode);
+      }
       const replyText = data?.reply || data?.error || "Coach engine unavailable. Please retry.";
 
       const coachMessage: Message = {
@@ -334,7 +359,7 @@ ${todayScheduleItem.exercises?.map((e, idx) => `  ${idx + 1}. **${e.name}** (${e
             <div>
               <div className="flex items-center gap-2">
                 <h2 id="ai-coach-title" className="font-extrabold text-base sm:text-lg text-primary tracking-tight">
-                  IRONSync AI Coach
+                  IronSync Coach
                 </h2>
                 <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -342,7 +367,7 @@ ${todayScheduleItem.exercises?.map((e, idx) => `  ${idx + 1}. **${e.name}** (${e
                 </span>
               </div>
               <p className="text-[11px] font-mono text-primary-muted truncate max-w-[260px] sm:max-w-none">
-                {memberName} &bull; {calories} kcal &bull; {protein}g protein &bull; {splitName}
+                Coach &bull; based on your profile
               </p>
             </div>
           </div>
@@ -357,6 +382,16 @@ ${todayScheduleItem.exercises?.map((e, idx) => `  ${idx + 1}. **${e.name}** (${e
             </button>
           </div>
         </div>
+
+        {/* Honest Basic Mode Banner if Gemini Key is absent */}
+        {hasGeminiKey === false && (
+          <div className="mx-3 my-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2 shrink-0">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div className="font-mono text-[11px] leading-tight">
+              <span className="font-bold">Coach is in basic mode</span> &bull; Rule-based engine active
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons Strip: Rebuild from profile | Diet chart | Today workout */}
         <div className="p-3 bg-surface border-b border-border flex items-center gap-2 shrink-0 overflow-x-auto scrollbar-none font-mono text-xs">
@@ -472,17 +507,17 @@ ${todayScheduleItem.exercises?.map((e, idx) => `  ${idx + 1}. **${e.name}** (${e
           </div>
         )}
 
-        {/* Quick Question Suggestions */}
+        {/* Chips: Today’s workout | Diet today | I’m sore | Swap this lift */}
         {activeView === "chat" && (
-          <div className="p-3 border-t border-border bg-surface/50 overflow-x-auto scrollbar-none flex items-center gap-2 shrink-0">
-            {QUICK_QUESTIONS.map((q, idx) => (
+          <div className="p-2.5 border-t border-border bg-surface/60 overflow-x-auto scrollbar-none flex items-center gap-2 shrink-0">
+            {COACH_CHIPS.map((chip, idx) => (
               <button
                 key={idx}
-                onClick={() => handleSend(q)}
+                onClick={() => handleSend(chip)}
                 disabled={isLoading}
-                className="py-1 px-2.5 rounded-xl bg-surface border border-border text-[11px] font-mono text-primary-muted hover:text-primary hover:border-accent/40 whitespace-nowrap transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                className="py-1.5 px-3 rounded-xl bg-surface-elevated hover:bg-surface border border-border hover:border-accent/40 text-xs font-mono font-medium text-primary hover:text-accent whitespace-nowrap transition-all shadow-sm active:scale-95 disabled:opacity-50"
               >
-                {q}
+                {chip}
               </button>
             ))}
           </div>

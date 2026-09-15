@@ -1,10 +1,43 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { MEMBER_COOKIE_NAME, verifyMemberSessionToken } from "@/lib/security/memberSession";
-import { getMemberById } from "@/lib/services/memberService";
+
+// Rate limiter: 20 messages per member per hour
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+const coachRateLimits = new Map<string, RateLimitEntry>();
+const HOURLY_LIMIT = 20;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+function checkHourlyRateLimit(memberKey: string): { allowed: boolean; remaining: number; resetInMinutes: number } {
+  const now = Date.now();
+  const entry = coachRateLimits.get(memberKey);
+
+  if (!entry || now > entry.resetAt) {
+    coachRateLimits.set(memberKey, { count: 1, resetAt: now + ONE_HOUR_MS });
+    return { allowed: true, remaining: HOURLY_LIMIT - 1, resetInMinutes: 60 };
+  }
+
+  if (entry.count >= HOURLY_LIMIT) {
+    const resetInMinutes = Math.max(1, Math.ceil((entry.resetAt - now) / (60 * 1000)));
+    return { allowed: false, remaining: 0, resetInMinutes };
+  }
+
+  entry.count += 1;
+  const resetInMinutes = Math.max(1, Math.ceil((entry.resetAt - now) / (60 * 1000)));
+  return { allowed: true, remaining: HOURLY_LIMIT - entry.count, resetInMinutes };
+}
+
+interface CoachMessageHistory {
+  sender: "user" | "coach";
+  text: string;
+}
 
 interface CoachRequestBody {
   message: string;
+  history?: CoachMessageHistory[];
   context?: {
     memberName?: string;
     goal?: string;
@@ -15,10 +48,19 @@ interface CoachRequestBody {
     split?: string;
     diet?: string;
     todayWorkout?: string;
+    todayExercises?: string[];
+    injuries?: string;
     experienceLevel?: string;
     daysPerWeek?: number;
     weightKg?: number;
   };
+}
+
+export async function GET() {
+  return NextResponse.json({
+    hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+    hourlyLimit: HOURLY_LIMIT,
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -26,12 +68,14 @@ export async function POST(request: NextRequest) {
     // 1. Authenticate user session: check Member Cookie FIRST, then Supabase Auth
     let memberName = "Athlete";
     let isMemberAuth = false;
+    let memberIdentifier = "anonymous";
 
     const token = request.cookies.get(MEMBER_COOKIE_NAME)?.value;
     if (token) {
       const payload = verifyMemberSessionToken(token);
       if (payload) {
         memberName = payload.fullName || "Athlete";
+        memberIdentifier = payload.memberId || payload.id || "member";
         isMemberAuth = true;
       }
     }
@@ -63,11 +107,34 @@ export async function POST(request: NextRequest) {
 
         if (user) {
           memberName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Admin Coach";
+          memberIdentifier = user.id;
         }
       }
     }
 
-    // 2. Validate input
+    // Fallback to IP if not authenticated
+    if (memberIdentifier === "anonymous") {
+      memberIdentifier =
+        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        request.headers.get("x-real-ip") ||
+        "anonymous";
+    }
+
+    // 2. Rate limiting check: 20 messages per member per hour
+    const rateCheck = checkHourlyRateLimit(memberIdentifier);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "RATE_LIMIT_EXCEEDED",
+          reply: `Hourly limit reached (20 msgs/hr). Focus on executing your sets on the gym floor and check back in ~${rateCheck.resetInMinutes} min!`,
+          remaining: 0,
+        },
+        { status: 429 }
+      );
+    }
+
+    // 3. Validate input
     const body = (await request.json().catch(() => ({}))) as CoachRequestBody;
     const rawMessage = body?.message?.trim();
 
@@ -78,10 +145,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Length limit guardrail
     if (rawMessage.length > 600) {
       return NextResponse.json(
-        { error: "Query exceeds the maximum allowable length of 600 characters." },
+        { error: "Query exceeds maximum length of 600 characters." },
         { status: 400 }
       );
     }
@@ -91,136 +157,143 @@ export async function POST(request: NextRequest) {
     const goal = context.goal || "Hypertrophy & Strength";
     const calories = context.calories || 2400;
     const protein = context.protein || 180;
+    const carbs = context.carbs || 280;
+    const fat = context.fat || 65;
     const split = context.split || "Push / Pull / Legs";
     const diet = context.diet || "non_vegetarian";
     const todayWorkout = context.todayWorkout || "Scheduled Training Session";
     const experience = context.experienceLevel || "Intermediate";
+    const daysPerWeek = context.daysPerWeek || 4;
+    const injuries = context.injuries || "";
+    const exercisesList =
+      context.todayExercises && context.todayExercises.length > 0
+        ? context.todayExercises.slice(0, 5).join(", ")
+        : "Compound & accessory target movements";
 
-    // 3. AI Providers: Check GEMINI_API_KEY first (matches user's curl specification), then OPENAI_API_KEY
+    // 4. Call Gemini if GEMINI_API_KEY exists (No OpenAI requirement)
     const geminiKey = process.env.GEMINI_API_KEY;
-    const openaiKey = process.env.OPENAI_API_KEY;
 
     if (geminiKey) {
-      try {
-        const systemPrompt = `You are the IRONSync Master Fitness Coach. Brand voice: Nike x Ferrari x Gymshark. Direct, elite, biomechanically rigorous, authoritative, zero fluff.
-Active Member Profile:
-- Member Name: ${name}
+      // Build conversation history (max 8 messages)
+      let historyText = "";
+      if (Array.isArray(body.history) && body.history.length > 0) {
+        const recent = body.history.slice(-8);
+        historyText =
+          "Recent conversation:\n" +
+          recent
+            .map(
+              (h) =>
+                `${h.sender === "user" ? "Athlete" : "Coach"}: ${h.text}`
+            )
+            .join("\n") +
+          "\n\n";
+      }
+
+      const systemPrompt = `You are IronSync Coach, an experienced gym trainer standing right on the floor with your athlete.
+Voice: Direct, clear, encouraging, no fluff, no medical diagnosis.
+Talk like a coach on the floor: "Do this next session", exact sets/reps/rest, form cues, what to eat today.
+Never say "as an AI language model" or refer to yourself as an AI.
+
+Active Athlete Profile (USE ONLY THESE EXACT NUMBERS):
+- Athlete Name: ${name}
 - Goal: ${goal}
 - Caloric Target: ${calories} kcal/day
-- Protein Target: ${protein}g/day
-- Split: ${split}
-- Diet: ${diet}
-- Today's Session: ${todayWorkout}
-- Experience: ${experience}
+- Protein Target: ${protein}g/day (Carbs: ${carbs}g, Fats: ${fat}g)
+- Diet Type: ${diet}
+- Training Split: ${split} (${daysPerWeek} days/week)
+- Experience Level: ${experience}
+- Today's Workout: ${todayWorkout}
+- Today's Exercises: ${exercisesList}
+${injuries ? `- Injuries/Physical Notes: ${injuries}` : ""}
 
-CRITICAL RULES:
-1. Provide science-grounded, high-performance directives with sets, reps, or meal items.
-2. Keep response strictly UNDER 180 words.
-3. Use bullet points for high legibility.
-4. NEVER contradict the calculated targets (${calories} kcal and ${protein}g protein).
-5. If user asks for vegetarian/vegan alternatives, provide high-protein plant/dairy options without meat.
-6. If user asks for exercise swaps, provide biomechanically equivalent alternatives.`;
+STRICT OPERATING RULES:
+1. Answer ONLY using that athlete's numbers (${calories} kcal, ${protein}g protein).
+2. If they ask "what should I eat" or ask about food, give today's exact meals from their ${calories} kcal and ${protein}g protein target matching their ${diet} diet (e.g. if vegetarian, paneer, lentils, greek yogurt, tofu, oats; no meat).
+3. If they ask form (e.g., "bench kaise karun?" or "how to squat"), give EXACTLY:
+   - 4 sharp biomechanical form cues
+   - 2 critical mistakes to avoid
+4. If data is missing to answer safely, ask ONE direct question.
+5. Under 160 words total. Use bullet points and end with ONE clear next action.
+6. Language: Naturally match the athlete's language and tone. If they ask in Hindi/Hinglish (e.g., "protein kitna khana hai?"), reply in natural Hinglish with their exact ${protein}g protein.
+7. Refuse medical diagnosis, steroids, SARMs, or crash-diet advice.`;
 
-        const geminiRes = await fetch(
-          "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-goog-api-key": geminiKey,
-            },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { text: `${systemPrompt}\n\nMember Inquiry: ${rawMessage}` },
-                  ],
-                },
-              ],
-              generationConfig: {
-                maxOutputTokens: 350,
-                temperature: 0.65,
+      // Try flash models: prefer gemini-2.0-flash / gemini-1.5-flash, fallback to gemini-flash-latest / gemini-3.6-flash
+      const modelsToTry = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-flash-latest",
+        "gemini-3.6-flash",
+      ];
+
+      for (const model of modelsToTry) {
+        try {
+          const geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-goog-api-key": geminiKey,
               },
-            }),
-          }
-        );
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      {
+                        text: `${systemPrompt}\n\n${historyText}Athlete: ${rawMessage}\n\nCoach:`,
+                      },
+                    ],
+                  },
+                ],
+                generationConfig: {
+                  maxOutputTokens: 300,
+                  temperature: 0.65,
+                },
+              }),
+            }
+          );
 
-        if (geminiRes.ok) {
-          const gData = await geminiRes.json();
-          const reply = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (reply && reply.trim()) {
-            return NextResponse.json({
-              success: true,
-              reply: reply.trim(),
-              source: "gemini-llm",
-              timestamp: new Date().toISOString(),
-            });
+          if (geminiRes.ok) {
+            const gData = await geminiRes.json();
+            const reply = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (reply && reply.trim()) {
+              return NextResponse.json({
+                success: true,
+                reply: reply.trim(),
+                source: "gemini",
+                model,
+                remaining: rateCheck.remaining,
+                timestamp: new Date().toISOString(),
+              });
+            }
           }
-        } else {
-          console.warn("Gemini API non-200 response:", await geminiRes.text());
+        } catch {
+          // Try next model in sequence
         }
-      } catch (err) {
-        console.warn("Gemini call exception, falling back to deterministic coach engine:", err);
       }
     }
 
-    if (openaiKey) {
-      try {
-        const systemPrompt = `You are the IRONSync Master Fitness Coach. Brand voice: Nike x Ferrari x Gymshark. Direct, elite, authoritative, zero fluff.
-Member: ${name} | Goal: ${goal} | ${calories} kcal | ${protein}g protein | Split: ${split} | Diet: ${diet} | Today: ${todayWorkout}.
-Rules: Under 180 words, bullet points, respect calculated macros strictly.`;
-
-        const openAiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openaiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: rawMessage },
-            ],
-            temperature: 0.7,
-            max_tokens: 300,
-          }),
-        });
-
-        if (openAiRes.ok) {
-          const aiData = await openAiRes.json();
-          const reply = aiData?.choices?.[0]?.message?.content;
-          if (reply && reply.trim()) {
-            return NextResponse.json({
-              success: true,
-              reply: reply.trim(),
-              source: "openai-llm",
-              timestamp: new Date().toISOString(),
-            });
-          }
-        }
-      } catch (err) {
-        console.warn("OpenAI call exception, falling back to deterministic coach engine:", err);
-      }
-    }
-
-    // 4. Deterministic Intelligent Rule-Based Sports Science Engine
-    // 100% reliable fallback: instant responses, zero spinners, zero 500 error, never sends pin_hash
+    // 5. Deterministic Sports Science Engine Fallback (<160 words, bulleted + 1 action)
     const reply = generateDeterministicCoachAdvice(rawMessage, {
       name,
       goal,
       calories,
       protein,
+      carbs,
+      fat,
       split,
       diet,
       todayWorkout,
       experience,
+      todayExercises: context.todayExercises,
     });
 
     return NextResponse.json({
       success: true,
       reply,
       source: "ironsync-engine",
+      isBasicMode: !geminiKey,
+      remaining: rateCheck.remaining,
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
@@ -233,8 +306,8 @@ Rules: Under 180 words, bullet points, respect calculated macros strictly.`;
 }
 
 /**
- * Intelligent deterministic sports-science advice generator.
- * Strictly formatted under 180 words in clean athletic bullets.
+ * Deterministic sports-science engine fallback.
+ * Strictly formatted under 160 words in athletic bullets + 1 next action.
  */
 function generateDeterministicCoachAdvice(
   query: string,
@@ -243,107 +316,119 @@ function generateDeterministicCoachAdvice(
     goal: string;
     calories: number;
     protein: number;
+    carbs?: number;
+    fat?: number;
     split: string;
     diet: string;
     todayWorkout: string;
     experience: string;
+    todayExercises?: string[];
   }
 ): string {
   const q = query.toLowerCase();
 
-  // 1. Exercise Swap / Alternative
-  if (q.includes("swap") || q.includes("substitute") || q.includes("replace") || q.includes("alternative")) {
-    return `### ⚡ TACTICAL MOVEMENT SWAP PROTOCOL
-For your **${ctx.todayWorkout}** under the **${ctx.split}** split:
-- **Bench / Chest Press**: Swap with Dumbbell Flat Bench or Weighted Dips for equal mechanical tension with improved glenohumeral freedom.
-- **Squat Variations**: If back squats irritate lower back, substitute with Dumbbell Bulgarian Split Squats or Hack Squats (same quad hypertrophy, reduced spinal load).
-- **Deadlift / Back Pull**: Swap conventional deadlift for Chest-Supported T-Bar Rows or Romanian Deadlifts (RDLs).
-- **Overhead Press**: Substitute barbell press with Seated Dumbbell Press (45° angle) to protect the rotator cuff.`;
+  // 1. Bench Press / Chest Form (Hindi / Hinglish / English)
+  if (q.includes("bench") || q.includes("chest press")) {
+    return `### ⚡ BENCH PRESS EXECUTION
+4 Form Cues:
+- **Scapular Retraction**: Pin shoulder blades back and down hard into the bench pad.
+- **Arch & Leg Drive**: Drive heels into the floor to lock pelvis; do not lift glutes.
+- **Bar Path**: Lower in a slight diagonal to lower sternum, wrists stacked straight.
+- **Elbow Tuck**: Flare at 45–60°, avoid 90° shoulder flare.
+
+2 Mistakes to Avoid:
+- Bouncing the bar off ribs to create false momentum.
+- Letting wrists bend backward under load.
+
+**Next Action**: Warm up with empty bar, then hit 3 × 6-8 reps at RPE 8.0 today.`;
   }
 
-  // 2. Easier Variation / Regression / Joint Pain
-  if (q.includes("easier") || q.includes("variation") || q.includes("pain") || q.includes("injury") || q.includes("regression") || q.includes("too heavy")) {
-    return `### ⚡ BIOMECHANICAL REGRESSION DIRECTIVES
-Maintain muscular tension while reducing joint shear stress:
-- **Push-Ups / Bench**: Regress to Incline Push-Ups on an elevated bench or Cable Chest Press with neutral hand grip.
-- **Pull-Ups**: Regress to Lat Pulldowns (strict 3-second eccentric) or Inverted Rows using an Olympic bar.
-- **Squats**: Regress to Goblet Squats with a heel wedge to maximize quad engagement without spinal flexion.
-- **RPE Guideline**: Drop working load by 15-20% and focus on a strict **3-1-1-0 tempo** (3s down, 1s pause, explosive drive).`;
+  // 2. Squat Form
+  if (q.includes("squat")) {
+    return `### ⚡ SQUAT EXECUTION
+4 Form Cues:
+- **Tripod Foot**: Grip floor through big toe, pinky toe, and heel.
+- **Bracing**: Inhale 360° belly breath into your core before initiating descent.
+- **Knee Tracking**: Drive knees out in line with second toe.
+- **Depth**: Break parallel with chest proud and spine neutral.
+
+2 Mistakes to Avoid:
+- Collapsing knees inward (valgus) on the ascent.
+- Shifting weight into toes and raising heels off the floor.
+
+**Next Action**: Take your main squat sets to 3 × 8 at RPE 8.0, resting 120s between sets.`;
   }
 
-  // 3. Vegetarian / Vegan Dinner or High-Protein Meal
-  if (q.includes("veg") || q.includes("dinner") || q.includes("vegetarian") || q.includes("plant") || q.includes("paneer") || q.includes("tofu")) {
-    return `### ⚡ HIGH-PROTEIN VEGETARIAN PROTOCOL
-To hit your **${ctx.protein}g daily protein** within your **${ctx.calories} kcal** target:
-- **Dinner Blueprint (38g Protein &bull; ~520 kcal)**:
-  - 180g Low-Fat Grilled Paneer or Pan-Seared Tofu
-  - 150g Cooked Quinoa or 2 Whole Wheat Rotis
-  - 1 bowl Spiced Yellow Moong Dal with sautéed spinach
-- **Protein Boosters**: Add 20g hemp seeds or a scoop of soy/pea protein isolate post-dinner if protein is lagging.
-- **Satiety Cue**: Drink 500ml water 15 minutes before dinner to prevent over-eating late carbohydrates.`;
+  // 3. Deadlift Form
+  if (q.includes("deadlift") || q.includes("rdl")) {
+    return `### ⚡ DEADLIFT EXECUTION
+4 Form Cues:
+- **Slack Pull**: Wedge hips down until barbell clicks against plates before floor drive.
+- **Lat Lock**: Squeeze armpits shut like protecting a hundred-dollar bill.
+- **Leg Press Floor**: Drive feet through the floor instead of yanking with upper back.
+- **Bar Proximity**: Keep the bar scraping shins all the way to hip lock.
+
+2 Mistakes to Avoid:
+- Rounding lower lumbar spine during floor break.
+- Hyperextending lower back at the top lockout.
+
+**Next Action**: Execute 3 working sets of 5 reps at RPE 8.5 with strict 2s eccentric.`;
   }
 
-  // 4. Post-Workout / Pre-Workout Meal Timing
-  if (q.includes("post-workout") || q.includes("pre-workout") || q.includes("timing") || q.includes("shake") || q.includes("fuel")) {
-    return `### ⚡ NUTRIENT TIMING DIRECTIVE
-Optimized for your **${ctx.calories} kcal** daily target:
-- **Pre-Training (60–90m before)**: 30-40g complex carbs + 20g lean protein (e.g. oatmeal with scoop of whey/soy protein, or bananas + rice cakes).
-- **Post-Training Window (within 60m)**:
-  - 30-40g high-leucine protein to trigger Muscle Protein Synthesis (MPS).
-  - 40-50g fast-digesting carbohydrates to restore glycogen and blunt cortisol.
-- **Hydration**: Consume 500ml water with 300mg sodium right after training for rapid intramuscular rehydration.`;
+  // 4. Protein / Diet Inquiry (handles "protein kitna khana hai?", "what to eat")
+  if (q.includes("protein") || q.includes("diet") || q.includes("eat") || q.includes("khana")) {
+    const isVeg = ctx.diet.includes("veg") && !ctx.diet.includes("non");
+    return `### ⚡ DAILY NUTRITION DIRECTIVE
+Targets calibrated to your profile:
+- **Protein Goal**: Exactly **${ctx.protein}g protein** today.
+- **Calorie Anchor**: Exactly **${ctx.calories} kcal/day** (${ctx.goal.replace("_", " ")}).
+- **Today's Protein Sources (${ctx.diet.replace("_", " ")})**:
+  ${isVeg ? "- 200g low-fat paneer/tofu (36g protein)\n  - 1 bowl yellow moong dal + quinoa (24g protein)\n  - 250g greek yogurt / curd (20g protein)\n  - 1 scoop whey/plant isolate post-workout (25g protein)" : "- 220g grilled chicken/fish (50g protein)\n  - 3 whole eggs + 2 whites (26g protein)\n  - 1 cup Greek yogurt / cottage cheese (22g protein)\n  - 1 scoop whey isolate (25g protein)"}
+
+**Next Action**: Log your post-workout meal within 60 minutes to lock in muscle protein synthesis.`;
   }
 
-  // 5. Bench Press / Chest plateau
-  if (q.includes("bench") || q.includes("chest")) {
-    return `### ⚡ BENCH PRESS OVERLOAD PROTOCOL
-Break through plateaus in your **${ctx.split}** program:
-- **Double Progression**: Stick to 4 × 6-8 reps. Lock weight until all 4 sets hit 8 clean reps at RPE 8.5 before incrementing load.
-- **Scapular Panning**: Pin shoulder blades hard into the bench pad; drive heels into the floor for kinetic leg drive.
-- **Pause Work**: Incorporate a 1.5-second pause at chest height on set 1 & 2 to build explosive turn-around power.`;
+  // 5. Swap / Substitution
+  if (q.includes("swap") || q.includes("substitute") || q.includes("replace") || q.includes("alternate")) {
+    return `### ⚡ MOVEMENT SWAP DIRECTIVE
+For your **${ctx.todayWorkout}**:
+- **Compound Press**: Swap Barbell Bench with Incline Dumbbell Press or Weighted Dips (reduced shoulder impingement).
+- **Leg Compound**: Swap Back Squat with Dumbbell Bulgarian Split Squats or Hack Squats (same quad hypertrophy, zero spinal axial load).
+- **Back Pull**: Swap Deadlift or Barbell Row with Chest-Supported Incline Row.
+
+**Next Action**: Pick one substitution and match the prescribed sets/reps (e.g. 3 × 8-10).`;
   }
 
-  // 6. Squats & Legs
-  if (q.includes("squat") || q.includes("knee") || q.includes("leg")) {
-    return `### ⚡ SQUAT MECHANICS DIRECTIVE
-Maximize quad hypertrophy with zero knee discomfort:
-- **Tripod Foot Base**: Distribute pressure across heel, big toe, and pinky toe.
-- **Abdominal Brace**: Inhale 360° diaphragmatic air into your belt line before initiating hip crease break.
-- **Femoral Alignment**: Drive knees out in line with 2nd toe to eliminate valgus collapse.`;
-  }
-
-  // 7. Deadlift & Back
-  if (q.includes("deadlift") || q.includes("back")) {
-    return `### ⚡ POSTERIOR CHAIN INTEGRITY
-Deadlift cues for maximum lat engagement:
-- **Pull Slack First**: Wedge hips in until barbell clicks against plates before floor drive.
-- **Floor Push**: Initiate drive by pressing the floor away rather than pulling with upper lumbar spine.
-- **Lat Lock**: Rotate elbows backward to lock the latissimus dorsi, keeping the bar path glued to shins.`;
-  }
-
-  // 8. Calories / Cutting / Bulking / Fat Loss
-  if (q.includes("calorie") || q.includes("cut") || q.includes("bulk") || q.includes("fat loss") || q.includes("deficit") || q.includes("surplus") || q.includes("diet")) {
-    return `### ⚡ ENERGY BALANCE DIRECTIVE
-Configured for your active **${ctx.goal}** blueprint:
-- **Calorie Anchor**: Adhere to **${ctx.calories} kcal/day** with weekly compliance >90%.
-- **Protein Anchor**: Hit **${ctx.protein}g protein daily** to spare lean mass during caloric deficits.
-- **Scale Trend**: Track 7-day rolling weight averages. Adjust calories by 150 kcal only if scale stalls for 14 consecutive days.`;
-  }
-
-  // 9. Recovery / Sleep / Soreness
-  if (q.includes("sore") || q.includes("recovery") || q.includes("sleep") || q.includes("doms")) {
+  // 6. Soreness / Recovery / Joint Strain
+  if (q.includes("sore") || q.includes("pain") || q.includes("recovery") || q.includes("sleep")) {
     return `### ⚡ RECOVERY PROTOCOL
-Muscle adaptation occurs outside the gym:
-- **Sleep Target**: 7.5–9.0 hours of sleep is mandatory; 70% of growth hormone is secreted during slow-wave Stage 3/4 sleep.
-- **Active Reset**: On rest days, perform 20 minutes of Zone 2 cardio (120-130 BPM) to clear cellular waste.
-- **Daily Water**: Target 3.5–4.0 liters with adequate dietary electrolytes.`;
+- **Active Flush**: 15 minutes of Zone 2 cardio (incline walking) to clear metabolic waste.
+- **Sleep Requirement**: 8 hours non-negotiable; 70% of growth hormone releases during Stage 3/4 sleep.
+- **Hydration**: Drink 3.5L water today with a pinch of electrolytes.
+- **Protein Floor**: Maintain your **${ctx.protein}g protein** to repair microtrauma.
+
+**Next Action**: Complete 10 minutes of hamstring and hip mobility before sleeping tonight.`;
   }
 
-  // 10. Default Athletic Guidance
-  return `### ⚡ IRONSYNC COACH DIRECTIVE
-Protocol for **${ctx.name}** &bull; **${ctx.goal}**:
-- **Today's Session**: Focus on **${ctx.todayWorkout}** under your **${ctx.split}** split.
-- **Target Fuel**: Hit **${ctx.calories} kcal** and **${ctx.protein}g protein** without compromise.
-- **RPE Discipline**: Take working sets to **RPE 8.0 - 9.0** (1 to 2 reps in reserve).
-- **Execution Over Intent**: Log every working set in the workout tracker to enforce progressive overload.`;
+  // 7. Today's Workout Inquiry
+  if (q.includes("workout") || q.includes("today") || q.includes("exercise")) {
+    const exercises = ctx.todayExercises?.slice(0, 4).join(", ") || "scheduled compound movements";
+    return `### ⚡ TODAY'S TRAINING DIRECTIVE
+- **Session**: **${ctx.todayWorkout}** under your **${ctx.split}** split.
+- **Key Lifts**: ${exercises}.
+- **Target Intensity**: All working sets at **RPE 8.0 - 8.5** (1-2 reps in reserve).
+- **Rest Period**: 90-120 seconds between compound working sets.
+
+**Next Action**: Hit the gym floor, start your warmup sets, and log each working set in the tracker!`;
+  }
+
+  // 8. Default Direct Trainer Advice
+  return `### ⚡ COACH DIRECTIVE
+Athlete **${ctx.name}** &bull; **${ctx.goal.replace("_", " ")}**:
+- **Today's Session**: **${ctx.todayWorkout}** (${ctx.split}).
+- **Daily Fuel Anchor**: **${ctx.calories} kcal** and **${ctx.protein}g protein** strictly.
+- **Intensity Target**: RPE 8.0 - 8.5 on all working sets.
+- **Discipline**: Never sacrifice biomechanical form for heavy weight on the bar.
+
+**Next Action**: Head to the Workout tab, execute your sets, and hit your protein target today.`;
 }
