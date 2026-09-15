@@ -32,8 +32,7 @@ Add these variables to `.env.local` for local development and to **Vercel Projec
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key | Supabase Dashboard > API > Project API keys > `anon` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role secret key (bypasses RLS on server) | Supabase Dashboard > API > Project API keys > `service_role` |
 | `MEMBER_SESSION_SECRET` | 32+ char secret for HMAC-SHA256 member session signing | `openssl rand -base64 32` |
-| `NEXT_PUBLIC_SITE_URL` | Canonical site URL | `https://ironsync.vercel.app` |
-
+| `NEXT_PUBLIC_SITE_URL` | Canonical site URL | `https://ironsync-peach.vercel.app` |
 ---
 
 ## 3. Database Schema Setup (Supabase SQL)
@@ -51,11 +50,11 @@ CREATE INDEX IF NOT EXISTS idx_members_plan_template_key ON public.members(plan_
 
 ## 4. Vercel Production Deployment Checklist
 
-To ensure `https://ironsync.vercel.app` serves this authentic IronSync application (and not an outdated project):
+To ensure `https://ironsync-peach.vercel.app` serves this authentic IronSync application (and not an outdated project):
 
 1. **Verify Git Repository on Vercel**:
    - Go to [Vercel Dashboard](https://vercel.com).
-   - Locate the project serving `ironsync.vercel.app`.
+   - Locate the project serving `ironsync-peach.vercel.app`.
    - Go to **Settings** > **Git**.
    - Verify the Connected Repository is: `arbaazcodes/ironsync` on branch `main`.
    - *(If it is connected to a different repository, disconnect it and re-import `arbaazcodes/ironsync`)*.
@@ -66,10 +65,10 @@ To ensure `https://ironsync.vercel.app` serves this authentic IronSync applicati
      - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
      - `SUPABASE_SERVICE_ROLE_KEY`
      - `MEMBER_SESSION_SECRET`
-     - `NEXT_PUBLIC_SITE_URL` = `https://ironsync.vercel.app`
+     - `NEXT_PUBLIC_SITE_URL` = `https://ironsync-peach.vercel.app`
 
 3. **Domain Assignment**:
-   - In Vercel Project **Settings** > **Domains**, verify `ironsync.vercel.app` is assigned to this project.
+   - In Vercel Project **Settings** > **Domains**, verify `ironsync-peach.vercel.app` is assigned to this project.
 
 4. **Trigger Redeploy**:
    - Go to the **Deployments** tab.

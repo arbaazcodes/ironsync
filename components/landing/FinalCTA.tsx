@@ -36,14 +36,13 @@ export function FinalCTA() {
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
-                href="/onboarding"
+                href="/login?tab=member"
                 variant="primary"
                 size="lg"
                 icon={<ArrowRight className="w-5 h-5" />}
                 className="w-full sm:w-auto font-extrabold text-sm uppercase tracking-wider px-10 py-4 shadow-accent-glow"
-                onClick={() => trackEvent("blueprint_started", { entry_source: "final_cta" })}
               >
-                Create My Free Blueprint
+                Access Member Portal
               </Button>
             </div>
 

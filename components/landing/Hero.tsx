@@ -55,24 +55,23 @@ export function Hero() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto pt-2">
               <Button
-                href="/onboarding"
+                href={user ? "/admin" : "/login?tab=member"}
                 variant="primary"
                 size="lg"
                 icon={<ArrowRight className="w-4 h-4" />}
                 className="w-full sm:w-auto font-extrabold text-sm uppercase tracking-wider py-3.5 px-8 shadow-accent-glow"
-                onClick={() => trackEvent("blueprint_started", { entry_source: "hero_cta" })}
               >
-                Start Plan
+                {user ? "Admin Portal" : "Enter Gym Portal"}
               </Button>
 
               <Button
-                href={user ? "/dashboard" : "/login"}
+                href={user ? "/admin" : "/login?tab=member"}
                 variant="secondary"
                 size="lg"
                 icon={<LogIn className="w-4 h-4 text-accent" />}
                 className="w-full sm:w-auto font-bold text-sm uppercase tracking-wider py-3.5 px-6"
               >
-                {user ? "Dashboard" : "Log In"}
+                {user ? "Admin" : "Member Login"}
               </Button>
             </div>
 

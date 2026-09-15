@@ -43,6 +43,24 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
     adminUser = user;
+
+    // Do not treat every Supabase user as admin if gym_admins exists
+    if (adminUser) {
+      try {
+        const { data: gymAdmin, error: adminErr } = await (supabase as any)
+          .from("gym_admins")
+          .select("user_id")
+          .eq("user_id", adminUser.id)
+          .maybeSingle();
+
+        // If gym_admins table exists without query error, user must be present in it
+        if (!adminErr && !gymAdmin) {
+          adminUser = null;
+        }
+      } catch {
+        // gym_admins table doesn't exist, proceed with current admin auth
+      }
+    }
   }
 
   // Member session cookie check (timing-safe HMAC-SHA256 verification)
@@ -67,9 +85,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Guard /member routes -> Requires Member Session or Admin Preview
+  // 2. Guard /member routes -> Requires valid member cookie
   if (pathname.startsWith("/member")) {
-    if (!hasValidMemberSession && !adminUser) {
+    if (!hasValidMemberSession) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/login";
       redirectUrl.searchParams.set("tab", "member");
@@ -78,56 +96,56 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Handle /dashboard routes
+  // 3. Handle /dashboard routes -> Route to Member or Admin dashboard
   if (pathname.startsWith("/dashboard")) {
-    if (adminUser) {
-      return response;
-    }
     if (hasValidMemberSession) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/member/dashboard";
       return NextResponse.redirect(redirectUrl);
     }
+    if (adminUser) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/admin";
+      return NextResponse.redirect(redirectUrl);
+    }
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", "/dashboard");
+    redirectUrl.searchParams.set("tab", "member");
     return NextResponse.redirect(redirectUrl);
   }
 
-  // 4. Handle logged-in user visiting /login
-  if (pathname === "/login" && adminUser) {
-    const tab = request.nextUrl.searchParams.get("tab");
-    if (!tab || tab === "athlete") {
-      // Check if user has an active plan in Supabase
-      if (supabaseUrl && supabaseKey) {
-        try {
-          const supabase = createServerClient(supabaseUrl, supabaseKey, {
-            cookies: {
-              getAll() {
-                return request.cookies.getAll();
-              },
-              setAll() {},
-            },
-          });
-          const { data: plan } = await supabase
-            .from("plans")
-            .select("id")
-            .eq("user_id", adminUser.id)
-            .eq("status", "active")
-            .limit(1)
-            .maybeSingle();
+  // 4. Handle /onboarding route -> Skip/hide public onboarding for active sessions
+  if (pathname.startsWith("/onboarding")) {
+    if (hasValidMemberSession) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/member/dashboard";
+      return NextResponse.redirect(redirectUrl);
+    }
+    if (adminUser) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/admin";
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
 
-          const redirectUrl = request.nextUrl.clone();
-          redirectUrl.pathname = plan ? "/dashboard" : "/onboarding";
-          redirectUrl.search = "";
-          return NextResponse.redirect(redirectUrl);
-        } catch {
-          const redirectUrl = request.nextUrl.clone();
-          redirectUrl.pathname = "/dashboard";
-          redirectUrl.search = "";
-          return NextResponse.redirect(redirectUrl);
-        }
-      }
+  // 5. Handle logged-in user visiting /login
+  if (pathname === "/login") {
+    const tab = request.nextUrl.searchParams.get("tab");
+
+    // If logged in member visits /login with tab=member (or default tab):
+    if (hasValidMemberSession && (!tab || tab === "member")) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/member/dashboard";
+      redirectUrl.search = "";
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // If logged in admin visits /login with tab=admin (or default tab if not a member):
+    if (adminUser && (tab === "admin" || (!tab && !hasValidMemberSession))) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/admin";
+      redirectUrl.search = "";
+      return NextResponse.redirect(redirectUrl);
     }
   }
 

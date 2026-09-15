@@ -63,10 +63,10 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/onboarding"
+                  href="/login?tab=member"
                   className="text-accent hover:text-accent-hover transition-colors font-medium inline-flex items-center gap-1"
                 >
-                  Create Blueprint &rarr;
+                  Member Portal &rarr;
                 </Link>
               </li>
             </ul>

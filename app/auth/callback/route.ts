@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (supabaseUrl && supabaseKey) {
-      let targetPath = rawNext || "/dashboard";
+      let targetPath = rawNext || "/admin";
       let response = NextResponse.redirect(`${origin}${targetPath}`);
 
       const supabase = createServerClient(supabaseUrl, supabaseKey, {

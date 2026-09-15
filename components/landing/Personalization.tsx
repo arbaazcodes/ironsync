@@ -263,12 +263,12 @@ export function Personalization() {
         {/* Action Prompt */}
         <div className="mt-12 text-center">
           <Button
-            href="/onboarding"
+            href="/login?tab=member"
             variant="primary"
             size="md"
             icon={<ArrowRight className="w-4 h-4" />}
           >
-            Configure Your Parameters &rarr;
+            Access Member Portal &rarr;
           </Button>
         </div>
       </Container>
