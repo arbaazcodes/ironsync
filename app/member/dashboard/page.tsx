@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Dumbbell,
   Flame,
@@ -14,32 +15,111 @@ import {
   Clock,
   Loader2,
   TrendingUp,
-  Award,
+  CheckCircle2,
+  AlertTriangle,
+  Lock,
+  Check,
+  UserCheck,
+  Coffee,
+  CircleAlert,
 } from "lucide-react";
 import { MemberDashboardData } from "@/lib/types/member";
+import { DayAttendanceSummary, AttendanceStatus } from "@/lib/types/attendance";
 import { AiCoachDrawer } from "@/components/dashboard/AiCoachDrawer";
+import { AttendanceDots } from "@/components/dashboard/AttendanceDots";
+
+interface AttendanceState {
+  todayDate: string;
+  today: AttendanceStatus | "unmarked";
+  weekSummary: DayAttendanceSummary[];
+}
 
 export default function MemberDashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<MemberDashboardData | null>(null);
+  const [attendance, setAttendance] = useState<AttendanceState | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCoachOpen, setIsCoachOpen] = useState(false);
+  const [markingAttendance, setMarkingAttendance] = useState(false);
+  const [startingWorkout, setStartingWorkout] = useState(false);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadDashboard() {
       try {
-        const res = await fetch("/api/member/dashboard");
-        if (res.ok) {
-          const result = await res.json();
-          setData(result);
+        const [dashRes, attRes] = await Promise.all([
+          fetch("/api/member/dashboard"),
+          fetch("/api/member/attendance"),
+        ]);
+
+        if (dashRes.ok) {
+          const dashData = await dashRes.json();
+          setData(dashData);
+        }
+
+        if (attRes.ok) {
+          const attData = await attRes.json();
+          setAttendance({
+            todayDate: attData.todayDate,
+            today: attData.today,
+            weekSummary: attData.weekSummary || [],
+          });
         }
       } catch (err) {
-        console.error("Failed to load dashboard data:", err);
+        console.error("Failed to load member dashboard:", err);
       } finally {
         setLoading(false);
       }
     }
-    loadData();
+
+    loadDashboard();
   }, []);
+
+  const handleMarkPresent = async () => {
+    if (!data?.member || isExpired || markingAttendance || attendance?.today === "present") return;
+    setMarkingAttendance(true);
+    try {
+      const res = await fetch("/api/member/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "present" }),
+      });
+
+      if (res.ok) {
+        // Refetch updated attendance summary
+        const attRes = await fetch("/api/member/attendance");
+        if (attRes.ok) {
+          const attData = await attRes.json();
+          setAttendance({
+            todayDate: attData.todayDate,
+            today: attData.today,
+            weekSummary: attData.weekSummary || [],
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to mark attendance:", err);
+    } finally {
+      setMarkingAttendance(false);
+    }
+  };
+
+  const handleStartWorkout = async () => {
+    if (isExpired || startingWorkout) return;
+    setStartingWorkout(true);
+    try {
+      // Auto mark attendance as present if not marked yet
+      if (attendance?.today !== "present") {
+        await fetch("/api/member/attendance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "present" }),
+        });
+      }
+    } catch (err) {
+      console.warn("Auto-attendance sync warning:", err);
+    }
+    router.push("/member/workout");
+  };
 
   if (loading) {
     return (
@@ -66,51 +146,151 @@ export default function MemberDashboardPage() {
   }
 
   const { member, assignedPlan } = data;
-  const todaySchedule = assignedPlan?.schedule?.[0] || {
-    dayName: "Day 1",
-    focus: "Hypertrophy Push Session",
-    type: "workout" as const,
-    tag: "hypertrophy",
-    exercises: [],
-  };
+
+  // Timezone IST check
+  const todayIST = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
+
+  // Expiration calculation
+  const isExpired =
+    member.status === "expired" ||
+    member.status === "suspended" ||
+    Boolean(member.expiryDate && member.expiryDate < todayIST);
+
+  let daysRemaining: number | null = null;
+  if (member.expiryDate) {
+    const diff = new Date(member.expiryDate).getTime() - new Date().getTime();
+    daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+  const isExpiringSoon = daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7;
+
+  // Resolve today's workout matching IST weekday
+  const todayWeekday = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    timeZone: "Asia/Kolkata",
+  })
+    .format(new Date())
+    .toUpperCase();
+
+  const todaySchedule =
+    assignedPlan?.schedule?.find(
+      (s) => s.dayName.toUpperCase() === todayWeekday || s.dayName.toUpperCase().startsWith(todayWeekday)
+    ) ||
+    assignedPlan?.schedule?.[0] || {
+      dayName: todayWeekday,
+      focus: "Hypertrophy Push Session",
+      type: "workout" as const,
+      exercises: [],
+    };
+
+  const exerciseCount = todaySchedule.exercises?.length || 5;
+  const durationMinutes = Math.max(45, exerciseCount * 9);
 
   return (
     <div className="space-y-8">
+      {/* EXPIRED BANNER ALERT (IF APPLICABLE) */}
+      {isExpired && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3.5 text-rose-300">
+          <CircleAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          <div className="space-y-1 text-xs">
+            <div className="font-bold uppercase tracking-wide text-rose-200">
+              Membership Expired or Inactive
+            </div>
+            <p className="text-rose-300/80 leading-relaxed">
+              Your gym access plan expired on{" "}
+              <span className="font-mono font-bold text-white">{member.expiryDate || "N/A"}</span>. Workout sessions and attendance self-marking are locked. Please visit the front desk to renew your membership.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner / Hero */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#141414] via-[#161616] to-[#0f0f0f] border border-white/[0.08] p-6 sm:p-8">
         <div className="absolute right-0 top-0 w-80 h-full bg-[#FF1E1E]/[0.06] blur-3xl pointer-events-none rounded-full" />
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
+          <div className="space-y-2.5">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-[#FF1E1E]/15 border border-[#FF1E1E]/30 text-[10px] font-mono font-bold uppercase text-[#FF1E1E]">
                 Gym Member ID: {member.memberId}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono font-bold uppercase text-emerald-400">
-                {member.status}
-              </span>
+
+              {isExpired ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-[10px] font-mono font-bold uppercase text-rose-400 flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Expired
+                </span>
+              ) : isExpiringSoon ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] font-mono font-bold uppercase text-amber-400 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Expiring in {daysRemaining}d
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono font-bold uppercase text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" /> {member.status}
+                </span>
+              )}
             </div>
+
             <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white">
               Welcome Back, {member.fullName.split(" ")[0]}
             </h1>
+
             <p className="text-xs sm:text-sm text-white/60 max-w-lg">
               Goal: <span className="text-white font-semibold uppercase">{member.fitnessGoal}</span> &bull; Blueprint:{" "}
               <span className="text-white font-semibold">{assignedPlan?.splitName || "IronSync Core Split"}</span>
             </p>
           </div>
 
-          {/* Quick AI Coach Launcher */}
-          <button
-            onClick={() => setIsCoachOpen(true)}
-            className="self-start sm:self-auto py-3 px-5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2.5 transition-all shadow-lg hover:border-[#FF1E1E]/50 group"
-          >
-            <Bot className="w-4 h-4 text-[#FF1E1E] group-hover:scale-110 transition-transform" />
-            <span>AI Coach</span>
-          </button>
+          {/* Quick Action Buttons Group */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Action 1: Mark Present Quick Button */}
+            <button
+              onClick={handleMarkPresent}
+              disabled={isExpired || markingAttendance || attendance?.today === "present"}
+              className={`py-3 px-4 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all border ${
+                attendance?.today === "present"
+                  ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400 cursor-default"
+                  : isExpired
+                  ? "bg-white/[0.03] border-white/[0.06] text-white/30 cursor-not-allowed"
+                  : "bg-white/[0.06] hover:bg-white/[0.1] border-white/[0.12] text-white hover:border-emerald-500/50"
+              }`}
+              title={
+                attendance?.today === "present"
+                  ? "Already marked present today"
+                  : isExpired
+                  ? "Membership expired"
+                  : "Mark yourself present for today's workout"
+              }
+            >
+              {markingAttendance ? (
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+              ) : attendance?.today === "present" ? (
+                <Check className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <UserCheck className="w-4 h-4 text-white/70" />
+              )}
+              <span>
+                {attendance?.today === "present"
+                  ? "Present Today"
+                  : markingAttendance
+                  ? "Marking..."
+                  : "Mark Present"}
+              </span>
+            </button>
+
+            {/* Action 2: Ask Coach Launcher */}
+            <button
+              onClick={() => setIsCoachOpen(true)}
+              className="py-3 px-4 rounded-2xl bg-[#FF1E1E]/15 hover:bg-[#FF1E1E]/25 border border-[#FF1E1E]/30 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all group"
+            >
+              <Bot className="w-4 h-4 text-[#FF1E1E] group-hover:scale-110 transition-transform" />
+              <span>Ask Coach</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Primary KPI Metrics */}
+      {/* KPI Metrics Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Daily Fuel */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[#121212] border border-white/[0.08] space-y-1.5">
@@ -138,31 +318,84 @@ export default function MemberDashboardPage() {
           <div className="text-[10px] text-white/40 font-mono">Muscle Protein Synthesis</div>
         </div>
 
-        {/* Training Frequency */}
+        {/* Today's Attendance Status */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[#121212] border border-white/[0.08] space-y-1.5">
           <div className="flex items-center justify-between text-white/50 text-[11px] font-mono uppercase">
-            <span>Frequency</span>
-            <Dumbbell className="w-3.5 h-3.5 text-sky-400" />
+            <span>Today&apos;s Check-In</span>
+            <UserCheck className="w-3.5 h-3.5 text-sky-400" />
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-white">
-            {assignedPlan?.trainingDays || 5}{" "}
-            <span className="text-xs font-normal text-white/40">days/wk</span>
+          <div className="text-lg sm:text-2xl font-black uppercase truncate">
+            {attendance?.today === "present" ? (
+              <span className="text-emerald-400 flex items-center gap-1.5">
+                <CheckCircle2 className="w-5 h-5 inline" /> Present
+              </span>
+            ) : attendance?.today === "missed" ? (
+              <span className="text-rose-400">Missed</span>
+            ) : attendance?.today === "skipped" ? (
+              <span className="text-amber-400">Skipped</span>
+            ) : (
+              <span className="text-white/50">Not Marked</span>
+            )}
           </div>
-          <div className="text-[10px] text-white/40 font-mono">Assigned Split Routine</div>
+          <div className="text-[10px] text-white/40 font-mono">Calendar Day in IST</div>
         </div>
 
-        {/* Membership Expiry */}
+        {/* Membership Access Term */}
         <div className="p-4 sm:p-5 rounded-2xl bg-[#121212] border border-white/[0.08] space-y-1.5">
           <div className="flex items-center justify-between text-white/50 text-[11px] font-mono uppercase">
             <span>Membership</span>
             <Clock className="w-3.5 h-3.5 text-amber-400" />
           </div>
-          <div className="text-lg sm:text-xl font-bold font-mono text-amber-400 truncate">
-            {member.expiryDate || "Active Plan"}
+          <div
+            className={`text-lg sm:text-xl font-bold font-mono truncate ${
+              isExpired ? "text-rose-400" : isExpiringSoon ? "text-amber-400" : "text-white"
+            }`}
+          >
+            {member.expiryDate || "Active Access"}
           </div>
-          <div className="text-[10px] text-white/40 font-mono">Gym Access Valid</div>
+          <div className="text-[10px] text-white/40 font-mono">
+            {isExpired
+              ? "Plan Expired — See Desk"
+              : daysRemaining !== null
+              ? `${daysRemaining} days remaining`
+              : "Gym Access Valid"}
+          </div>
         </div>
       </div>
+
+      {/* 7-DAY ATTENDANCE ROLL CALL WIDGET */}
+      {attendance?.weekSummary && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-[#121212] border border-white/[0.08] space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="text-xs font-mono uppercase text-sky-400 font-bold flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Attendance Log (Last 7 Days)</span>
+              </div>
+              <p className="text-[11px] text-white/50 mt-0.5">
+                Daily IST check-ins. Rest days are automatically tracked according to your training blueprint.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 text-[10px] font-mono text-white/50">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" /> Present
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-rose-500" /> Missed
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-amber-500" /> Skipped
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-sky-500/40" /> Rest
+              </span>
+            </div>
+          </div>
+
+          <AttendanceDots summary={attendance.weekSummary} />
+        </div>
+      )}
 
       {/* Main 2-Column Split: Today's Workout + Nutrition Strategy */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -172,11 +405,16 @@ export default function MemberDashboardPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-mono uppercase text-[#FF1E1E]">
                 <Dumbbell className="w-4 h-4" />
-                <span>Next Training Session</span>
+                <span>Today&apos;s Prescribed Training</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-white/[0.06] text-[10px] font-mono text-white/60">
-                {todaySchedule.dayName}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-white/[0.06] text-[10px] font-mono text-white/60">
+                  {todaySchedule.dayName}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-white/[0.06] text-[10px] font-mono text-white/60">
+                  ~{durationMinutes} min
+                </span>
+              </div>
             </div>
 
             <div>
@@ -184,33 +422,67 @@ export default function MemberDashboardPage() {
                 {todaySchedule.focus}
               </h2>
               <p className="text-xs text-white/50 mt-1">
-                {todaySchedule.exercises?.length || 5} Prescribed Movements with Video Form Loops
+                {todaySchedule.type === "recovery"
+                  ? "Scheduled active rest & regeneration day. Stay hydrated and hit your protein target."
+                  : `${exerciseCount} Prescribed Movements with Video Form Loops & Biomechanical Cues`}
               </p>
             </div>
 
             {/* Exercises List Snippet */}
-            <div className="space-y-2 pt-2">
-              {todaySchedule.exercises?.slice(0, 3).map((ex, i) => (
-                <div
-                  key={i}
-                  className="p-3 rounded-xl bg-black/40 border border-white/[0.06] flex items-center justify-between text-xs font-mono"
-                >
-                  <span className="text-white font-medium">{ex.name}</span>
-                  <span className="text-white/40">
-                    {ex.setsReps}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {todaySchedule.type === "workout" && todaySchedule.exercises && (
+              <div className="space-y-2 pt-2">
+                {todaySchedule.exercises.slice(0, 3).map((ex, i) => (
+                  <div
+                    key={i}
+                    className="p-3 rounded-xl bg-black/40 border border-white/[0.06] flex items-center justify-between text-xs font-mono"
+                  >
+                    <span className="text-white font-medium truncate max-w-[200px]">
+                      {i + 1}. {ex.name}
+                    </span>
+                    <span className="text-white/40">{ex.setsReps}</span>
+                  </div>
+                ))}
+                {todaySchedule.exercises.length > 3 && (
+                  <div className="text-[11px] font-mono text-white/40 text-center pt-1">
+                    + {todaySchedule.exercises.length - 3} more movements
+                  </div>
+                )}
+              </div>
+            )}
+
+            {todaySchedule.type === "recovery" && (
+              <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06] flex items-center gap-3 text-xs text-white/70 font-mono">
+                <Coffee className="w-4 h-4 text-sky-400 shrink-0" />
+                <span>Active recovery scheduled for today. Rest & recharge your nervous system.</span>
+              </div>
+            )}
           </div>
 
-          <Link
-            href="/member/workout"
-            className="w-full py-3.5 rounded-xl bg-[#FF1E1E] hover:bg-[#E01818] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#FF1E1E]/20 transition-all"
-          >
-            <span>Launch Workout Session</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          {/* Action 1: Start Workout or Locked */}
+          {isExpired ? (
+            <div className="w-full py-3.5 px-4 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white/40 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed">
+              <Lock className="w-4 h-4 text-rose-400" />
+              <span>Workout Locked &bull; See Front Desk to Renew</span>
+            </div>
+          ) : (
+            <button
+              onClick={handleStartWorkout}
+              disabled={startingWorkout}
+              className="w-full py-3.5 rounded-xl bg-[#FF1E1E] hover:bg-[#E01818] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#FF1E1E]/20 transition-all active:scale-[0.99]"
+            >
+              {startingWorkout ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Launching Session...</span>
+                </>
+              ) : (
+                <>
+                  <span>Start Workout Session</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Today's Nutrition Card */}

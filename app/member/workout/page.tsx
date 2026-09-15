@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MemberDashboardData } from "@/lib/types/member";
 import { ExerciseCard } from "@/components/dashboard/ExerciseCard";
 import { ExerciseDetailDrawer } from "@/components/dashboard/ExerciseDetailDrawer";
+import { WorkoutTimer } from "@/components/dashboard/WorkoutTimer";
 import { WorkoutExercise } from "@/lib/types/onboarding";
 import {
   Dumbbell,
@@ -14,9 +17,18 @@ import {
   ChevronRight,
   Flame,
   Zap,
+  Timer,
+  Check,
+  X,
+  AlertCircle,
+  RotateCcw,
+  ArrowLeft,
+  Sparkles,
+  Trophy,
 } from "lucide-react";
 
 export default function MemberWorkoutPage() {
+  const router = useRouter();
   const [data, setData] = useState<MemberDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
@@ -25,16 +37,61 @@ export default function MemberWorkoutPage() {
   const [detailExercise, setDetailExercise] = useState<WorkoutExercise | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // Completed days
-  const [completedDays, setCompletedDays] = useState<Record<number, boolean>>({});
+  // Rest Timer visibility
+  const [showTimer, setShowTimer] = useState(false);
+
+  // Interactive Set Completion Tracking (persisted per member + date + exercise index + set index)
+  // { [exerciseIndex]: { [setIndex]: boolean } }
+  const [completedSets, setCompletedSets] = useState<Record<number, Record<number, boolean>>>({});
+
+  // Modals
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [isSkipModalOpen, setIsSkipModalOpen] = useState(false);
+  const [skipReason, setSkipReason] = useState("fatigue");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [sessionCompleted, setSessionCompleted] = useState(false);
+
+  // Today date string in IST
+  const todayIST = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
 
   useEffect(() => {
     async function loadData() {
       try {
         const res = await fetch("/api/member/dashboard");
         if (res.ok) {
-          const result = await res.json();
+          const result: MemberDashboardData = await res.json();
           setData(result);
+
+          // Find today's weekday in IST and select default index
+          const todayWeekday = new Intl.DateTimeFormat("en-US", {
+            weekday: "short",
+            timeZone: "Asia/Kolkata",
+          })
+            .format(new Date())
+            .toUpperCase();
+
+          const schedule = result.assignedPlan?.schedule || [];
+          const matchedIdx = schedule.findIndex(
+            (s) =>
+              s.dayName.toUpperCase() === todayWeekday ||
+              s.dayName.toUpperCase().startsWith(todayWeekday)
+          );
+
+          const activeIdx = matchedIdx >= 0 ? matchedIdx : 0;
+          setSelectedDayIndex(activeIdx);
+
+          // Load sets tracking from localStorage
+          if (typeof window !== "undefined" && result.member?.memberId) {
+            const storageKey = `ironsync_workout_${result.member.memberId}_${todayIST}_day${activeIdx}`;
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+              try {
+                setCompletedSets(JSON.parse(saved));
+              } catch {}
+            }
+          }
         }
       } catch (e) {
         console.error("Failed to load workouts:", e);
@@ -43,7 +100,95 @@ export default function MemberWorkoutPage() {
       }
     }
     loadData();
-  }, []);
+  }, [todayIST]);
+
+  // Load sets when day index changes
+  const handleSelectDay = (idx: number) => {
+    setSelectedDayIndex(idx);
+    if (typeof window !== "undefined" && data?.member?.memberId) {
+      const storageKey = `ironsync_workout_${data.member.memberId}_${todayIST}_day${idx}`;
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          setCompletedSets(JSON.parse(saved));
+        } catch {
+          setCompletedSets({});
+        }
+      } else {
+        setCompletedSets({});
+      }
+    }
+  };
+
+  const handleToggleSet = (exerciseIdx: number, setIdx: number) => {
+    setCompletedSets((prev) => {
+      const exSets = prev[exerciseIdx] || {};
+      const updatedExSets = {
+        ...exSets,
+        [setIdx]: !exSets[setIdx],
+      };
+      const updated = {
+        ...prev,
+        [exerciseIdx]: updatedExSets,
+      };
+
+      // Save to localStorage
+      if (typeof window !== "undefined" && data?.member?.memberId) {
+        const storageKey = `ironsync_workout_${data.member.memberId}_${todayIST}_day${selectedDayIndex}`;
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      }
+
+      return updated;
+    });
+  };
+
+  const handleOpenDetail = (exercise: WorkoutExercise) => {
+    setDetailExercise(exercise);
+    setIsDetailOpen(true);
+  };
+
+  // Parse set count from exercise.setsReps (e.g. "4 × 8-10" -> 4)
+  const getSetCount = (setsReps: string): number => {
+    const parts = setsReps.split("×").map((s) => s.trim());
+    const count = parseInt(parts[0], 10);
+    return isNaN(count) || count <= 0 ? 3 : Math.min(count, 8);
+  };
+
+  // Complete Session Flow
+  const handleCompleteSession = async () => {
+    setActionLoading(true);
+    try {
+      await fetch("/api/member/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "present" }),
+      });
+      setSessionCompleted(true);
+      setIsCompleteModalOpen(true);
+    } catch (err) {
+      console.error("Failed to mark session complete:", err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Skip Session Flow
+  const handleConfirmSkip = async () => {
+    setActionLoading(true);
+    try {
+      await fetch("/api/member/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "skipped" }),
+      });
+      setIsSkipModalOpen(false);
+      router.push("/member/dashboard");
+    } catch (err) {
+      console.error("Failed to skip session:", err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -59,52 +204,93 @@ export default function MemberWorkoutPage() {
   const schedule = data?.assignedPlan?.schedule || [];
   const currentDay = schedule[selectedDayIndex] || schedule[0];
 
-  const handleOpenDetail = (exercise: WorkoutExercise) => {
-    setDetailExercise(exercise);
-    setIsDetailOpen(true);
-  };
+  // Calculate total sets and completed sets for progress
+  let totalSetsCount = 0;
+  let completedSetsCount = 0;
+  if (currentDay && currentDay.type === "workout" && currentDay.exercises) {
+    currentDay.exercises.forEach((ex, exIdx) => {
+      const numSets = getSetCount(ex.setsReps);
+      totalSetsCount += numSets;
+      for (let s = 0; s < numSets; s++) {
+        if (completedSets[exIdx]?.[s]) {
+          completedSetsCount++;
+        }
+      }
+    });
+  }
 
-  const handleToggleCompleted = (idx: number) => {
-    setCompletedDays((prev) => ({
-      ...prev,
-      [idx]: !prev[idx],
-    }));
-  };
+  const progressPercent =
+    totalSetsCount > 0 ? Math.round((completedSetsCount / totalSetsCount) * 100) : 0;
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-xs font-mono text-[#FF1E1E] uppercase tracking-wider">
-          <Dumbbell className="w-3.5 h-3.5" />
-          Assigned Split Architecture
+      {/* Header & Controls Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <Link
+            href="/member/dashboard"
+            className="inline-flex items-center gap-1 text-xs font-mono text-white/50 hover:text-white transition-colors mb-1"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
+          </Link>
+          <div className="flex items-center gap-2 text-xs font-mono text-[#FF1E1E] uppercase tracking-wider">
+            <Dumbbell className="w-3.5 h-3.5" />
+            Assigned Split Architecture
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-0.5">
+            {data?.assignedPlan?.splitName || "Training Program"}
+          </h1>
+          <p className="text-xs text-white/50">
+            Track individual sets, view video form loops, and launch rest intervals.
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-1">
-          {data?.assignedPlan?.splitName || "Training Program"}
-        </h1>
-        <p className="text-xs sm:text-sm text-white/50">
-          Kinetic form cues, sets, rep targets, and exercise video execution loops.
-        </p>
+
+        {/* Timer Launcher Button */}
+        <button
+          onClick={() => setShowTimer(!showTimer)}
+          className={`self-start sm:self-auto py-2.5 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 transition-all border ${
+            showTimer
+              ? "bg-[#FF1E1E] border-[#FF1E1E] text-white shadow-lg shadow-[#FF1E1E]/20"
+              : "bg-[#121212] border-white/[0.12] text-white/80 hover:text-white hover:border-[#FF1E1E]/40"
+          }`}
+        >
+          <Timer className="w-4 h-4 text-white" />
+          <span>{showTimer ? "Hide Rest Timer" : "Rest Timer (90s)"}</span>
+        </button>
       </div>
+
+      {/* Floating / Collapsible Rest Timer */}
+      {showTimer && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-[#121212] border border-white/[0.1] shadow-2xl animate-in slide-in-from-top-3 duration-300">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-mono uppercase text-white/60 font-bold flex items-center gap-2">
+              <Clock className="w-4 h-4 text-[#FF1E1E]" /> Active Rest Interval
+            </span>
+            <button
+              onClick={() => setShowTimer(false)}
+              className="text-xs text-white/40 hover:text-white font-mono"
+            >
+              Close
+            </button>
+          </div>
+          <WorkoutTimer defaultDuration={90} />
+        </div>
+      )}
 
       {/* Day Selector Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {schedule.map((item, idx) => {
           const isSelected = selectedDayIndex === idx;
-          const isDone = completedDays[idx];
           return (
             <button
               key={idx}
-              onClick={() => setSelectedDayIndex(idx)}
+              onClick={() => handleSelectDay(idx)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold font-mono uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-2 border ${
                 isSelected
                   ? "bg-[#FF1E1E] border-[#FF1E1E] text-white shadow-lg shadow-[#FF1E1E]/20"
-                  : isDone
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                   : "bg-[#121212] border-white/[0.08] text-white/60 hover:text-white"
               }`}
             >
-              {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
               <span>{item.dayName}</span>
               <span className="text-[10px] opacity-70">
                 ({item.type === "recovery" ? "Rest" : `${item.exercises?.length || 0} Ex`})
@@ -117,6 +303,7 @@ export default function MemberWorkoutPage() {
       {/* Active Day Card */}
       {currentDay && (
         <div className="space-y-6">
+          {/* Day Focus Banner */}
           <div className="p-6 sm:p-7 rounded-3xl bg-[#121212] border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="text-xs font-mono uppercase text-[#FF1E1E]">{currentDay.dayName}</div>
@@ -126,59 +313,182 @@ export default function MemberWorkoutPage() {
               <p className="text-xs text-white/50 mt-1">
                 {currentDay.type === "recovery"
                   ? "Active recovery protocol — prioritize hydration, gentle mobility, and 8+ hours sleep."
-                  : `Target: ${currentDay.exercises?.length || 0} compound and isolation movements`}
+                  : `Target: ${currentDay.exercises?.length || 0} movements &bull; Estimated completion: ~${
+                      (currentDay.exercises?.length || 5) * 9
+                    } min`}
               </p>
             </div>
 
             {currentDay.type === "workout" && (
-              <button
-                onClick={() => handleToggleCompleted(selectedDayIndex)}
-                className={`py-3 px-5 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all ${
-                  completedDays[selectedDayIndex]
-                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
-                    : "bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/[0.12]"
-                }`}
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>
-                  {completedDays[selectedDayIndex] ? "Session Completed" : "Mark Session Complete"}
-                </span>
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Progress Mini Bar */}
+                <div className="hidden sm:block text-right font-mono text-xs">
+                  <div className="text-white/40 uppercase text-[10px]">Session Progress</div>
+                  <div className="text-white font-bold">
+                    {completedSetsCount} / {totalSetsCount} Sets ({progressPercent}%)
+                  </div>
+                </div>
+
+                {/* Complete Button */}
+                <button
+                  onClick={handleCompleteSession}
+                  disabled={actionLoading}
+                  className="py-3 px-5 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 active:scale-95"
+                >
+                  {actionLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  )}
+                  <span>Complete Session</span>
+                </button>
+              </div>
             )}
           </div>
 
-          {/* Exercise Roster */}
+          {/* Exercise Roster with Interactive Set Trackers */}
           {currentDay.type === "workout" && currentDay.exercises && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">
-                Prescribed Movements & Sets
-              </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">
+                  Prescribed Movements & Sets
+                </h3>
+                <span className="text-xs font-mono text-white/40">
+                  Click sets to track completion
+                </span>
+              </div>
 
-              <div className="grid grid-cols-1 gap-3">
-                {currentDay.exercises.map((exercise, i) => (
-                  <ExerciseCard
-                    key={i}
-                    exercise={exercise}
-                    index={i}
-                    onDetailClick={() => handleOpenDetail(exercise)}
-                  />
-                ))}
+              <div className="grid grid-cols-1 gap-4">
+                {currentDay.exercises.map((exercise, exIdx) => {
+                  const numSets = getSetCount(exercise.setsReps);
+
+                  return (
+                    <div
+                      key={exIdx}
+                      className="rounded-2xl bg-[#121212] border border-white/[0.08] overflow-hidden"
+                    >
+                      {/* Movement Card */}
+                      <ExerciseCard
+                        exercise={exercise}
+                        index={exIdx}
+                        onDetailClick={() => handleOpenDetail(exercise)}
+                      />
+
+                      {/* Interactive Set Tracker Row */}
+                      <div className="px-4 py-3 bg-black/40 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3">
+                        <span className="text-[11px] font-mono text-white/50 uppercase font-bold">
+                          Sets Log:
+                        </span>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          {Array.from({ length: numSets }).map((_, setIdx) => {
+                            const isSetDone = Boolean(completedSets[exIdx]?.[setIdx]);
+
+                            return (
+                              <button
+                                key={setIdx}
+                                onClick={() => handleToggleSet(exIdx, setIdx)}
+                                className={`py-1.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 border ${
+                                  isSetDone
+                                    ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+                                    : "bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.08]"
+                                }`}
+                                title={`Toggle Set ${setIdx + 1}`}
+                              >
+                                <div
+                                  className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
+                                    isSetDone
+                                      ? "bg-emerald-500 border-emerald-400 text-black"
+                                      : "border-white/30"
+                                  }`}
+                                >
+                                  {isSetDone && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                                </div>
+                                <span>Set {setIdx + 1}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* End of Workout Actions Bar */}
+              <div className="p-6 rounded-3xl bg-[#121212] border border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+                <div className="text-center sm:text-left">
+                  <div className="text-sm font-bold text-white uppercase">Finish Today&apos;s Training</div>
+                  <p className="text-xs text-white/50 mt-0.5">
+                    Marking complete logs your attendance as present and finalizes your session.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+                  <button
+                    onClick={() => setIsSkipModalOpen(true)}
+                    className="py-3 px-4 rounded-xl text-xs font-mono uppercase text-white/50 hover:text-white hover:bg-white/[0.06] transition-all border border-transparent hover:border-white/10"
+                  >
+                    Skip Session
+                  </button>
+
+                  <button
+                    onClick={handleCompleteSession}
+                    disabled={actionLoading}
+                    className="py-3 px-6 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-500 hover:bg-emerald-600 text-white flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                  >
+                    {actionLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    )}
+                    <span>Complete Session</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           {/* Recovery Day Protocol */}
           {currentDay.type === "recovery" && (
-            <div className="p-8 rounded-3xl bg-[#121212] border border-white/[0.08] text-center space-y-4">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                <Zap className="w-7 h-7" />
+            <div className="p-8 sm:p-12 rounded-3xl bg-[#121212] border border-white/[0.08] text-center space-y-6">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shadow-xl shadow-sky-500/10">
+                <Zap className="w-8 h-8" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold uppercase text-white">Rest & Regeneration Day</h3>
-                <p className="text-xs text-white/50 max-w-md mx-auto mt-1">
-                  Muscle protein synthesis and central nervous system replenishment occur while resting. Stay hydrated and hit your daily protein goal.
+              <div className="max-w-md mx-auto space-y-2">
+                <h3 className="text-xl font-black uppercase text-white">
+                  Rest & Muscle Regeneration Day
+                </h3>
+                <p className="text-xs sm:text-sm text-white/50 leading-relaxed">
+                  Muscle protein synthesis and central nervous system recovery occur while resting.
+                  Prioritize hydration, light mobility, and adequate sleep to prepare for your next
+                  hypertrophy session.
                 </p>
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto text-left font-mono text-xs">
+                <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06] space-y-1">
+                  <span className="text-white/40 text-[10px] uppercase block">Water Intake</span>
+                  <span className="text-white font-bold">3.5L - 4.0L</span>
+                </div>
+                <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06] space-y-1">
+                  <span className="text-white/40 text-[10px] uppercase block">Protein Goal</span>
+                  <span className="text-emerald-400 font-bold">
+                    {data?.assignedPlan?.protein || 180}g Target
+                  </span>
+                </div>
+                <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06] space-y-1">
+                  <span className="text-white/40 text-[10px] uppercase block">Sleep Target</span>
+                  <span className="text-white font-bold">8+ Hours</span>
+                </div>
+              </div>
+
+              <Link
+                href="/member/dashboard"
+                className="inline-block py-3 px-6 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-white text-xs font-mono uppercase font-bold transition-all"
+              >
+                Return to Member Dashboard
+              </Link>
             </div>
           )}
         </div>
@@ -190,6 +500,133 @@ export default function MemberWorkoutPage() {
         onClose={() => setIsDetailOpen(false)}
         exercise={detailExercise}
       />
+
+      {/* MODAL: COMPLETE WORKOUT SUCCESS */}
+      {isCompleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#121212] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 space-y-6 text-center shadow-2xl">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <Trophy className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-mono font-bold uppercase text-emerald-400">
+                Attendance Recorded &bull; Present
+              </span>
+              <h2 className="text-2xl font-black uppercase text-white tracking-tight">
+                Workout Completed!
+              </h2>
+              <p className="text-xs text-white/60 leading-relaxed">
+                Outstanding execution today. Your attendance has been marked as present in your gym
+                record. Refuel with your target protein and hydration.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/[0.06] grid grid-cols-2 gap-3 text-xs font-mono">
+              <div>
+                <span className="text-[10px] text-white/40 uppercase block">Sets Logged</span>
+                <span className="text-base font-bold text-white">
+                  {completedSetsCount} / {totalSetsCount || 15}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-white/40 uppercase block">Est. Caloric Burn</span>
+                <span className="text-base font-bold text-[#FF1E1E]">~380 kcal</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Link
+                href="/member/dashboard"
+                className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
+              >
+                <span>Return to Dashboard</span>
+              </Link>
+              <button
+                onClick={() => setIsCompleteModalOpen(false)}
+                className="w-full py-2.5 text-xs font-mono text-white/50 hover:text-white"
+              >
+                Review Workout Log
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SKIP WORKOUT */}
+      {isSkipModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#121212] border border-white/[0.12] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+              <div className="space-y-0.5">
+                <div className="text-[10px] font-mono uppercase text-amber-400 font-bold">
+                  Attendance Action
+                </div>
+                <h2 className="text-lg font-black uppercase text-white">Skip Today&apos;s Workout</h2>
+              </div>
+              <button
+                onClick={() => setIsSkipModalOpen(false)}
+                className="p-1 rounded-lg text-white/50 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-white/60 leading-relaxed">
+              This will record your attendance for today as <span className="text-amber-400 font-bold">Skipped</span> in your gym log.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono uppercase text-white/50 block">
+                Primary Reason for Skip
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { key: "fatigue", label: "Fatigue or Muscle Soreness" },
+                  { key: "schedule", label: "Work or Travel Conflict" },
+                  { key: "injury", label: "Minor Strain or Discomfort" },
+                  { key: "rest", label: "Additional Rest Day Needed" },
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setSkipReason(item.key)}
+                    className={`py-2.5 px-3.5 rounded-xl text-left text-xs font-mono transition-all border ${
+                      skipReason === item.key
+                        ? "bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold"
+                        : "bg-black/40 border-white/[0.06] text-white/60 hover:text-white hover:bg-white/[0.04]"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsSkipModalOpen(false)}
+                className="flex-1 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white font-mono text-xs font-bold uppercase transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSkip}
+                disabled={actionLoading}
+                className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-amber-500/20"
+              >
+                {actionLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-black" />
+                ) : (
+                  <span>Confirm Skip</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

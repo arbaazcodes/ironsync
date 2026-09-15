@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/security/adminAuth";
 import { getMembers, createMember } from "@/lib/services/memberService";
+import { getAttendanceForMembersBatch } from "@/lib/services/attendanceService";
 import { CreateMemberInput, MemberStatus } from "@/lib/types/member";
 
 export async function GET(request: Request) {
@@ -29,7 +30,19 @@ export async function GET(request: Request) {
     // Strip pinHash from all responses
     const sanitized = members.map(({ pinHash, ...safeMember }) => safeMember);
 
-    return NextResponse.json({ success: true, count: sanitized.length, members: sanitized });
+    const includeAttendance = searchParams.get("includeAttendance") === "true";
+    let attendanceMap: Record<string, any> = {};
+    if (includeAttendance && sanitized.length > 0) {
+      const memberUuids = sanitized.map((m) => m.id);
+      attendanceMap = await getAttendanceForMembersBatch(memberUuids);
+    }
+
+    return NextResponse.json({
+      success: true,
+      count: sanitized.length,
+      members: sanitized,
+      attendance: attendanceMap,
+    });
   } catch (err: any) {
     console.error("Admin members GET error:", err);
     return NextResponse.json({ error: err?.message || "Internal server error" }, { status: 500 });

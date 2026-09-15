@@ -81,6 +81,7 @@ export function ExerciseDetailDrawer({
 
   const details = getExerciseDetails(exercise.name);
   const media = getExerciseMedia(exercise.name);
+  const activeVideoUrl = details.videoUrl || media.videoUrl;
   const anatomy = MUSCLE_ANATOMY_DATA[media.muscleGroup] || MUSCLE_ANATOMY_DATA["Chest"];
 
   // Parse sets & reps from setsReps (e.g. "4 × 8-10")
@@ -292,21 +293,21 @@ export function ExerciseDetailDrawer({
             </div>
           </div>
 
-          {/* OPTIONAL DEMONSTRATION VIDEO */}
-          {details.videoUrl && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between font-mono text-[11px] text-primary-dim">
-                <span className="flex items-center gap-1.5 font-bold text-primary">
-                  <Play className="w-3.5 h-3.5 text-accent" />
-                  BIOMECHANICAL DEMO LOOP
-                </span>
-                <span>Muted by Default</span>
-              </div>
+          {/* DEMONSTRATION VIDEO OR COMING SOON PLACEHOLDER */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between font-mono text-[11px] text-primary-dim">
+              <span className="flex items-center gap-1.5 font-bold text-primary">
+                <Play className="w-3.5 h-3.5 text-accent" />
+                BIOMECHANICAL DEMO LOOP
+              </span>
+              <span>{activeVideoUrl ? "Muted by Default" : "HD Movement Guide"}</span>
+            </div>
 
+            {activeVideoUrl ? (
               <div className="relative rounded-2xl overflow-hidden bg-black border border-border shadow-lg aspect-video flex items-center justify-center group">
                 <video
                   ref={videoRef}
-                  src={details.videoUrl}
+                  src={activeVideoUrl}
                   playsInline
                   muted={isMuted}
                   preload="metadata"
@@ -362,8 +363,30 @@ export function ExerciseDetailDrawer({
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="relative rounded-2xl overflow-hidden bg-black border border-border shadow-lg aspect-video flex items-center justify-center group">
+                <img
+                  src={media.imageUrl}
+                  alt={exercise.name}
+                  className="w-full h-full object-cover brightness-[0.4] group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                <div className="relative z-10 flex flex-col items-center text-center p-4 space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-accent backdrop-blur-sm">
+                    <Play className="w-5 h-5 fill-accent/20" />
+                  </div>
+                  <div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#FF1E1E]/20 border border-[#FF1E1E]/40 text-[10px] font-mono font-bold uppercase text-[#FF1E1E]">
+                      Form video coming soon
+                    </span>
+                    <p className="text-[11px] text-white/60 font-mono mt-1">
+                      Biomechanical cues and form execution steps are detailed below.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* 4-STAGE HOW TO PERFORM BREAKDOWN */}
           <div className="space-y-3">

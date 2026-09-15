@@ -22,8 +22,11 @@ import {
   Clock,
   Sparkles,
   ExternalLink,
+  UserCheck,
 } from "lucide-react";
 import { GymMember, MemberStatus, CreateMemberInput } from "@/lib/types/member";
+import { AttendanceRecord, DayAttendanceSummary } from "@/lib/types/attendance";
+import { AttendanceDots } from "@/components/dashboard/AttendanceDots";
 import { GYM_PLAN_TEMPLATES } from "@/lib/data/gymPlans";
 
 function MembersManager() {
@@ -32,6 +35,8 @@ function MembersManager() {
 
   // Roster State
   const [members, setMembers] = useState<GymMember[]>([]);
+  const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceRecord[]>>({});
+  const [markingAttendanceId, setMarkingAttendanceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -77,14 +82,87 @@ function MembersManager() {
   const [activeEditMember, setActiveEditMember] = useState<GymMember | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
-  // Fetch Members
+  // Helper to generate 7-day attendance summary for compact rendering in table
+  const getMemberWeekSummary = (records: AttendanceRecord[] = []): DayAttendanceSummary[] => {
+    const dates: string[] = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      dates.push(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(d));
+    }
+    const todayIST = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(now);
+    const recMap = new Map(records.map((r) => [r.day, r]));
+
+    return dates.map((dateStr) => {
+      const d = new Date(dateStr + "T00:00:00Z");
+      const dayOfWeek = new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        timeZone: "Asia/Kolkata",
+      }).format(d).toUpperCase();
+      const existing = recMap.get(dateStr);
+      return {
+        date: dateStr,
+        dayOfWeek,
+        formattedDate: dateStr,
+        status: existing ? existing.status : "unmarked",
+        isToday: dateStr === todayIST,
+        isPast: dateStr < todayIST,
+        record: existing,
+      };
+    });
+  };
+
+  // Quick Mark Present Handler for Front Desk
+  const handleQuickMarkPresent = async (member: GymMember) => {
+    if (markingAttendanceId === member.id) return;
+    setMarkingAttendanceId(member.id);
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}/attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "present" }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const todayIST = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Kolkata",
+        }).format(new Date());
+
+        setAttendanceMap((prev) => {
+          const current = prev[member.id] || [];
+          const filtered = current.filter((r) => r.day !== todayIST);
+          const newRecord: AttendanceRecord = result.record || {
+            id: crypto.randomUUID(),
+            memberUuid: member.id,
+            day: todayIST,
+            status: "present",
+            source: "admin",
+            createdAt: new Date().toISOString(),
+          };
+          return {
+            ...prev,
+            [member.id]: [newRecord, ...filtered],
+          };
+        });
+      }
+    } catch (err) {
+      console.error("Error marking attendance:", err);
+    } finally {
+      setMarkingAttendanceId(null);
+    }
+  };
+
+  // Fetch Members with Batch Attendance
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/members");
+      const res = await fetch("/api/admin/members?includeAttendance=true");
       if (res.ok) {
         const data = await res.json();
         setMembers(data.members || []);
+        if (data.attendance) {
+          setAttendanceMap(data.attendance);
+        }
       }
     } catch (err) {
       console.error("Error fetching members:", err);
@@ -353,6 +431,7 @@ function MembersManager() {
                   <th className="py-3.5 px-4 font-semibold">Athlete</th>
                   <th className="py-3.5 px-4 font-semibold">Contact</th>
                   <th className="py-3.5 px-4 font-semibold">Status</th>
+                  <th className="py-3.5 px-4 font-semibold">7-Day Attendance</th>
                   <th className="py-3.5 px-4 font-semibold">Assigned Blueprint</th>
                   <th className="py-3.5 px-4 font-semibold">Valid Until</th>
                   <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
@@ -414,6 +493,14 @@ function MembersManager() {
                         </select>
                       </td>
 
+                      {/* 7-Day Attendance Dots */}
+                      <td className="py-3.5 px-4">
+                        <AttendanceDots
+                          summary={getMemberWeekSummary(attendanceMap[member.id] || [])}
+                          compact
+                        />
+                      </td>
+
                       {/* Assigned Plan */}
                       <td className="py-3.5 px-4">
                         <button
@@ -436,6 +523,46 @@ function MembersManager() {
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Quick Front Desk Attendance Action */}
+                          {(() => {
+                            const todayIST = new Intl.DateTimeFormat("en-CA", {
+                              timeZone: "Asia/Kolkata",
+                            }).format(new Date());
+                            const isPresentToday = (attendanceMap[member.id] || []).some(
+                              (r) => r.day === todayIST && r.status === "present"
+                            );
+                            const isMarking = markingAttendanceId === member.id;
+
+                            if (isPresentToday) {
+                              return (
+                                <span
+                                  className="px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-bold flex items-center gap-1"
+                                  title="Member already checked in today"
+                                >
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <span className="hidden sm:inline">Present</span>
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <button
+                                onClick={() => handleQuickMarkPresent(member)}
+                                disabled={isMarking}
+                                className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-emerald-500/15 border border-white/[0.08] hover:border-emerald-500/40 text-white/70 hover:text-emerald-400 font-mono text-[10px] font-bold flex items-center gap-1 transition-all"
+                                title="Quick Check-In: Mark Present"
+                              >
+                                {isMarking ? (
+                                  <Loader2 className="w-3 h-3 animate-spin text-emerald-400" />
+                                ) : (
+                                  <UserCheck className="w-3 h-3 text-emerald-400" />
+                                )}
+                                <span className="hidden sm:inline">Check In</span>
+                              </button>
+                            );
+                          })()}
+
+                          {/* Reset PIN Action */}
                           <button
                             onClick={() => handleResetPin(member)}
                             disabled={isResetting}

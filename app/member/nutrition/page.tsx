@@ -12,6 +12,7 @@ import {
   Sparkles,
   Loader2,
   Info,
+  Utensils,
 } from "lucide-react";
 
 export default function MemberNutritionPage() {
@@ -121,16 +122,35 @@ export default function MemberNutritionPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {meals.map((meal, index) => (
-            <MealCard
-              key={index}
-              meal={meal}
-              index={index}
-              onSwapMeal={handleSwapMeal}
-            />
-          ))}
-        </div>
+        {meals.length === 0 ? (
+          <div className="p-8 sm:p-12 rounded-3xl bg-[#121212] border border-white/[0.08] text-center space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Utensils className="w-7 h-7" />
+            </div>
+            <div className="max-w-md mx-auto space-y-2">
+              <h3 className="text-lg font-bold uppercase text-white">
+                Personalized Meals Coming Soon
+              </h3>
+              <p className="text-xs text-white/50 leading-relaxed">
+                Your assigned daily targets are active above:{" "}
+                <span className="text-white font-bold">{assignedPlan?.calories || 2600} kcal</span> and{" "}
+                <span className="text-emerald-400 font-bold">{assignedPlan?.protein || 180}g protein</span>.
+                Your gym trainer or front desk can assign custom meal plans tailored to your food preferences.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {meals.map((meal, index) => (
+              <MealCard
+                key={index}
+                meal={meal}
+                index={index}
+                onSwapMeal={handleSwapMeal}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

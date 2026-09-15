@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MemberDashboardData } from "@/lib/types/member";
+import { DayAttendanceSummary } from "@/lib/types/attendance";
+import { AttendanceDots } from "@/components/dashboard/AttendanceDots";
 import {
   User,
   ShieldCheck,
@@ -11,21 +14,34 @@ import {
   Clock,
   Dumbbell,
   KeyRound,
-  HelpCircle,
   Loader2,
+  LogOut,
+  CheckCircle2,
 } from "lucide-react";
 
 export default function MemberProfilePage() {
+  const router = useRouter();
   const [data, setData] = useState<MemberDashboardData | null>(null);
+  const [weekSummary, setWeekSummary] = useState<DayAttendanceSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
       try {
-        const res = await fetch("/api/member/dashboard");
-        if (res.ok) {
-          const result = await res.json();
+        const [dashRes, attRes] = await Promise.all([
+          fetch("/api/member/dashboard"),
+          fetch("/api/member/attendance"),
+        ]);
+
+        if (dashRes.ok) {
+          const result = await dashRes.json();
           setData(result);
+        }
+
+        if (attRes.ok) {
+          const attData = await attRes.json();
+          setWeekSummary(attData.weekSummary || []);
         }
       } catch (err) {
         console.error("Failed to load profile:", err);
@@ -35,6 +51,17 @@ export default function MemberProfilePage() {
     }
     loadProfile();
   }, []);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/member/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      router.push("/login?tab=member");
+    }
+  };
 
   if (loading) {
     return (
@@ -60,17 +87,33 @@ export default function MemberProfilePage() {
   return (
     <div className="space-y-8 max-w-3xl">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-xs font-mono text-[#FF1E1E] uppercase tracking-wider">
-          <User className="w-3.5 h-3.5" />
-          Gym Athlete Credentials
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-mono text-[#FF1E1E] uppercase tracking-wider">
+            <User className="w-3.5 h-3.5" />
+            Gym Athlete Credentials
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-1">
+            Membership Profile
+          </h1>
+          <p className="text-xs sm:text-sm text-white/50">
+            Official enrollment records, access parameters, and membership term.
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-1">
-          Membership Profile
-        </h1>
-        <p className="text-xs sm:text-sm text-white/50">
-          Official enrollment records, access parameters, and membership term.
-        </p>
+
+        {/* Working Sign Out Button */}
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="self-start sm:self-auto py-2.5 px-4 rounded-xl bg-white/[0.04] hover:bg-rose-500/10 border border-white/[0.08] hover:border-rose-500/30 text-white/70 hover:text-rose-400 text-xs font-mono uppercase font-bold tracking-wider flex items-center gap-2 transition-all"
+        >
+          {loggingOut ? (
+            <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
+          ) : (
+            <LogOut className="w-4 h-4 text-rose-400" />
+          )}
+          <span>{loggingOut ? "Signing Out..." : "Sign Out"}</span>
+        </button>
       </div>
 
       {/* Main Profile Card */}
@@ -87,7 +130,7 @@ export default function MemberProfilePage() {
                 <span className="px-2.5 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs font-mono font-bold text-white">
                   {member.memberId}
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono uppercase text-emerald-400 font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono uppercase text-emerald-400 font-bold">
                   {member.status}
                 </span>
               </div>
@@ -101,6 +144,19 @@ export default function MemberProfilePage() {
             </div>
           )}
         </div>
+
+        {/* 7-DAY ATTENDANCE STRIP */}
+        {weekSummary.length > 0 && (
+          <div className="space-y-3 border-b border-white/[0.08] pb-6">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono uppercase text-sky-400 font-bold flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" /> Recent 7-Day Attendance
+              </span>
+              <span className="text-[10px] font-mono text-white/40">IST Calendar Log</span>
+            </div>
+            <AttendanceDots summary={weekSummary} />
+          </div>
+        )}
 
         {/* Member Details Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
