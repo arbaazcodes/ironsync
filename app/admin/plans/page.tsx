@@ -10,14 +10,14 @@ export default function AdminPlansPage() {
   return (
     <div className="space-y-8">
       <div>
-        <div className="flex items-center gap-2 text-xs font-mono text-[#FF1E1E] uppercase tracking-wider">
+        <div className="flex items-center gap-2 text-xs font-mono text-accent uppercase tracking-wider">
           <Dumbbell className="w-3.5 h-3.5" />
           Master Blueprint Architecture
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-1">
+        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-primary mt-1">
           Training Plans Catalog
         </h1>
-        <p className="text-xs sm:text-sm text-white/50">
+        <p className="text-xs sm:text-sm text-primary-muted">
           Standardized periodization splits and nutritional protocols available for member assignment.
         </p>
       </div>
@@ -33,22 +33,22 @@ export default function AdminPlansPage() {
                 onClick={() => setSelectedPlan(tpl)}
                 className={`w-full text-left p-5 rounded-2xl border transition-all duration-200 ${
                   isSelected
-                    ? "bg-[#161616] border-[#FF1E1E] shadow-xl shadow-[#FF1E1E]/10"
-                    : "bg-[#101010] border-white/[0.08] hover:border-white/20"
+                    ? "bg-card border-accent shadow-xl shadow-accent/10 ring-1 ring-accent"
+                    : "bg-card border-border hover:border-accent/40"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono uppercase tracking-wider text-[#FF1E1E]">
+                  <span className="text-xs font-mono uppercase tracking-wider text-accent font-bold">
                     {tpl.goal}
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.06] text-white/60">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-surface-elevated text-primary-muted border border-border">
                     {tpl.trainingDays} Days/Wk
                   </span>
                 </div>
-                <div className="font-extrabold text-sm uppercase text-white mt-2">
+                <div className="font-extrabold text-sm uppercase text-primary mt-2">
                   {tpl.name}
                 </div>
-                <div className="text-xs text-white/50 mt-1 line-clamp-2">
+                <div className="text-xs text-primary-muted mt-1 line-clamp-2">
                   {tpl.description}
                 </div>
               </button>
@@ -57,53 +57,53 @@ export default function AdminPlansPage() {
         </div>
 
         {/* Right: Plan Deep-Dive */}
-        <div className="lg:col-span-2 bg-[#121212] border border-white/[0.08] rounded-2xl p-6 sm:p-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+        <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
             <div>
-              <div className="text-xs font-mono text-[#FF1E1E] uppercase">Blueprint Spec</div>
-              <h2 className="text-xl font-black uppercase text-white mt-0.5">
+              <div className="text-xs font-mono text-accent uppercase font-bold">Blueprint Spec</div>
+              <h2 className="text-xl font-black uppercase text-primary mt-0.5">
                 {selectedPlan.name}
               </h2>
-              <p className="text-xs text-white/50 mt-1">{selectedPlan.description}</p>
+              <p className="text-xs text-primary-muted mt-1">{selectedPlan.description}</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="px-3 py-1.5 rounded-xl bg-black/60 border border-white/[0.1] text-center font-mono">
-                <div className="text-[10px] text-white/40 uppercase">Daily Fuel</div>
-                <div className="text-sm font-bold text-white">{selectedPlan.blueprint.macros.calories} kcal</div>
+              <div className="px-3 py-1.5 rounded-xl bg-surface-elevated border border-border text-center font-mono">
+                <div className="text-[10px] text-primary-dim uppercase">Daily Fuel</div>
+                <div className="text-sm font-bold text-primary">{selectedPlan.blueprint.macros.calories} kcal</div>
               </div>
-              <div className="px-3 py-1.5 rounded-xl bg-black/60 border border-white/[0.1] text-center font-mono">
-                <div className="text-[10px] text-white/40 uppercase">Protein Target</div>
-                <div className="text-sm font-bold text-[#FF1E1E]">{selectedPlan.blueprint.macros.protein}g</div>
+              <div className="px-3 py-1.5 rounded-xl bg-surface-elevated border border-border text-center font-mono">
+                <div className="text-[10px] text-primary-dim uppercase">Protein Target</div>
+                <div className="text-sm font-bold text-accent">{selectedPlan.blueprint.macros.protein}g</div>
               </div>
             </div>
           </div>
 
           {/* Schedule Breakdown */}
           <div className="space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-white/70">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-primary-muted font-bold">
               Training Schedule Split
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {selectedPlan.blueprint.schedule.map((day, idx) => (
                 <div
                   key={idx}
-                  className="p-3.5 rounded-xl bg-black/40 border border-white/[0.06] space-y-1.5"
+                  className="p-3.5 rounded-xl bg-surface border border-border space-y-1.5"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase text-white">{day.dayName}</span>
+                    <span className="text-xs font-bold uppercase text-primary">{day.dayName}</span>
                     <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
                         day.type === "workout"
-                          ? "bg-[#FF1E1E]/15 text-[#FF1E1E]"
-                          : "bg-white/[0.08] text-white/60"
+                          ? "bg-accent/15 text-accent border border-accent/20"
+                          : "bg-surface-elevated text-primary-muted border border-border"
                       }`}
                     >
                       {day.type.toUpperCase()}
                     </span>
                   </div>
-                  <div className="text-xs text-white/80 font-medium">{day.focus}</div>
+                  <div className="text-xs text-primary font-medium">{day.focus}</div>
                   {day.exercises && day.exercises.length > 0 && (
-                    <div className="text-[10px] text-white/40 font-mono">
+                    <div className="text-[10px] text-primary-dim font-mono">
                       {day.exercises.length} exercises &bull; {day.exercises.map((e) => e.name).slice(0, 2).join(", ")}...
                     </div>
                   )}
@@ -113,12 +113,12 @@ export default function AdminPlansPage() {
           </div>
 
           {/* Recovery Protocol */}
-          <div className="p-4 rounded-xl bg-black/30 border border-white/[0.06] space-y-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
+          <div className="p-4 rounded-xl bg-surface border border-border space-y-2">
+            <div className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
               Recovery & Periodization Strategy
             </div>
-            <div className="text-xs text-white/60 leading-relaxed font-mono">
+            <div className="text-xs text-primary-muted leading-relaxed font-mono">
               Sleep: {selectedPlan.blueprint.recoveryProtocol.sleepTarget} &bull; Hydration: {selectedPlan.blueprint.recoveryProtocol.hydrationTarget} &bull; Mobility: {selectedPlan.blueprint.recoveryProtocol.mobilityWindow}
             </div>
           </div>

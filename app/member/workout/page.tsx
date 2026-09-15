@@ -192,8 +192,8 @@ export default function MemberWorkoutPage() {
 
   if (loading) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center text-white/50 space-y-3">
-        <Loader2 className="w-8 h-8 animate-spin text-[#FF1E1E]" />
+      <div className="py-24 flex flex-col items-center justify-center text-primary-muted space-y-3">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
         <span className="text-xs font-mono uppercase tracking-wider">
           Loading Workout Protocol...
         </span>
@@ -229,18 +229,18 @@ export default function MemberWorkoutPage() {
         <div>
           <Link
             href="/member/dashboard"
-            className="inline-flex items-center gap-1 text-xs font-mono text-white/50 hover:text-white transition-colors mb-1"
+            className="inline-flex items-center gap-1 text-xs font-mono text-primary-muted hover:text-primary transition-colors mb-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
           </Link>
-          <div className="flex items-center gap-2 text-xs font-mono text-[#FF1E1E] uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-mono text-accent uppercase tracking-wider font-bold">
             <Dumbbell className="w-3.5 h-3.5" />
             Assigned Split Architecture
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-0.5">
+          <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-primary mt-0.5">
             {data?.assignedPlan?.splitName || "Training Program"}
           </h1>
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-primary-muted">
             Track individual sets, view video form loops, and launch rest intervals.
           </p>
         </div>
@@ -250,25 +250,25 @@ export default function MemberWorkoutPage() {
           onClick={() => setShowTimer(!showTimer)}
           className={`self-start sm:self-auto py-2.5 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 transition-all border ${
             showTimer
-              ? "bg-[#FF1E1E] border-[#FF1E1E] text-white shadow-lg shadow-[#FF1E1E]/20"
-              : "bg-[#121212] border-white/[0.12] text-white/80 hover:text-white hover:border-[#FF1E1E]/40"
+              ? "bg-accent border-accent text-white shadow-accent-glow"
+              : "bg-card border-border text-primary hover:border-accent/40 shadow-sm"
           }`}
         >
-          <Timer className="w-4 h-4 text-white" />
+          <Timer className="w-4 h-4 text-accent" />
           <span>{showTimer ? "Hide Rest Timer" : "Rest Timer (90s)"}</span>
         </button>
       </div>
 
       {/* Floating / Collapsible Rest Timer */}
       {showTimer && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-[#121212] border border-white/[0.1] shadow-2xl animate-in slide-in-from-top-3 duration-300">
+        <div className="p-4 sm:p-5 rounded-3xl bg-card border border-border shadow-md animate-in slide-in-from-top-3 duration-300">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-mono uppercase text-white/60 font-bold flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[#FF1E1E]" /> Active Rest Interval
+            <span className="text-xs font-mono uppercase text-primary-muted font-bold flex items-center gap-2">
+              <Clock className="w-4 h-4 text-accent" /> Active Rest Interval
             </span>
             <button
               onClick={() => setShowTimer(false)}
-              className="text-xs text-white/40 hover:text-white font-mono"
+              className="text-xs text-primary-dim hover:text-primary font-mono"
             >
               Close
             </button>
@@ -287,8 +287,8 @@ export default function MemberWorkoutPage() {
               onClick={() => handleSelectDay(idx)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold font-mono uppercase tracking-wider whitespace-nowrap transition-all flex items-center gap-2 border ${
                 isSelected
-                  ? "bg-[#FF1E1E] border-[#FF1E1E] text-white shadow-lg shadow-[#FF1E1E]/20"
-                  : "bg-[#121212] border-white/[0.08] text-white/60 hover:text-white"
+                  ? "bg-accent border-accent text-white shadow-accent-glow"
+                  : "bg-card border-border text-primary-muted hover:text-primary"
               }`}
             >
               <span>{item.dayName}</span>
@@ -304,13 +304,13 @@ export default function MemberWorkoutPage() {
       {currentDay && (
         <div className="space-y-6">
           {/* Day Focus Banner */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-[#121212] border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-6 sm:p-7 rounded-3xl bg-card border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="text-xs font-mono uppercase text-[#FF1E1E]">{currentDay.dayName}</div>
-              <h2 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tight mt-0.5">
+              <div className="text-xs font-mono uppercase text-accent font-bold">{currentDay.dayName}</div>
+              <h2 className="text-xl sm:text-2xl font-extrabold uppercase text-primary tracking-tight mt-0.5">
                 {currentDay.focus}
               </h2>
-              <p className="text-xs text-white/50 mt-1">
+              <p className="text-xs text-primary-muted mt-1">
                 {currentDay.type === "recovery"
                   ? "Active recovery protocol — prioritize hydration, gentle mobility, and 8+ hours sleep."
                   : `Target: ${currentDay.exercises?.length || 0} movements &bull; Estimated completion: ~${
@@ -323,8 +323,8 @@ export default function MemberWorkoutPage() {
               <div className="flex items-center gap-3">
                 {/* Progress Mini Bar */}
                 <div className="hidden sm:block text-right font-mono text-xs">
-                  <div className="text-white/40 uppercase text-[10px]">Session Progress</div>
-                  <div className="text-white font-bold">
+                  <div className="text-primary-dim uppercase text-[10px]">Session Progress</div>
+                  <div className="text-primary font-bold">
                     {completedSetsCount} / {totalSetsCount} Sets ({progressPercent}%)
                   </div>
                 </div>
@@ -350,10 +350,10 @@ export default function MemberWorkoutPage() {
           {currentDay.type === "workout" && currentDay.exercises && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-primary-muted">
                   Prescribed Movements & Sets
                 </h3>
-                <span className="text-xs font-mono text-white/40">
+                <span className="text-xs font-mono text-primary-dim">
                   Click sets to track completion
                 </span>
               </div>
@@ -365,7 +365,7 @@ export default function MemberWorkoutPage() {
                   return (
                     <div
                       key={exIdx}
-                      className="rounded-2xl bg-[#121212] border border-white/[0.08] overflow-hidden"
+                      className="rounded-2xl bg-card border border-border overflow-hidden shadow-sm"
                     >
                       {/* Movement Card */}
                       <ExerciseCard
@@ -375,8 +375,8 @@ export default function MemberWorkoutPage() {
                       />
 
                       {/* Interactive Set Tracker Row */}
-                      <div className="px-4 py-3 bg-black/40 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3">
-                        <span className="text-[11px] font-mono text-white/50 uppercase font-bold">
+                      <div className="px-4 py-3 bg-surface-elevated border-t border-border flex flex-wrap items-center justify-between gap-3">
+                        <span className="text-[11px] font-mono text-primary-muted uppercase font-bold">
                           Sets Log:
                         </span>
 
@@ -390,16 +390,16 @@ export default function MemberWorkoutPage() {
                                 onClick={() => handleToggleSet(exIdx, setIdx)}
                                 className={`py-1.5 px-3 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-1.5 border ${
                                   isSetDone
-                                    ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
-                                    : "bg-white/[0.04] border-white/[0.08] text-white/50 hover:text-white hover:bg-white/[0.08]"
+                                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-surface border-border text-primary-muted hover:text-primary hover:bg-surface-elevated"
                                 }`}
                                 title={`Toggle Set ${setIdx + 1}`}
                               >
                                 <div
                                   className={`w-3.5 h-3.5 rounded flex items-center justify-center border ${
                                     isSetDone
-                                      ? "bg-emerald-500 border-emerald-400 text-black"
-                                      : "border-white/30"
+                                      ? "bg-emerald-500 border-emerald-400 text-white"
+                                      : "border-border"
                                   }`}
                                 >
                                   {isSetDone && <Check className="w-2.5 h-2.5 stroke-[3]" />}
@@ -416,10 +416,10 @@ export default function MemberWorkoutPage() {
               </div>
 
               {/* End of Workout Actions Bar */}
-              <div className="p-6 rounded-3xl bg-[#121212] border border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+              <div className="p-6 rounded-3xl bg-card border border-border shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
                 <div className="text-center sm:text-left">
-                  <div className="text-sm font-bold text-white uppercase">Finish Today&apos;s Training</div>
-                  <p className="text-xs text-white/50 mt-0.5">
+                  <div className="text-sm font-bold text-primary uppercase">Finish Today&apos;s Training</div>
+                  <p className="text-xs text-primary-muted mt-0.5">
                     Marking complete logs your attendance as present and finalizes your session.
                   </p>
                 </div>
@@ -427,7 +427,7 @@ export default function MemberWorkoutPage() {
                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
                   <button
                     onClick={() => setIsSkipModalOpen(true)}
-                    className="py-3 px-4 rounded-xl text-xs font-mono uppercase text-white/50 hover:text-white hover:bg-white/[0.06] transition-all border border-transparent hover:border-white/10"
+                    className="py-3 px-4 rounded-xl text-xs font-mono uppercase text-primary-muted hover:text-primary hover:bg-surface-elevated transition-all border border-border/60"
                   >
                     Skip Session
                   </button>
@@ -451,15 +451,15 @@ export default function MemberWorkoutPage() {
 
           {/* Recovery Day Protocol */}
           {currentDay.type === "recovery" && (
-            <div className="p-8 sm:p-12 rounded-3xl bg-[#121212] border border-white/[0.08] text-center space-y-6">
-              <div className="w-16 h-16 mx-auto rounded-3xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shadow-xl shadow-sky-500/10">
+            <div className="p-8 sm:p-12 rounded-3xl bg-card border border-border shadow-sm text-center space-y-6">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-500 shadow-md">
                 <Zap className="w-8 h-8" />
               </div>
               <div className="max-w-md mx-auto space-y-2">
-                <h3 className="text-xl font-black uppercase text-white">
+                <h3 className="text-xl font-extrabold uppercase text-primary">
                   Rest & Muscle Regeneration Day
                 </h3>
-                <p className="text-xs sm:text-sm text-white/50 leading-relaxed">
+                <p className="text-xs sm:text-sm text-primary-muted leading-relaxed">
                   Muscle protein synthesis and central nervous system recovery occur while resting.
                   Prioritize hydration, light mobility, and adequate sleep to prepare for your next
                   hypertrophy session.
@@ -467,25 +467,25 @@ export default function MemberWorkoutPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto text-left font-mono text-xs">
-                <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06] space-y-1">
-                  <span className="text-white/40 text-[10px] uppercase block">Water Intake</span>
-                  <span className="text-white font-bold">3.5L - 4.0L</span>
+                <div className="p-3 rounded-2xl bg-surface-elevated border border-border space-y-1">
+                  <span className="text-primary-dim text-[10px] uppercase block">Water Intake</span>
+                  <span className="text-primary font-bold">3.5L - 4.0L</span>
                 </div>
-                <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06] space-y-1">
-                  <span className="text-white/40 text-[10px] uppercase block">Protein Goal</span>
-                  <span className="text-emerald-400 font-bold">
+                <div className="p-3 rounded-2xl bg-surface-elevated border border-border space-y-1">
+                  <span className="text-primary-dim text-[10px] uppercase block">Protein Goal</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                     {data?.assignedPlan?.protein || 180}g Target
                   </span>
                 </div>
-                <div className="p-3 rounded-2xl bg-black/40 border border-white/[0.06] space-y-1">
-                  <span className="text-white/40 text-[10px] uppercase block">Sleep Target</span>
-                  <span className="text-white font-bold">8+ Hours</span>
+                <div className="p-3 rounded-2xl bg-surface-elevated border border-border space-y-1">
+                  <span className="text-primary-dim text-[10px] uppercase block">Sleep Target</span>
+                  <span className="text-primary font-bold">8+ Hours</span>
                 </div>
               </div>
 
               <Link
                 href="/member/dashboard"
-                className="inline-block py-3 px-6 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-white text-xs font-mono uppercase font-bold transition-all"
+                className="inline-block py-3 px-6 rounded-xl bg-surface-elevated hover:bg-surface border border-border text-primary text-xs font-mono uppercase font-bold transition-all"
               >
                 Return to Member Dashboard
               </Link>
@@ -503,35 +503,35 @@ export default function MemberWorkoutPage() {
 
       {/* MODAL: COMPLETE WORKOUT SUCCESS */}
       {isCompleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-[#121212] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 space-y-6 text-center shadow-2xl">
-            <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-card border border-emerald-500/30 rounded-3xl p-6 sm:p-8 space-y-6 text-center shadow-2xl">
+            <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <Trophy className="w-8 h-8" />
             </div>
 
             <div className="space-y-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-mono font-bold uppercase text-emerald-400">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono font-bold uppercase text-emerald-600 dark:text-emerald-400">
                 Attendance Recorded &bull; Present
               </span>
-              <h2 className="text-2xl font-black uppercase text-white tracking-tight">
+              <h2 className="text-2xl font-extrabold uppercase text-primary tracking-tight">
                 Workout Completed!
               </h2>
-              <p className="text-xs text-white/60 leading-relaxed">
+              <p className="text-xs text-primary-muted leading-relaxed">
                 Outstanding execution today. Your attendance has been marked as present in your gym
                 record. Refuel with your target protein and hydration.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/[0.06] grid grid-cols-2 gap-3 text-xs font-mono">
+            <div className="p-4 rounded-2xl bg-surface-elevated border border-border grid grid-cols-2 gap-3 text-xs font-mono">
               <div>
-                <span className="text-[10px] text-white/40 uppercase block">Sets Logged</span>
-                <span className="text-base font-bold text-white">
+                <span className="text-[10px] text-primary-dim uppercase block">Sets Logged</span>
+                <span className="text-base font-bold text-primary">
                   {completedSetsCount} / {totalSetsCount || 15}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-white/40 uppercase block">Est. Caloric Burn</span>
-                <span className="text-base font-bold text-[#FF1E1E]">~380 kcal</span>
+                <span className="text-[10px] text-primary-dim uppercase block">Est. Caloric Burn</span>
+                <span className="text-base font-bold text-accent">~380 kcal</span>
               </div>
             </div>
 
@@ -544,7 +544,7 @@ export default function MemberWorkoutPage() {
               </Link>
               <button
                 onClick={() => setIsCompleteModalOpen(false)}
-                className="w-full py-2.5 text-xs font-mono text-white/50 hover:text-white"
+                className="w-full py-2.5 text-xs font-mono text-primary-muted hover:text-primary"
               >
                 Review Workout Log
               </button>
@@ -555,29 +555,29 @@ export default function MemberWorkoutPage() {
 
       {/* MODAL: SKIP WORKOUT */}
       {isSkipModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-[#121212] border border-white/[0.12] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-4">
               <div className="space-y-0.5">
-                <div className="text-[10px] font-mono uppercase text-amber-400 font-bold">
+                <div className="text-[10px] font-mono uppercase text-amber-600 dark:text-amber-400 font-bold">
                   Attendance Action
                 </div>
-                <h2 className="text-lg font-black uppercase text-white">Skip Today&apos;s Workout</h2>
+                <h2 className="text-lg font-extrabold uppercase text-primary">Skip Today&apos;s Workout</h2>
               </div>
               <button
                 onClick={() => setIsSkipModalOpen(false)}
-                className="p-1 rounded-lg text-white/50 hover:text-white"
+                className="p-1 rounded-lg text-primary-muted hover:text-primary"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-white/60 leading-relaxed">
-              This will record your attendance for today as <span className="text-amber-400 font-bold">Skipped</span> in your gym log.
+            <p className="text-xs text-primary-muted leading-relaxed">
+              This will record your attendance for today as <span className="text-amber-600 dark:text-amber-400 font-bold">Skipped</span> in your gym log.
             </p>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-mono uppercase text-white/50 block">
+              <label className="text-[10px] font-mono uppercase text-primary-dim block">
                 Primary Reason for Skip
               </label>
               <div className="grid grid-cols-1 gap-2">
@@ -593,8 +593,8 @@ export default function MemberWorkoutPage() {
                     onClick={() => setSkipReason(item.key)}
                     className={`py-2.5 px-3.5 rounded-xl text-left text-xs font-mono transition-all border ${
                       skipReason === item.key
-                        ? "bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold"
-                        : "bg-black/40 border-white/[0.06] text-white/60 hover:text-white hover:bg-white/[0.04]"
+                        ? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-bold"
+                        : "bg-surface-elevated border-border text-primary-muted hover:text-primary hover:bg-surface"
                     }`}
                   >
                     {item.label}
@@ -607,7 +607,7 @@ export default function MemberWorkoutPage() {
               <button
                 type="button"
                 onClick={() => setIsSkipModalOpen(false)}
-                className="flex-1 py-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-white font-mono text-xs font-bold uppercase transition-colors"
+                className="flex-1 py-3 rounded-xl bg-surface-elevated hover:bg-surface text-primary border border-border font-mono text-xs font-bold uppercase transition-colors"
               >
                 Cancel
               </button>
@@ -615,10 +615,10 @@ export default function MemberWorkoutPage() {
                 type="button"
                 onClick={handleConfirmSkip}
                 disabled={actionLoading}
-                className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-amber-500/20"
+                className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-amber-500/20"
               >
                 {actionLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
                 ) : (
                   <span>Confirm Skip</span>
                 )}

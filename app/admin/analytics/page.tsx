@@ -21,41 +21,41 @@ export default function AdminAnalyticsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <div className="flex items-center gap-2 text-xs font-mono text-[#FF1E1E] uppercase tracking-wider">
+        <div className="flex items-center gap-2 text-xs font-mono text-accent uppercase tracking-wider font-bold">
           <BarChart3 className="w-3.5 h-3.5" />
           Performance & Metrics
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-1">
+        <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-primary mt-1">
           Gym Analytics
         </h1>
-        <p className="text-xs sm:text-sm text-white/50">
+        <p className="text-xs sm:text-sm text-primary-muted">
           Real-time metrics on membership growth, engagement, and blueprint completion.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-[#121212] border border-white/[0.08] space-y-1">
-          <div className="text-xs font-mono text-white/50 uppercase">Roster Retention</div>
-          <div className="text-3xl font-black text-white">{retention}%</div>
-          <div className="text-[11px] text-emerald-400 font-mono">Active status ratio</div>
+        <div className="p-5 rounded-2xl bg-card border border-border space-y-1 shadow-sm">
+          <div className="text-xs font-mono text-primary-muted uppercase">Roster Retention</div>
+          <div className="text-3xl font-black text-primary font-mono">{retention}%</div>
+          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">Active status ratio</div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#121212] border border-white/[0.08] space-y-1">
-          <div className="text-xs font-mono text-white/50 uppercase">Enrolled Athletes</div>
-          <div className="text-3xl font-black text-[#FF1E1E]">{total}</div>
-          <div className="text-[11px] text-white/40 font-mono">Managed gym profiles</div>
+        <div className="p-5 rounded-2xl bg-card border border-border space-y-1 shadow-sm">
+          <div className="text-xs font-mono text-primary-muted uppercase">Enrolled Members</div>
+          <div className="text-3xl font-black text-accent font-mono">{total}</div>
+          <div className="text-[11px] text-primary-dim font-mono">Managed gym profiles</div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#121212] border border-white/[0.08] space-y-1">
-          <div className="text-xs font-mono text-white/50 uppercase">Active Programs</div>
-          <div className="text-3xl font-black text-sky-400">4</div>
-          <div className="text-[11px] text-white/40 font-mono">Standardized splits</div>
+        <div className="p-5 rounded-2xl bg-card border border-border space-y-1 shadow-sm">
+          <div className="text-xs font-mono text-primary-muted uppercase">Active Programs</div>
+          <div className="text-3xl font-black text-sky-600 dark:text-sky-400 font-mono">4</div>
+          <div className="text-[11px] text-primary-dim font-mono">Standardized splits</div>
         </div>
       </div>
 
       {/* Roster Demographics Breakdown */}
-      <div className="p-6 rounded-2xl bg-[#121212] border border-white/[0.08] space-y-4">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+      <div className="p-6 rounded-2xl bg-card border border-border space-y-4 shadow-sm">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-primary">
           Goal Distribution
         </h3>
         <div className="space-y-3">
@@ -65,14 +65,14 @@ export default function AdminAnalyticsPage() {
             return (
               <div key={goal} className="space-y-1.5">
                 <div className="flex justify-between text-xs font-mono">
-                  <span className="text-white/80 uppercase">{goal.replace("_", " ")}</span>
-                  <span className="text-white/50">
+                  <span className="text-primary font-bold uppercase">{goal.replace("_", " ")}</span>
+                  <span className="text-primary-muted">
                     {count} ({pct}%)
                   </span>
                 </div>
-                <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-surface-elevated rounded-full overflow-hidden border border-border">
                   <div
-                    className="h-full bg-[#FF1E1E] transition-all duration-500"
+                    className="h-full bg-accent transition-all duration-500 rounded-full"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

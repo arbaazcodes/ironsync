@@ -44,6 +44,10 @@ const config: Config = {
         },
         divider: "var(--divider)",
       },
+      fontFamily: {
+        sans: ["var(--font-sans)", "Inter", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "monospace"],
+      },
       borderRadius: {
         "3xl": "24px",
       },

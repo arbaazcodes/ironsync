@@ -17,7 +17,7 @@ export function AttendanceDots({
 }: AttendanceDotsProps) {
   if (!summary || summary.length === 0) {
     return (
-      <div className="flex items-center gap-1.5 text-[10px] font-mono text-white/30">
+      <div className="flex items-center gap-1.5 text-[10px] font-mono text-primary-dim">
         No attendance records
       </div>
     );
@@ -29,8 +29,8 @@ export function AttendanceDots({
         return {
           bg: "bg-emerald-500",
           border: "border-emerald-400",
-          glow: "shadow-[0_0_8px_rgba(16,185,129,0.4)]",
-          text: "text-emerald-400",
+          glow: "shadow-[0_0_8px_rgba(16,185,129,0.35)]",
+          text: "text-emerald-600 dark:text-emerald-400",
           label: "Present",
           icon: Check,
         };
@@ -39,7 +39,7 @@ export function AttendanceDots({
           bg: "bg-rose-500",
           border: "border-rose-400",
           glow: "shadow-[0_0_8px_rgba(244,63,94,0.3)]",
-          text: "text-rose-400",
+          text: "text-rose-600 dark:text-rose-400",
           label: "Missed",
           icon: X,
         };
@@ -48,26 +48,26 @@ export function AttendanceDots({
           bg: "bg-amber-500",
           border: "border-amber-400",
           glow: "shadow-[0_0_8px_rgba(245,158,11,0.3)]",
-          text: "text-amber-400",
+          text: "text-amber-600 dark:text-amber-400",
           label: "Skipped",
           icon: Minus,
         };
       case "rest":
         return {
-          bg: "bg-sky-500/30",
-          border: "border-sky-400/40",
+          bg: "bg-sky-500/25 dark:bg-sky-500/30",
+          border: "border-sky-400/50",
           glow: "",
-          text: "text-sky-300",
+          text: "text-sky-600 dark:text-sky-300",
           label: "Rest Day",
           icon: Coffee,
         };
       case "unmarked":
       default:
         return {
-          bg: "bg-white/[0.08]",
-          border: "border-white/[0.12]",
+          bg: "bg-neutral-200 dark:bg-white/[0.1]",
+          border: "border-neutral-300 dark:border-white/[0.12]",
           glow: "",
-          text: "text-white/40",
+          text: "text-primary-dim",
           label: "Not Marked",
           icon: Circle,
         };
@@ -79,7 +79,6 @@ export function AttendanceDots({
       <div className="flex items-center gap-1.5" title="Last 7 Days Attendance">
         {summary.map((item, idx) => {
           const config = getStatusConfig(item.status);
-          const Icon = config.icon;
           return (
             <div
               key={idx}
@@ -88,12 +87,12 @@ export function AttendanceDots({
             >
               <div
                 className={`w-3 h-3 rounded-full ${config.bg} ${config.glow} transition-transform hover:scale-125 ${
-                  item.isToday ? "ring-2 ring-white/60 ring-offset-1 ring-offset-black" : ""
+                  item.isToday ? "ring-2 ring-accent ring-offset-1 ring-offset-background" : ""
                 }`}
               />
               {/* Tooltip on hover */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/dot:flex flex-col items-center z-30 pointer-events-none">
-                <div className="px-2 py-0.5 rounded bg-black/90 border border-white/20 text-[9px] font-mono text-white whitespace-nowrap shadow-lg">
+                <div className="px-2 py-0.5 rounded bg-primary text-background text-[9px] font-mono whitespace-nowrap shadow-md">
                   {item.dayOfWeek}: {config.label}
                 </div>
               </div>
@@ -114,16 +113,16 @@ export function AttendanceDots({
           return (
             <div
               key={idx}
-              className={`flex-1 flex flex-col items-center p-2 rounded-xl transition-all border ${
+              className={`flex-1 flex flex-col items-center p-2 sm:p-2.5 rounded-xl transition-all border ${
                 item.isToday
-                  ? "bg-white/[0.06] border-[#FF1E1E]/40 shadow-sm"
-                  : "bg-black/30 border-white/[0.05]"
+                  ? "bg-accent/10 border-accent/40 shadow-sm"
+                  : "bg-surface-elevated/70 border-border"
               }`}
               title={`${item.formattedDate}: ${config.label}`}
             >
               <span
                 className={`text-[9px] sm:text-[10px] font-mono uppercase font-bold tracking-wider ${
-                  item.isToday ? "text-[#FF1E1E]" : "text-white/40"
+                  item.isToday ? "text-accent" : "text-primary-dim"
                 }`}
               >
                 {item.dayOfWeek}
@@ -132,7 +131,7 @@ export function AttendanceDots({
               <div className="my-1.5 flex items-center justify-center">
                 <div
                   className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center ${config.bg} ${config.glow} ${
-                    item.isToday ? "ring-2 ring-[#FF1E1E] ring-offset-1 ring-offset-black" : ""
+                    item.isToday ? "ring-2 ring-accent ring-offset-1 ring-offset-background" : ""
                   }`}
                 >
                   <Icon className="w-3 h-3 text-white" />

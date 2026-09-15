@@ -19,12 +19,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    const storedTheme = localStorage.getItem("ironsync_theme") as Theme | null;
+    const storedTheme = (localStorage.getItem("ironsync-theme") || localStorage.getItem("ironsync_theme")) as Theme | null;
     if (storedTheme === "dark" || storedTheme === "light") {
       setThemeState(storedTheme);
       applyTheme(storedTheme);
     } else {
-      // Default light
+      // Default to light mode
       applyTheme("light");
     }
   }, []);
@@ -44,14 +44,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (metaThemeColor) {
       metaThemeColor.setAttribute(
         "content",
-        targetTheme === "dark" ? "#050505" : "#FFFFFF"
+        targetTheme === "dark" ? "#0C0C0C" : "#F7F7F5"
       );
     }
   };
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem("ironsync_theme", newTheme);
+    localStorage.setItem("ironsync-theme", newTheme);
     applyTheme(newTheme);
   };
 

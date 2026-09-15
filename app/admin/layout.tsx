@@ -14,9 +14,8 @@ import {
   ShieldCheck,
   Menu,
   X,
-  Plus,
-  Sparkles,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -38,34 +37,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-background text-primary flex flex-col md:flex-row selection:bg-accent/20 selection:text-primary">
       {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/[0.08] bg-[#0c0c0c]/90 backdrop-blur-md sticky top-0 z-50">
+      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-surface/90 backdrop-blur-md sticky top-0 z-50">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#FF1E1E] flex items-center justify-center shadow-md shadow-[#FF1E1E]/20">
+          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shadow-sm">
             <Dumbbell className="w-4 h-4 text-white" />
           </div>
-          <span className="font-extrabold text-sm tracking-wider uppercase">
-            Iron<span className="text-[#FF1E1E]">Sync</span>
+          <span className="font-extrabold text-sm tracking-wider uppercase text-primary">
+            Iron<span className="text-accent">Sync</span>
           </span>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.08] text-white/70">
+          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-elevated border border-border text-primary-dim">
             ADMIN
           </span>
         </Link>
 
-        <button
-          type="button"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg bg-white/[0.05] text-white/70 hover:text-white"
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 rounded-lg bg-surface-elevated border border-border text-primary-muted hover:text-primary"
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Nav Drawer */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 top-[53px] bg-[#050505]/95 z-40 p-5 space-y-4 backdrop-blur-xl border-b border-white/[0.08]">
+        <div className="md:hidden fixed inset-0 top-[53px] bg-surface/98 z-40 p-5 space-y-4 backdrop-blur-xl border-b border-border">
           <div className="flex flex-col space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -77,8 +79,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-[#FF1E1E] text-white font-semibold"
-                      : "text-white/60 hover:text-white hover:bg-white/[0.05]"
+                      ? "bg-accent text-white font-semibold shadow-sm"
+                      : "text-primary-muted hover:text-primary hover:bg-surface-elevated"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -88,10 +90,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
           </div>
 
-          <div className="pt-4 border-t border-white/[0.08]">
+          <div className="pt-4 border-t border-border flex items-center justify-between">
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               Sign Out Admin
@@ -101,19 +103,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-white/[0.08] bg-[#0a0a0a] min-h-screen sticky top-0 h-screen p-5 justify-between">
+      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-surface min-h-screen sticky top-0 h-screen p-5 justify-between transition-colors">
         <div className="space-y-6">
           {/* Logo & Gym Info */}
           <Link href="/admin" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF1E1E] to-[#B30000] flex items-center justify-center shadow-lg shadow-[#FF1E1E]/20">
+            <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shadow-sm">
               <Dumbbell className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="font-extrabold text-base tracking-wider uppercase">
-                Iron<span className="text-[#FF1E1E]">Sync</span>
+              <div className="font-extrabold text-base tracking-wider uppercase text-primary">
+                Iron<span className="text-accent">Sync</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-mono text-white/50">
-                <ShieldCheck className="w-3 h-3 text-[#FF1E1E]" />
+              <div className="flex items-center gap-1.5 text-[10px] font-mono text-primary-dim">
+                <ShieldCheck className="w-3 h-3 text-accent" />
                 ADMIN PORTAL
               </div>
             </div>
@@ -133,8 +135,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   href={item.href}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-150 ${
                     isActive
-                      ? "bg-[#FF1E1E] text-white shadow-md shadow-[#FF1E1E]/25"
-                      : "text-white/60 hover:text-white hover:bg-white/[0.05]"
+                      ? "bg-accent text-white shadow-sm"
+                      : "text-primary-muted hover:text-primary hover:bg-surface-elevated"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -145,18 +147,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
 
-        {/* User profile / Logout */}
-        <div className="pt-4 border-t border-white/[0.08] space-y-3">
-          <div className="px-2">
-            <div className="text-[11px] font-mono text-white/40 uppercase">Logged in as</div>
-            <div className="text-xs font-medium text-white truncate">
-              {user?.email || "Gym Administrator"}
+        {/* User Profile & Theme Toggle & Logout */}
+        <div className="pt-4 border-t border-border space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div className="truncate pr-2">
+              <div className="text-[10px] font-mono text-primary-dim uppercase">Signed in as</div>
+              <div className="text-xs font-medium text-primary truncate max-w-[140px]">
+                {user?.email || "Administrator"}
+              </div>
             </div>
+            <ThemeToggle />
           </div>
 
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-white/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-primary-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -165,7 +170,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 bg-[#050505] p-4 sm:p-8 overflow-y-auto">
+      <main className="flex-1 min-w-0 bg-background p-4 sm:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto">{children}</div>
       </main>
     </div>

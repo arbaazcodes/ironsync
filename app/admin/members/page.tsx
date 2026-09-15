@@ -341,10 +341,10 @@ function MembersManager() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold uppercase tracking-tight text-primary">
             Gym Member Roster
           </h1>
-          <p className="text-xs sm:text-sm text-white/50">
+          <p className="text-xs sm:text-sm text-primary-muted">
             Create members, assign training blueprints, and manage access credentials.
           </p>
         </div>
@@ -366,7 +366,7 @@ function MembersManager() {
             });
             setIsAddModalOpen(true);
           }}
-          className="py-2.5 px-4 rounded-xl bg-[#FF1E1E] hover:bg-[#E01818] text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-[#FF1E1E]/20 flex items-center justify-center gap-2 transition-all"
+          className="py-2.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider shadow-accent-glow flex items-center justify-center gap-2 transition-all"
         >
           <UserPlus className="w-4 h-4" />
           Add New Member
@@ -374,16 +374,16 @@ function MembersManager() {
       </div>
 
       {/* Filter Bar */}
-      <div className="p-4 rounded-2xl bg-[#121212] border border-white/[0.08] flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-2xl bg-card border border-border shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
         {/* Search */}
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-dim" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by name, ID, or phone..."
-            className="w-full pl-10 pr-4 py-2 bg-black/40 border border-white/[0.1] rounded-xl text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-[#FF1E1E]"
+            className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-xl text-xs text-primary placeholder:text-primary-dim focus:outline-none focus:border-accent"
           />
         </div>
 
@@ -395,8 +395,8 @@ function MembersManager() {
               onClick={() => setStatusFilter(st)}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-colors ${
                 statusFilter === st
-                  ? "bg-white/[0.12] text-white font-bold border border-white/[0.15]"
-                  : "text-white/50 hover:text-white hover:bg-white/[0.04]"
+                  ? "bg-accent text-white font-bold shadow-sm"
+                  : "text-primary-muted hover:text-primary hover:bg-surface-elevated"
               }`}
             >
               {st}
@@ -406,17 +406,17 @@ function MembersManager() {
       </div>
 
       {/* Members Table */}
-      <div className="rounded-2xl bg-[#121212] border border-white/[0.08] overflow-hidden">
+      <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
         {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center text-white/40 gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-[#FF1E1E]" />
+          <div className="py-20 flex flex-col items-center justify-center text-primary-dim gap-2">
+            <Loader2 className="w-6 h-6 animate-spin text-accent" />
             <span className="text-xs font-mono">Querying member database...</span>
           </div>
         ) : filteredMembers.length === 0 ? (
           <div className="py-16 text-center space-y-3">
-            <Users className="w-8 h-8 mx-auto text-white/30" />
-            <div className="text-sm font-semibold text-white">No athletes found</div>
-            <p className="text-xs text-white/40 max-w-xs mx-auto">
+            <Users className="w-8 h-8 mx-auto text-primary-dim" />
+            <div className="text-sm font-semibold text-primary">No athletes found</div>
+            <p className="text-xs text-primary-muted max-w-xs mx-auto">
               {searchQuery || statusFilter !== "all"
                 ? "Try clearing your filters or search terms."
                 : "Get started by adding your first gym member."}
@@ -425,7 +425,7 @@ function MembersManager() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-white/[0.08] bg-white/[0.02] text-white/50 font-mono uppercase text-[10px]">
+              <thead className="border-b border-border bg-surface text-primary-dim font-mono uppercase text-[10px]">
                 <tr>
                   <th className="py-3.5 px-4 font-semibold">Member ID</th>
                   <th className="py-3.5 px-4 font-semibold">Athlete</th>
@@ -437,37 +437,37 @@ function MembersManager() {
                   <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.04]">
+              <tbody className="divide-y divide-border/60">
                 {filteredMembers.map((member) => {
                   const plan = GYM_PLAN_TEMPLATES.find((p) => p.id === member.planId);
                   const isResetting = resettingId === member.id;
 
                   return (
-                    <tr key={member.id} className="hover:bg-white/[0.02] transition-colors">
+                    <tr key={member.id} className="hover:bg-surface-elevated/50 transition-colors">
                       {/* Member ID */}
-                      <td className="py-3.5 px-4 font-mono font-bold text-white">
-                        <span className="px-2 py-0.5 rounded bg-white/[0.06] border border-white/[0.08]">
+                      <td className="py-3.5 px-4 font-mono font-bold text-primary">
+                        <span className="px-2 py-0.5 rounded bg-surface-elevated border border-border">
                           {member.memberId}
                         </span>
                       </td>
 
                       {/* Athlete Name */}
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-white">{member.fullName}</div>
-                        <div className="text-[10px] text-white/40 uppercase font-mono">
+                        <div className="font-semibold text-primary">{member.fullName}</div>
+                        <div className="text-[10px] text-primary-dim uppercase font-mono">
                           Goal: {member.fitnessGoal}
                         </div>
                       </td>
 
                       {/* Contact */}
-                      <td className="py-3.5 px-4 font-mono text-white/70">
+                      <td className="py-3.5 px-4 font-mono text-primary-muted">
                         <div className="flex items-center gap-1.5">
-                          <Phone className="w-3 h-3 text-white/40" />
+                          <Phone className="w-3 h-3 text-primary-dim" />
                           {member.phone}
                         </div>
                         {member.email && (
-                          <div className="flex items-center gap-1.5 text-[10px] text-white/40 truncate max-w-[180px]">
-                            <Mail className="w-3 h-3 text-white/30" />
+                          <div className="flex items-center gap-1.5 text-[10px] text-primary-dim truncate max-w-[180px]">
+                            <Mail className="w-3 h-3 text-primary-dim" />
                             {member.email}
                           </div>
                         )}
@@ -478,12 +478,12 @@ function MembersManager() {
                         <select
                           value={member.status}
                           onChange={(e) => handleUpdateStatus(member.id, e.target.value as MemberStatus)}
-                          className={`text-[10px] font-mono uppercase px-2 py-1 rounded-full border bg-black cursor-pointer focus:outline-none ${
+                          className={`text-[10px] font-mono uppercase px-2 py-1 rounded-full border bg-surface cursor-pointer focus:outline-none ${
                             member.status === "active"
-                              ? "text-emerald-400 border-emerald-500/30"
+                              ? "text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                               : member.status === "suspended"
-                              ? "text-amber-400 border-amber-500/30"
-                              : "text-red-400 border-red-500/30"
+                              ? "text-amber-600 dark:text-amber-400 border-amber-500/30"
+                              : "text-rose-500 border-rose-500/30"
                           }`}
                         >
                           <option value="active">Active</option>
@@ -505,10 +505,10 @@ function MembersManager() {
                       <td className="py-3.5 px-4">
                         <button
                           onClick={() => setActiveEditMember(member)}
-                          className="flex items-center gap-1.5 text-white/80 hover:text-white hover:underline text-left group"
+                          className="flex items-center gap-1.5 text-primary-muted hover:text-primary hover:underline text-left group"
                           title="Click to change plan"
                         >
-                          <Dumbbell className="w-3.5 h-3.5 text-[#FF1E1E]" />
+                          <Dumbbell className="w-3.5 h-3.5 text-accent" />
                           <span className="truncate max-w-[160px]">
                             {plan?.name || member.planId || "Default Blueprint"}
                           </span>
@@ -516,7 +516,7 @@ function MembersManager() {
                       </td>
 
                       {/* Expiry */}
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-white/60">
+                      <td className="py-3.5 px-4 font-mono text-[11px] text-primary-muted">
                         {member.expiryDate || "Ongoing"}
                       </td>
 
@@ -536,10 +536,10 @@ function MembersManager() {
                             if (isPresentToday) {
                               return (
                                 <span
-                                  className="px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-bold flex items-center gap-1"
+                                  className="px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-[10px] font-bold flex items-center gap-1"
                                   title="Member already checked in today"
                                 >
-                                  <Check className="w-3 h-3 text-emerald-400" />
+                                  <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                   <span className="hidden sm:inline">Present</span>
                                 </span>
                               );
@@ -549,13 +549,13 @@ function MembersManager() {
                               <button
                                 onClick={() => handleQuickMarkPresent(member)}
                                 disabled={isMarking}
-                                className="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-emerald-500/15 border border-white/[0.08] hover:border-emerald-500/40 text-white/70 hover:text-emerald-400 font-mono text-[10px] font-bold flex items-center gap-1 transition-all"
+                                className="px-2 py-1 rounded-lg bg-surface-elevated hover:bg-emerald-500/15 border border-border hover:border-emerald-500/40 text-primary-muted hover:text-emerald-600 dark:hover:text-emerald-400 font-mono text-[10px] font-bold flex items-center gap-1 transition-all"
                                 title="Quick Check-In: Mark Present"
                               >
                                 {isMarking ? (
-                                  <Loader2 className="w-3 h-3 animate-spin text-emerald-400" />
+                                  <Loader2 className="w-3 h-3 animate-spin text-emerald-600 dark:text-emerald-400" />
                                 ) : (
-                                  <UserCheck className="w-3 h-3 text-emerald-400" />
+                                  <UserCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                 )}
                                 <span className="hidden sm:inline">Check In</span>
                               </button>
@@ -566,7 +566,7 @@ function MembersManager() {
                           <button
                             onClick={() => handleResetPin(member)}
                             disabled={isResetting}
-                            className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors"
+                            className="p-1.5 rounded-lg bg-surface-elevated border border-border text-primary-muted hover:text-primary hover:bg-surface transition-colors"
                             title="Reset 4-Digit Security PIN"
                           >
                             {isResetting ? (
@@ -588,25 +588,25 @@ function MembersManager() {
 
       {/* MODAL 1: ADD NEW MEMBER */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-lg bg-[#121212] border border-white/[0.12] rounded-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="w-full max-w-lg bg-card border border-border rounded-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-4">
               <div>
-                <div className="text-[10px] font-mono text-[#FF1E1E] uppercase tracking-wider">
+                <div className="text-[10px] font-mono text-accent uppercase tracking-wider font-bold">
                   Gym Registration
                 </div>
-                <h2 className="text-lg font-black uppercase text-white">Enroll New Member</h2>
+                <h2 className="text-lg font-extrabold uppercase text-primary">Enroll New Member</h2>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1.5 rounded-lg text-white/50 hover:text-white"
+                className="p-1.5 rounded-lg text-primary-muted hover:text-primary"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {addError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{addError}</span>
               </div>
@@ -616,25 +616,25 @@ function MembersManager() {
               {/* Name & Phone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-mono uppercase text-white/70">Full Name *</label>
+                  <label className="font-mono uppercase text-primary-muted">Full Name *</label>
                   <input
                     type="text"
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     placeholder="e.g. John Doe"
-                    className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#FF1E1E]"
+                    className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="font-mono uppercase text-white/70">Phone Number *</label>
+                  <label className="font-mono uppercase text-primary-muted">Phone Number *</label>
                   <input
                     type="tel"
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+1 555-0199"
-                    className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#FF1E1E]"
+                    className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -642,19 +642,19 @@ function MembersManager() {
               {/* Email & Custom PIN */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-mono uppercase text-white/70">Email (Optional)</label>
+                  <label className="font-mono uppercase text-primary-muted">Email (Optional)</label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="john@example.com"
-                    className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#FF1E1E]"
+                    className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="font-mono uppercase text-white/70 flex items-center justify-between">
+                  <label className="font-mono uppercase text-primary-muted flex items-center justify-between">
                     <span>Initial PIN (Optional)</span>
-                    <span className="text-[10px] text-white/40">Leave empty to auto-generate</span>
+                    <span className="text-[10px] text-primary-dim">Leave empty to auto-generate</span>
                   </label>
                   <input
                     type="text"
@@ -664,7 +664,7 @@ function MembersManager() {
                       setFormData({ ...formData, pin: e.target.value.replace(/\D/g, "").slice(0, 4) })
                     }
                     placeholder="Auto 4-digit"
-                    className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl font-mono text-white placeholder:text-white/30 focus:outline-none focus:border-[#FF1E1E]"
+                    className="w-full p-2.5 bg-surface border border-border rounded-xl font-mono text-primary placeholder:text-primary-dim focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
@@ -672,11 +672,11 @@ function MembersManager() {
               {/* Goal & Assigned Plan */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-mono uppercase text-white/70">Fitness Goal</label>
+                  <label className="font-mono uppercase text-primary-muted">Fitness Goal</label>
                   <select
                     value={formData.fitnessGoal}
                     onChange={(e) => setFormData({ ...formData, fitnessGoal: e.target.value })}
-                    className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#FF1E1E]"
+                    className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary focus:outline-none focus:border-accent"
                   >
                     <option value="hypertrophy">Muscle Hypertrophy</option>
                     <option value="fat_loss">Fat Loss & Conditioning</option>
@@ -685,11 +685,11 @@ function MembersManager() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="font-mono uppercase text-white/70">Assigned Plan</label>
+                  <label className="font-mono uppercase text-primary-muted">Assigned Plan</label>
                   <select
                     value={formData.planId}
                     onChange={(e) => setFormData({ ...formData, planId: e.target.value })}
-                    className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#FF1E1E]"
+                    className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary focus:outline-none focus:border-accent"
                   >
                     {GYM_PLAN_TEMPLATES.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -703,49 +703,49 @@ function MembersManager() {
               {/* Dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="font-mono uppercase text-white/70">Start Date</label>
+                  <label className="font-mono uppercase text-primary-muted">Start Date</label>
                   <input
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#FF1E1E]"
+                    className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="font-mono uppercase text-white/70">Expiry Date</label>
+                  <label className="font-mono uppercase text-primary-muted">Expiry Date</label>
                   <input
                     type="date"
                     value={formData.expiryDate}
                     onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                    className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl text-white focus:outline-none focus:border-[#FF1E1E]"
+                    className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
               </div>
 
               {/* Notes */}
               <div className="space-y-1.5">
-                <label className="font-mono uppercase text-white/70">Internal Notes</label>
+                <label className="font-mono uppercase text-primary-muted">Internal Notes</label>
                 <textarea
                   rows={2}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder="Medical history, locker number, or custom goals..."
-                  className="w-full p-2.5 bg-black/40 border border-white/[0.1] rounded-xl text-white placeholder:text-white/30 focus:outline-none focus:border-[#FF1E1E]"
+                  className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary placeholder:text-primary-dim focus:outline-none focus:border-accent"
                 />
               </div>
 
-              <div className="pt-3 border-t border-white/[0.08] flex justify-end gap-3">
+              <div className="pt-3 border-t border-border flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-white/[0.1] text-white/70 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl border border-border text-primary-muted hover:text-primary hover:bg-surface-elevated transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={addLoading}
-                  className="px-5 py-2.5 rounded-xl bg-[#FF1E1E] hover:bg-[#E01818] text-white font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-[#FF1E1E]/25"
+                  className="px-5 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold uppercase tracking-wider flex items-center gap-2 shadow-accent-glow transition-all"
                 >
                   {addLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
                   Register & Generate ID
@@ -758,43 +758,43 @@ function MembersManager() {
 
       {/* MODAL 2: CREDENTIALS POPUP (SHOWN ONCE) */}
       {credentialsModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg">
-          <div className="w-full max-w-md bg-[#111111] border-2 border-[#FF1E1E] rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-lg">
+          <div className="w-full max-w-md bg-card border-2 border-accent rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
             <div className="text-center space-y-1.5">
-              <div className="w-12 h-12 mx-auto rounded-full bg-[#FF1E1E]/10 border border-[#FF1E1E]/30 flex items-center justify-center text-[#FF1E1E]">
+              <div className="w-12 h-12 mx-auto rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center text-accent">
                 <KeyRound className="w-6 h-6" />
               </div>
-              <h2 className="text-xl font-black uppercase tracking-tight text-white">
+              <h2 className="text-xl font-extrabold uppercase tracking-tight text-primary">
                 {credentialsModal.type === "new" ? "Member Enrolled Successfully" : "PIN Reset Successfully"}
               </h2>
-              <p className="text-xs text-white/60">
+              <p className="text-xs text-primary-muted">
                 Deliver these login credentials securely to the athlete.
               </p>
             </div>
 
             {/* Credentials Card */}
-            <div className="p-5 rounded-xl bg-black border border-white/[0.12] space-y-3 font-mono">
+            <div className="p-5 rounded-xl bg-surface-elevated border border-border space-y-3 font-mono">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-white/50 uppercase">Athlete Name:</span>
-                <span className="text-white font-bold">{credentialsModal.fullName}</span>
+                <span className="text-primary-muted uppercase">Athlete Name:</span>
+                <span className="text-primary font-bold">{credentialsModal.fullName}</span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-white/50 uppercase">Member ID:</span>
-                <span className="text-[#FF1E1E] font-extrabold text-sm px-2 py-0.5 rounded bg-white/[0.05]">
+                <span className="text-primary-muted uppercase">Member ID:</span>
+                <span className="text-accent font-extrabold text-sm px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
                   {credentialsModal.memberId}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-white/50 uppercase">Temporary PIN:</span>
-                <span className="text-emerald-400 font-black text-lg tracking-widest px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30">
+                <span className="text-primary-muted uppercase">Temporary PIN:</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-black text-lg tracking-widest px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30">
                   {credentialsModal.rawPin}
                 </span>
               </div>
             </div>
 
             {/* Security Warning */}
-            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-2.5 leading-relaxed">
-              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5 leading-relaxed">
+              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
               <span>
                 <strong>SECURITY PROTOCOL:</strong> This 4-digit PIN is displayed only once. It is stored exclusively as an encrypted scrypt hash. If forgotten, an administrator must generate a new PIN.
               </span>
@@ -805,16 +805,16 @@ function MembersManager() {
               <button
                 type="button"
                 onClick={handleCopyCredentials}
-                className="py-2.5 px-3 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-white font-semibold text-xs flex items-center justify-center gap-2 border border-white/[0.1]"
+                className="py-2.5 px-3 rounded-xl bg-surface-elevated hover:bg-surface text-primary font-semibold text-xs flex items-center justify-center gap-2 border border-border transition-colors"
               >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 {copied ? "Copied to Clipboard!" : "Copy Details"}
               </button>
 
               <button
                 type="button"
                 onClick={() => setCredentialsModal({ ...credentialsModal, isOpen: false })}
-                className="py-2.5 px-3 rounded-xl bg-[#FF1E1E] hover:bg-[#E01818] text-white font-bold text-xs uppercase tracking-wider"
+                className="py-2.5 px-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider shadow-accent-glow transition-all"
               >
                 Done / Close
               </button>
@@ -825,16 +825,16 @@ function MembersManager() {
 
       {/* MODAL 3: ASSIGN PLAN MODAL */}
       {activeEditMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#121212] border border-white/[0.12] rounded-2xl p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
-                <h3 className="text-base font-bold uppercase text-white">Assign Training Blueprint</h3>
-                <p className="text-xs text-white/50">{activeEditMember.fullName} ({activeEditMember.memberId})</p>
+                <h3 className="text-base font-bold uppercase text-primary">Assign Training Blueprint</h3>
+                <p className="text-xs text-primary-muted">{activeEditMember.fullName} ({activeEditMember.memberId})</p>
               </div>
               <button
                 onClick={() => setActiveEditMember(null)}
-                className="p-1 rounded-lg text-white/50 hover:text-white"
+                className="p-1 rounded-lg text-primary-muted hover:text-primary"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -850,17 +850,17 @@ function MembersManager() {
                     disabled={editLoading}
                     className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between ${
                       isCurrent
-                        ? "bg-[#FF1E1E]/10 border-[#FF1E1E] text-white"
-                        : "bg-black/40 border-white/[0.08] text-white/80 hover:border-white/20"
+                        ? "bg-accent/10 border-accent text-primary"
+                        : "bg-surface border-border text-primary hover:border-accent/40"
                     }`}
                   >
                     <div>
                       <div className="font-bold text-xs uppercase">{tpl.name}</div>
-                      <div className="text-[11px] text-white/50 font-mono">
+                      <div className="text-[11px] text-primary-dim font-mono">
                         {tpl.trainingDays} days &bull; {tpl.goal}
                       </div>
                     </div>
-                    {isCurrent && <Check className="w-4 h-4 text-[#FF1E1E]" />}
+                    {isCurrent && <Check className="w-4 h-4 text-accent" />}
                   </button>
                 );
               })}
@@ -870,7 +870,7 @@ function MembersManager() {
               <button
                 type="button"
                 onClick={() => setActiveEditMember(null)}
-                className="px-4 py-2 rounded-xl border border-white/[0.1] text-xs text-white/70"
+                className="px-4 py-2 rounded-xl border border-border text-xs text-primary-muted hover:text-primary hover:bg-surface-elevated transition-colors"
               >
                 Cancel
               </button>
