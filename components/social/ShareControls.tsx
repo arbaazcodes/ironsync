@@ -34,7 +34,7 @@ export const ShareControls: React.FC<ShareControlsProps> = ({
   const athlete = userName || plan.displayName || "Athlete";
   const formattedGoal = (plan.goal || "Muscle Gain").replace(/_/g, " ").toUpperCase();
   const caloriesStr = Number(plan.calories).toLocaleString();
-  const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://ironsync.fit";
+  const siteUrl = typeof window !== "undefined" ? window.location.origin : "https://ironsync.online";
 
   // Build high-converting social summary text
   const shareText = `🔥 My IronSync Fitness Blueprint

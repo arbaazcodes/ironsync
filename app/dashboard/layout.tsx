@@ -46,12 +46,12 @@ export default function DashboardLayout({
           </p>
           <div className="pt-2">
             <Button
-              href="/onboarding"
+              href="/member/dashboard"
               variant="primary"
               size="md"
               icon={<ArrowRight className="w-4 h-4" />}
             >
-              Complete Onboarding
+              Go to Member Portal
             </Button>
           </div>
         </div>

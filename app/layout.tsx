@@ -19,6 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ironsync.online"),
   title: "IronSync — Personalized Fitness Blueprint",
   description:
     "Build a fitness plan that actually fits your life. Tailored workouts, personalized calories, and structured recovery engineered around your real schedule and goals.",
@@ -31,6 +32,9 @@ export const metadata: Metadata = {
     "recovery protocol",
   ],
   authors: [{ name: "IronSync" }],
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export const viewport = {

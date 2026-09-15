@@ -38,6 +38,13 @@ function OnboardingContent() {
 }
 
 export default function OnboardingPage() {
+  React.useEffect(() => {
+    // Gate public onboarding - redirect visitors to member portal
+    if (typeof window !== "undefined") {
+      window.location.replace("/login?tab=member");
+    }
+  }, []);
+
   return (
     <OnboardingProvider>
       <OnboardingShell>

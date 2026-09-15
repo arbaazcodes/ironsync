@@ -96,10 +96,10 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="mailto:support@ironsync.fit"
+                  href="mailto:support@ironsync.online"
                   className="hover:text-primary transition-colors"
                 >
-                  support@ironsync.fit
+                  support@ironsync.online
                 </a>
               </li>
             </ul>

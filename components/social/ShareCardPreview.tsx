@@ -172,7 +172,7 @@ export const ShareCardPreview: React.FC<ShareCardPreviewProps> = ({
           Create Your Own Blueprint
         </span>
         <span className="text-sm font-black text-emerald-400 tracking-wider block">
-          IRONSYNC.FIT
+          IRONSYNC.ONLINE
         </span>
         <span className="text-[8px] text-gray-500 block">
           Deterministic Algorithmic Calibration Architecture

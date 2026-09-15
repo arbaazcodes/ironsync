@@ -59,8 +59,8 @@ export default function PrivacyPage() {
               </h2>
               <p>
                 If you have inquiries regarding privacy practices, contact our team at{" "}
-                <a href="mailto:privacy@ironsync.fit" className="text-accent hover:underline font-mono">
-                  privacy@ironsync.fit
+                <a href="mailto:support@ironsync.online" className="text-accent hover:underline font-mono">
+                  support@ironsync.online
                 </a>.
               </p>
             </div>

@@ -377,10 +377,17 @@ function LoginContent() {
                   )}
                 </button>
 
-                <div className="pt-2 border-t border-border text-center">
+                <div className="pt-3 border-t border-border flex flex-col items-center gap-1.5 text-center">
                   <p className="text-[11px] text-primary-dim leading-relaxed">
                     Member IDs and PINs are issued directly by your gym administrator upon enrollment.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("admin")}
+                    className="text-[11px] font-mono text-primary-muted hover:text-accent transition-colors underline underline-offset-4 cursor-pointer mt-1"
+                  >
+                    Staff / Admin portal sign in &rarr;
+                  </button>
                 </div>
               </form>
             )}
@@ -464,10 +471,17 @@ function LoginContent() {
                   )}
                 </button>
 
-                <div className="pt-2 border-t border-border text-center">
+                <div className="pt-3 border-t border-border flex flex-col items-center gap-1.5 text-center">
                   <span className="text-[11px] text-primary-dim">
                     Authorized gym operators and managers only.
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange("member")}
+                    className="text-[11px] font-mono text-primary-muted hover:text-accent transition-colors underline underline-offset-4 cursor-pointer mt-1"
+                  >
+                    &larr; Switch to Member Login
+                  </button>
                 </div>
               </form>
             )}

@@ -114,7 +114,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // 4. Handle /onboarding route -> Skip/hide public onboarding for active sessions
+  // 4. Handle /onboarding route -> Gated, no public self-serve signup funnel
   if (pathname.startsWith("/onboarding")) {
     if (hasValidMemberSession) {
       const redirectUrl = request.nextUrl.clone();
@@ -126,6 +126,10 @@ export async function middleware(request: NextRequest) {
       redirectUrl.pathname = "/admin";
       return NextResponse.redirect(redirectUrl);
     }
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/login";
+    redirectUrl.searchParams.set("tab", "member");
+    return NextResponse.redirect(redirectUrl);
   }
 
   // 5. Handle logged-in user visiting /login

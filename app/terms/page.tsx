@@ -59,8 +59,8 @@ export default function TermsPage() {
               </h2>
               <p>
                 Questions regarding our terms of service may be directed to{" "}
-                <a href="mailto:support@ironsync.fit" className="text-accent hover:underline font-mono">
-                  support@ironsync.fit
+                <a href="mailto:support@ironsync.online" className="text-accent hover:underline font-mono">
+                  support@ironsync.online
                 </a>.
               </p>
             </div>

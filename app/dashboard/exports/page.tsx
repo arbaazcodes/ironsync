@@ -196,7 +196,7 @@ export default function DashboardExportsPage() {
                   <div className="p-2.5 rounded-lg bg-surface border border-border/50">
                     <span className="text-primary-dim text-[10px] block">ACQUISITION WATERMARK</span>
                     <span className="text-primary font-bold block">
-                      ironsync.fit
+                      ironsync.online
                     </span>
                   </div>
                 </div>
