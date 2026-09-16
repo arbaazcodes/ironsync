@@ -409,6 +409,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      member_change_requests: {
+        Row: {
+          id: string;
+          member_uuid: string;
+          member_id: string;
+          status: string;
+          requested_fields: Json;
+          member_note: string | null;
+          admin_note: string | null;
+          reviewed_by: string | null;
+          created_at: string;
+          reviewed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          member_uuid: string;
+          member_id: string;
+          status?: string;
+          requested_fields?: Json;
+          member_note?: string | null;
+          admin_note?: string | null;
+          reviewed_by?: string | null;
+          created_at?: string;
+          reviewed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          member_uuid?: string;
+          member_id?: string;
+          status?: string;
+          requested_fields?: Json;
+          member_note?: string | null;
+          admin_note?: string | null;
+          reviewed_by?: string | null;
+          created_at?: string;
+          reviewed_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -433,5 +472,6 @@ export type CheckInRow = Database["public"]["Tables"]["check_ins"]["Row"];
 export type ExportRow = Database["public"]["Tables"]["exports"]["Row"];
 export type ReminderPreferencesRow = Database["public"]["Tables"]["reminder_preferences"]["Row"];
 export type MemberRow = Database["public"]["Tables"]["members"]["Row"];
+export type MemberChangeRequestRow = Database["public"]["Tables"]["member_change_requests"]["Row"];
 
 

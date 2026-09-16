@@ -58,11 +58,14 @@ function mapRowToMember(row: any): GymMember {
     dateOfBirth: row.date_of_birth,
     gender: row.gender || parsedNotesProfile.gender || null,
     age: row.age != null ? Number(row.age) : (parsedNotesProfile.age != null ? Number(parsedNotesProfile.age) : null),
-    height: row.height != null ? Number(row.height) : (parsedNotesProfile.height != null ? Number(parsedNotesProfile.height) : null),
-    weight: row.weight != null ? Number(row.weight) : (parsedNotesProfile.weight != null ? Number(parsedNotesProfile.weight) : null),
+    height: row.height != null ? Number(row.height) : (row.height_cm != null ? Number(row.height_cm) : (parsedNotesProfile.height != null ? Number(parsedNotesProfile.height) : null)),
+    heightCm: row.height_cm != null ? Number(row.height_cm) : (row.height != null ? Number(row.height) : (parsedNotesProfile.height != null ? Number(parsedNotesProfile.height) : null)),
+    weight: row.weight != null ? Number(row.weight) : (row.weight_kg != null ? Number(row.weight_kg) : (parsedNotesProfile.weight != null ? Number(parsedNotesProfile.weight) : null)),
+    weightKg: row.weight_kg != null ? Number(row.weight_kg) : (row.weight != null ? Number(row.weight) : (parsedNotesProfile.weight != null ? Number(parsedNotesProfile.weight) : null)),
     experience: row.experience || parsedNotesProfile.experience || "intermediate",
     dietType: row.diet_type || parsedNotesProfile.dietType || "non_vegetarian",
     daysPerWeek: row.days_per_week != null ? Number(row.days_per_week) : (parsedNotesProfile.daysPerWeek != null ? Number(parsedNotesProfile.daysPerWeek) : 4),
+    emergencyContact: row.emergency_contact || parsedNotesProfile.emergencyContact || null,
     notes: row.notes,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -609,6 +612,7 @@ export async function updateMember(
     member.planTemplateKey = isUuid(input.planId) ? null : input.planId;
   }
   if (input.expiryDate !== undefined) member.expiryDate = input.expiryDate;
+  if (input.dateOfBirth !== undefined) member.dateOfBirth = input.dateOfBirth;
   if (input.gender !== undefined) member.gender = input.gender;
   if (input.age !== undefined) member.age = input.age;
   if (input.height !== undefined) member.height = input.height;
@@ -616,6 +620,7 @@ export async function updateMember(
   if (input.experience !== undefined) member.experience = input.experience;
   if (input.dietType !== undefined) member.dietType = input.dietType;
   if (input.daysPerWeek !== undefined) member.daysPerWeek = input.daysPerWeek;
+  if (input.emergencyContact !== undefined) member.emergencyContact = input.emergencyContact;
   if (input.notes !== undefined) member.notes = input.notes;
   member.updatedAt = now;
 
@@ -629,6 +634,7 @@ export async function updateMember(
       status: member.status,
       fitness_goal: member.fitnessGoal,
       expiry_date: member.expiryDate,
+      date_of_birth: member.dateOfBirth,
       gender: member.gender,
       age: member.age,
       height: member.height,
@@ -636,6 +642,7 @@ export async function updateMember(
       experience: member.experience,
       diet_type: member.dietType,
       days_per_week: member.daysPerWeek,
+      emergency_contact: member.emergencyContact,
       notes: member.notes,
       updated_at: now,
     };
@@ -651,13 +658,15 @@ export async function updateMember(
       .eq("member_id", member.memberId);
 
     if (error) {
-      // Retry without plan_template_key if column not yet added
+      // Retry without non-standard columns if not yet migrated
       if (
+        error.message?.includes("emergency_contact") ||
         error.message?.includes("plan_template_key") ||
         error.code === "42703" ||
         error.code === "PGRST204"
       ) {
         delete dbUpdate.plan_template_key;
+        delete dbUpdate.emergency_contact;
         const retry = await supabase
           .from("members")
           .update(dbUpdate as any)
@@ -799,26 +808,10 @@ export async function getMemberDashboardData(
   }
 
   const meals = generateMealPlan(diet, blueprint.macros.calories, 4);
+  const { pinHash, ...safeMember } = member;
 
   return {
-    member: {
-      id: member.id,
-      memberId: member.memberId,
-      fullName: member.fullName,
-      phone: member.phone,
-      email: member.email,
-      status: member.status,
-      startDate: member.startDate,
-      expiryDate: member.expiryDate,
-      fitnessGoal: member.fitnessGoal,
-      gender: member.gender,
-      age: member.age,
-      height: member.height,
-      weight: member.weight,
-      experience: member.experience,
-      dietType: member.dietType,
-      daysPerWeek: member.daysPerWeek,
-    },
+    member: safeMember,
     assignedPlan: {
       id: template.id,
       version: 1,

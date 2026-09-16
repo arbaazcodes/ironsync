@@ -21,9 +21,12 @@ export interface GymMember {
   age?: number | null;
   height?: number | null;
   weight?: number | null;
+  heightCm?: number | null;
+  weightKg?: number | null;
   experience?: string | null;
   dietType?: string | null;
   daysPerWeek?: number | null;
+  emergencyContact?: string | null;
   notes?: string | null;
   createdBy?: string | null;
   createdAt: string;
@@ -48,6 +51,7 @@ export interface CreateMemberInput {
   experience?: string;
   dietType?: string;
   daysPerWeek?: number;
+  emergencyContact?: string;
   notes?: string;
 }
 
@@ -60,12 +64,14 @@ export interface UpdateMemberInput {
   planId?: string | null;
   expiryDate?: string | null;
   gender?: string | null;
+  dateOfBirth?: string | null;
   age?: number | null;
   height?: number | null;
   weight?: number | null;
   experience?: string | null;
   dietType?: string | null;
   daysPerWeek?: number | null;
+  emergencyContact?: string | null;
   notes?: string | null;
 }
 
@@ -93,24 +99,7 @@ export interface MemberAuthResponse {
 }
 
 export interface MemberDashboardData {
-  member: {
-    id: string;
-    memberId: string;
-    fullName: string;
-    phone: string;
-    email?: string | null;
-    status: MemberStatus;
-    startDate: string;
-    expiryDate?: string | null;
-    fitnessGoal: string;
-    gender?: string | null;
-    age?: number | null;
-    height?: number | null;
-    weight?: number | null;
-    experience?: string | null;
-    dietType?: string | null;
-    daysPerWeek?: number | null;
-  };
+  member: Omit<GymMember, "pinHash">;
   assignedPlan: {
     id: string;
     version: number;

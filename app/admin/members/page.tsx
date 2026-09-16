@@ -23,11 +23,18 @@ import {
   Sparkles,
   ExternalLink,
   UserCheck,
+  Edit,
+  FileEdit,
+  FileText,
+  Clock3,
 } from "lucide-react";
 import { GymMember, MemberStatus, CreateMemberInput } from "@/lib/types/member";
 import { AttendanceRecord, DayAttendanceSummary } from "@/lib/types/attendance";
+import { ChangeRequestWithMember } from "@/lib/types/changeRequest";
 import { AttendanceDots } from "@/components/dashboard/AttendanceDots";
 import { GYM_PLAN_TEMPLATES } from "@/lib/data/gymPlans";
+import { ChangeRequestsDrawer } from "@/components/admin/ChangeRequestsDrawer";
+import { DirectEditMemberModal } from "@/components/admin/DirectEditMemberModal";
 
 function MembersManager() {
   const searchParams = useSearchParams();
@@ -81,6 +88,14 @@ function MembersManager() {
   // Edit / Plan Change Modal State
   const [activeEditMember, setActiveEditMember] = useState<GymMember | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+
+  // Change Requests Drawer State
+  const [changeRequests, setChangeRequests] = useState<ChangeRequestWithMember[]>([]);
+  const [isChangeDrawerOpen, setIsChangeDrawerOpen] = useState(false);
+  const [selectedChangeRequestId, setSelectedChangeRequestId] = useState<string | null>(null);
+
+  // Direct Edit Member Modal State
+  const [directEditMember, setDirectEditMember] = useState<GymMember | null>(null);
 
   // Helper to generate 7-day attendance summary for compact rendering in table
   const getMemberWeekSummary = (records: AttendanceRecord[] = []): DayAttendanceSummary[] => {
@@ -152,20 +167,29 @@ function MembersManager() {
     }
   };
 
-  // Fetch Members with Batch Attendance
+  // Fetch Members with Batch Attendance and Change Requests
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/members?includeAttendance=true");
-      if (res.ok) {
-        const data = await res.json();
+      const [membersRes, reqRes] = await Promise.all([
+        fetch("/api/admin/members?includeAttendance=true"),
+        fetch("/api/admin/change-requests"),
+      ]);
+
+      if (membersRes.ok) {
+        const data = await membersRes.json();
         setMembers(data.members || []);
         if (data.attendance) {
           setAttendanceMap(data.attendance);
         }
       }
+
+      if (reqRes.ok) {
+        const reqData = await reqRes.json();
+        setChangeRequests(reqData.requests || []);
+      }
     } catch (err) {
-      console.error("Error fetching members:", err);
+      console.error("Error fetching members or change requests:", err);
     } finally {
       setLoading(false);
     }
@@ -349,28 +373,49 @@ function MembersManager() {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setFormData({
-              fullName: "",
-              phone: "",
-              email: "",
-              pin: "",
-              fitnessGoal: "hypertrophy",
-              planId: "plan-hypertrophy-ppl",
-              startDate: new Date().toISOString().split("T")[0],
-              expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              dateOfBirth: "",
-              gender: "male",
-              notes: "",
-            });
-            setIsAddModalOpen(true);
-          }}
-          className="py-2.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider shadow-accent-glow flex items-center justify-center gap-2 transition-all"
-        >
-          <UserPlus className="w-4 h-4" />
-          Add New Member
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          {/* Change Requests Queue Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedChangeRequestId(null);
+              setIsChangeDrawerOpen(true);
+            }}
+            className="py-2.5 px-4 rounded-xl bg-surface-elevated hover:bg-surface border border-border text-primary font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer relative"
+          >
+            <FileEdit className="w-4 h-4 text-accent" />
+            <span>Change Requests</span>
+            {changeRequests.filter((r) => r.status === "pending").length > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-accent text-white text-[10px] font-mono font-bold">
+                {changeRequests.filter((r) => r.status === "pending").length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setFormData({
+                fullName: "",
+                phone: "",
+                email: "",
+                pin: "",
+                fitnessGoal: "hypertrophy",
+                planId: "plan-hypertrophy-ppl",
+                startDate: new Date().toISOString().split("T")[0],
+                expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                dateOfBirth: "",
+                gender: "male",
+                notes: "",
+              });
+              setIsAddModalOpen(true);
+            }}
+            className="py-2.5 px-4 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider shadow-accent-glow flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add New Member</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar */}
@@ -441,6 +486,9 @@ function MembersManager() {
                 {filteredMembers.map((member) => {
                   const plan = GYM_PLAN_TEMPLATES.find((p) => p.id === member.planId);
                   const isResetting = resettingId === member.id;
+                  const memberPendingReq = changeRequests.find(
+                    (r) => (r.memberUuid === member.id || r.memberId === member.memberId) && r.status === "pending"
+                  );
 
                   return (
                     <tr key={member.id} className="hover:bg-surface-elevated/50 transition-colors">
@@ -453,7 +501,23 @@ function MembersManager() {
 
                       {/* Athlete Name */}
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-primary">{member.fullName}</div>
+                        <div className="font-semibold text-primary flex items-center gap-2 flex-wrap">
+                          <span>{member.fullName}</span>
+                          {memberPendingReq && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedChangeRequestId(memberPendingReq.id);
+                                setIsChangeDrawerOpen(true);
+                              }}
+                              className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-mono text-[9px] font-bold uppercase tracking-wider hover:bg-amber-500/25 transition-colors cursor-pointer flex items-center gap-1"
+                              title="Review Pending Profile Change Request"
+                            >
+                              <Clock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 animate-pulse" />
+                              <span>Pending Edit</span>
+                            </button>
+                          )}
+                        </div>
                         <div className="text-[10px] text-primary-dim uppercase font-mono">
                           Goal: {member.fitnessGoal}
                         </div>
@@ -562,11 +626,37 @@ function MembersManager() {
                             );
                           })()}
 
+                          {/* Review Pending Request Action */}
+                          {memberPendingReq && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedChangeRequestId(memberPendingReq.id);
+                                setIsChangeDrawerOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 transition-colors cursor-pointer"
+                              title="Review Pending Change Request"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          {/* Direct Edit Member Record */}
+                          <button
+                            type="button"
+                            onClick={() => setDirectEditMember(member)}
+                            className="p-1.5 rounded-lg bg-surface-elevated border border-border text-primary-muted hover:text-primary hover:bg-surface transition-colors cursor-pointer"
+                            title="Directly Edit Member Profile"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+
                           {/* Reset PIN Action */}
                           <button
+                            type="button"
                             onClick={() => handleResetPin(member)}
                             disabled={isResetting}
-                            className="p-1.5 rounded-lg bg-surface-elevated border border-border text-primary-muted hover:text-primary hover:bg-surface transition-colors"
+                            className="p-1.5 rounded-lg bg-surface-elevated border border-border text-primary-muted hover:text-primary hover:bg-surface transition-colors cursor-pointer"
                             title="Reset 4-Digit Security PIN"
                           >
                             {isResetting ? (
@@ -870,13 +960,36 @@ function MembersManager() {
               <button
                 type="button"
                 onClick={() => setActiveEditMember(null)}
-                className="px-4 py-2 rounded-xl border border-border text-xs text-primary-muted hover:text-primary hover:bg-surface-elevated transition-colors"
+                className="px-4 py-2 rounded-xl border border-border text-xs text-primary-muted hover:text-primary hover:bg-surface-elevated transition-colors cursor-pointer"
               >
                 Cancel
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL 4: CHANGE REQUESTS REVIEW DRAWER */}
+      <ChangeRequestsDrawer
+        isOpen={isChangeDrawerOpen}
+        onClose={() => setIsChangeDrawerOpen(false)}
+        requests={changeRequests}
+        initialSelectedId={selectedChangeRequestId}
+        onReviewed={() => {
+          fetchMembers();
+        }}
+      />
+
+      {/* MODAL 5: DIRECT EDIT MEMBER RECORD */}
+      {directEditMember && (
+        <DirectEditMemberModal
+          isOpen={!!directEditMember}
+          onClose={() => setDirectEditMember(null)}
+          member={directEditMember}
+          onSaved={() => {
+            fetchMembers();
+          }}
+        />
       )}
     </div>
   );
