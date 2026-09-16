@@ -40,7 +40,11 @@ export async function PATCH(
     const { id } = await params;
     const body = (await request.json().catch(() => ({}))) as UpdateMemberInput;
 
-    const updated = await updateMember(id, body);
+    const updated = await updateMember(id, body, {
+      id: admin.id,
+      email: admin.email,
+      type: "admin",
+    });
     if (!updated) {
       return NextResponse.json({ error: "Member not found or update failed" }, { status: 404 });
     }

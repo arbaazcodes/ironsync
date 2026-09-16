@@ -58,6 +58,11 @@ export function ChangeRequestsDrawer({
   const handleReview = async (action: "approve" | "reject") => {
     if (!activeRequest) return;
 
+    if (action === "reject" && !adminNote.trim()) {
+      setActionError("Please provide a reason before rejecting this change request.");
+      return;
+    }
+
     setActionError(null);
     setActionSuccess(null);
     setActionLoading(action);
@@ -353,30 +358,42 @@ export function ChangeRequestsDrawer({
                   </div>
                 )}
 
-                {/* Decision Form (Only if status is pending) */}
+                 {/* Decision Form (Only if status is pending) */}
                 {activeRequest.status === "pending" && (
                   <div className="pt-3 border-t border-border space-y-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-mono uppercase text-primary-muted flex items-center justify-between">
-                        <span>Admin Decision Note (Optional)</span>
-                        <span className="text-[10px] text-primary-dim">Visible to athlete</span>
+                        <span>Admin Decision Note</span>
+                        <span className="text-[10px] text-primary-dim">
+                          {adminNote.trim() ? "Visible to member" : "Required to reject request"}
+                        </span>
                       </label>
                       <input
                         type="text"
                         value={adminNote}
                         onChange={(e) => setAdminNote(e.target.value)}
-                        placeholder="e.g. Verified at front desk weigh-in, or Reason for rejection..."
+                        placeholder="Type verification notes, or type mandatory reason to reject..."
                         className="w-full p-2.5 bg-surface border border-border rounded-xl text-primary text-xs focus:outline-none focus:border-accent"
                       />
+                      {!adminNote.trim() && (
+                        <p className="text-[11px] font-mono text-amber-600 dark:text-amber-400">
+                          * A rejection reason is required before rejecting this request.
+                        </p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      {/* Reject Button */}
+                      {/* Reject Button (Strictly disabled until admin types reason) */}
                       <button
                         type="button"
-                        disabled={actionLoading !== null}
+                        disabled={actionLoading !== null || !adminNote.trim()}
                         onClick={() => handleReview("reject")}
-                        className="py-2.5 px-4 rounded-xl bg-surface-elevated hover:bg-rose-500/15 border border-border hover:border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                        title={
+                          !adminNote.trim()
+                            ? "Please enter a rejection reason above to reject this request."
+                            : "Reject this change request with the entered reason."
+                        }
+                        className="py-2.5 px-4 rounded-xl bg-surface-elevated hover:bg-rose-500/15 border border-border hover:border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {actionLoading === "reject" ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

@@ -448,6 +448,53 @@ export type Database = {
         };
         Relationships: [];
       };
+      member_audit_log: {
+        Row: {
+          id: string;
+          member_uuid: string;
+          member_id: string;
+          action: string;
+          actor_type: string;
+          actor_label: string | null;
+          request_id: string | null;
+          before_data: Json | null;
+          after_data: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          member_uuid: string;
+          member_id: string;
+          action: string;
+          actor_type: string;
+          actor_label?: string | null;
+          request_id?: string | null;
+          before_data?: Json | null;
+          after_data?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          member_uuid?: string;
+          member_id?: string;
+          action?: string;
+          actor_type?: string;
+          actor_label?: string | null;
+          request_id?: string | null;
+          before_data?: Json | null;
+          after_data?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_audit_log_member_uuid_fkey";
+            columns: ["member_uuid"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -473,5 +520,7 @@ export type ExportRow = Database["public"]["Tables"]["exports"]["Row"];
 export type ReminderPreferencesRow = Database["public"]["Tables"]["reminder_preferences"]["Row"];
 export type MemberRow = Database["public"]["Tables"]["members"]["Row"];
 export type MemberChangeRequestRow = Database["public"]["Tables"]["member_change_requests"]["Row"];
+export type MemberAuditLogRow = Database["public"]["Tables"]["member_audit_log"]["Row"];
+
 
 

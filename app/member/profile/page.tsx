@@ -216,25 +216,32 @@ export default function MemberProfilePage() {
         </div>
       )}
 
-      {/* RECENTLY REJECTED REQUEST NOTICE (DISMISSIBLE) */}
+      {/* RECENTLY REJECTED REQUEST NOTICE */}
       {latestRejected && (
-        <div className="p-4 rounded-2xl bg-surface-elevated border border-rose-500/30 flex items-start justify-between gap-3 text-xs">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 font-bold text-rose-600 dark:text-rose-400 uppercase font-mono">
+        <div className="p-5 rounded-2xl bg-rose-500/10 border-2 border-rose-500/30 space-y-3.5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-500/20 pb-2.5">
+            <div className="flex items-center gap-2 font-bold text-rose-600 dark:text-rose-400 uppercase font-mono text-sm">
               <ShieldAlert className="w-4 h-4 shrink-0 text-rose-500" />
-              <span>Previous Change Request Rejected</span>
+              <span>Rejected: {latestRejected.adminNote || "Reason not provided by front desk"}</span>
             </div>
-            <p className="text-primary-muted">
-              {latestRejected.adminNote
-                ? `Gym Administration Note: "${latestRejected.adminNote}"`
-                : "Your requested changes could not be verified by the front desk."}
-            </p>
+            <button
+              onClick={() => setDismissRejectedNotice(true)}
+              className="text-primary-dim hover:text-primary font-mono text-[11px] underline cursor-pointer self-start sm:self-auto"
+            >
+              Dismiss
+            </button>
           </div>
+
+          <p className="text-xs text-primary-muted leading-relaxed">
+            Your previous change request was reviewed and declined by the gym administration. You can adjust your details and submit a new request below.
+          </p>
+
           <button
-            onClick={() => setDismissRejectedNotice(true)}
-            className="text-primary-dim hover:text-primary font-mono text-[11px] underline"
+            onClick={() => setIsChangeModalOpen(true)}
+            className="py-2 px-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-xs font-mono uppercase font-bold tracking-wider flex items-center gap-2 shadow-sm transition-all cursor-pointer w-fit"
           >
-            Dismiss
+            <FileEdit className="w-3.5 h-3.5" />
+            <span>Submit a New Request</span>
           </button>
         </div>
       )}

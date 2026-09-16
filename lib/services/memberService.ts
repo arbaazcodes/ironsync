@@ -18,6 +18,7 @@ import { getGymPlanTemplate, GYM_PLAN_TEMPLATES } from "../data/gymPlans";
 import { generateBlueprint } from "../engine/index";
 import { generateMealPlan } from "../engine/mealGenerator";
 import { DietType } from "../types/onboarding";
+import { logMemberAction } from "./auditLogService";
 
 // In-memory fallback store is ONLY used in non-production environments when explicitly enabled
 const MEMORY_MEMBERS: Map<string, GymMember> = new Map();
@@ -596,10 +597,21 @@ export async function assignPlanToMember(
  */
 export async function updateMember(
   idOrMemberId: string,
-  input: UpdateMemberInput
+  input: UpdateMemberInput,
+  actor?: { id: string; email?: string; type?: "admin" | "member" | "system" }
 ): Promise<GymMember | null> {
   const member = await resolveMember(idOrMemberId);
   if (!member) return null;
+
+  // Snapshot before data for fields being modified (never log sensitive pin fields)
+  const beforeData: Record<string, any> = {};
+  const afterData: Record<string, any> = {};
+  for (const [key, val] of Object.entries(input)) {
+    if (val !== undefined && key !== "pin" && key !== "pinHash") {
+      beforeData[key] = (member as any)[key] ?? null;
+      afterData[key] = val;
+    }
+  }
 
   const now = new Date().toISOString();
   if (input.fullName !== undefined) member.fullName = input.fullName.trim();
@@ -685,6 +697,23 @@ export async function updateMember(
   if (isMemoryFallbackAllowed()) {
     MEMORY_MEMBERS.set(member.id, member);
     MEMORY_MEMBERS.set(member.memberId.toUpperCase(), member);
+  }
+
+  // Audit Log: Log direct_edit if performed by admin/system
+  if (actor) {
+    try {
+      await logMemberAction({
+        memberUuid: member.id,
+        memberId: member.memberId,
+        action: "direct_edit",
+        actorType: actor.type || "admin",
+        actorLabel: actor.email || actor.id || "admin",
+        beforeData,
+        afterData,
+      });
+    } catch (auditErr) {
+      console.warn("[MemberService] Failed to log direct_edit audit:", auditErr);
+    }
   }
 
   return member;

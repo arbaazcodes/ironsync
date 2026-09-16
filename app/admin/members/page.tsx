@@ -27,6 +27,7 @@ import {
   FileEdit,
   FileText,
   Clock3,
+  History,
 } from "lucide-react";
 import { GymMember, MemberStatus, CreateMemberInput } from "@/lib/types/member";
 import { AttendanceRecord, DayAttendanceSummary } from "@/lib/types/attendance";
@@ -35,6 +36,7 @@ import { AttendanceDots } from "@/components/dashboard/AttendanceDots";
 import { GYM_PLAN_TEMPLATES } from "@/lib/data/gymPlans";
 import { ChangeRequestsDrawer } from "@/components/admin/ChangeRequestsDrawer";
 import { DirectEditMemberModal } from "@/components/admin/DirectEditMemberModal";
+import { MemberAuditHistoryModal } from "@/components/admin/MemberAuditHistoryModal";
 
 function MembersManager() {
   const searchParams = useSearchParams();
@@ -96,6 +98,9 @@ function MembersManager() {
 
   // Direct Edit Member Modal State
   const [directEditMember, setDirectEditMember] = useState<GymMember | null>(null);
+
+  // Audit History Modal State
+  const [auditMember, setAuditMember] = useState<GymMember | null>(null);
 
   // Helper to generate 7-day attendance summary for compact rendering in table
   const getMemberWeekSummary = (records: AttendanceRecord[] = []): DayAttendanceSummary[] => {
@@ -651,6 +656,16 @@ function MembersManager() {
                             <Edit className="w-3.5 h-3.5" />
                           </button>
 
+                          {/* Audit History Timeline Action */}
+                          <button
+                            type="button"
+                            onClick={() => setAuditMember(member)}
+                            className="p-1.5 rounded-lg bg-surface-elevated border border-border text-primary-muted hover:text-accent hover:bg-surface transition-colors cursor-pointer"
+                            title="View Member Audit History"
+                          >
+                            <History className="w-3.5 h-3.5 text-accent" />
+                          </button>
+
                           {/* Reset PIN Action */}
                           <button
                             type="button"
@@ -991,6 +1006,13 @@ function MembersManager() {
           }}
         />
       )}
+
+      {/* MODAL 6: MEMBER AUDIT HISTORY TIMELINE */}
+      <MemberAuditHistoryModal
+        isOpen={auditMember !== null}
+        onClose={() => setAuditMember(null)}
+        member={auditMember}
+      />
     </div>
   );
 }

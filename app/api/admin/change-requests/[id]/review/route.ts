@@ -26,6 +26,13 @@ export async function POST(
       );
     }
 
+    if (action === "reject" && (!adminNote || !adminNote.trim())) {
+      return NextResponse.json(
+        { error: "A rejection reason is required before rejecting a change request." },
+        { status: 400 }
+      );
+    }
+
     const reviewed = await reviewChangeRequest(id, admin, action, adminNote);
 
     return NextResponse.json({

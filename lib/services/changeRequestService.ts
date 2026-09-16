@@ -8,6 +8,11 @@ import {
   ALLOWED_CHANGE_FIELD_KEYS,
 } from "../types/changeRequest";
 import { getMemberById } from "./memberService";
+import { logMemberAction } from "./auditLogService";
+import {
+  notifyGymAdminNewRequest,
+  notifyMemberRequestReviewed,
+} from "./emailService";
 
 // In-memory fallback store for non-production environments
 const MEMORY_REQUESTS: Map<string, MemberChangeRequest> = new Map();
@@ -134,6 +139,37 @@ export async function createChangeRequest(
 
   if (isMemoryFallbackAllowed()) {
     MEMORY_REQUESTS.set(newRequest.id, newRequest);
+  }
+
+  // 4. Audit Log: Log request_submitted
+  try {
+    const member = await getMemberById(memberUuid);
+    await logMemberAction({
+      memberUuid: newRequest.memberUuid,
+      memberId: newRequest.memberId,
+      action: "request_submitted",
+      actorType: "member",
+      actorLabel: member?.fullName || newRequest.memberId,
+      requestId: newRequest.id,
+      afterData: {
+        requested_fields: newRequest.requestedFields,
+        member_note: newRequest.memberNote,
+      },
+    });
+
+    // 5. Notify Gym Admin (gracefully skips if RESEND_API_KEY missing)
+    notifyGymAdminNewRequest({
+      memberUuid: newRequest.memberUuid,
+      memberId: newRequest.memberId,
+      memberName: member?.fullName || "Member",
+      requestedFields: newRequest.requestedFields,
+      memberNote: newRequest.memberNote,
+      requestId: newRequest.id,
+    }).catch((err) =>
+      console.warn("[EmailService] Failed to dispatch admin alert:", err)
+    );
+  } catch (logErr) {
+    console.warn("[ChangeRequestService] Failed to log audit or trigger notification:", logErr);
   }
 
   return newRequest;
@@ -296,8 +332,32 @@ export async function reviewChangeRequest(
     throw new Error(`This change request has already been ${request.status}.`);
   }
 
+  // Fetch current member record for before_data snapshot and contact email
+  const member = await getMemberById(request.memberUuid);
+
   if (action === "approve") {
-    // 1. Build update payload for public.members with requested_fields only
+    // 1. Snapshot current fields before applying
+    const beforeData: Record<string, any> = {};
+    if (member) {
+      for (const key of Object.keys(request.requestedFields)) {
+        if (key === "full_name") beforeData[key] = member.fullName;
+        else if (key === "phone") beforeData[key] = member.phone;
+        else if (key === "email") beforeData[key] = member.email;
+        else if (key === "date_of_birth") beforeData[key] = member.dateOfBirth;
+        else if (key === "gender") beforeData[key] = member.gender;
+        else if (key === "goal") beforeData[key] = member.fitnessGoal;
+        else if (key === "diet_type") beforeData[key] = member.dietType;
+        else if (key === "experience") beforeData[key] = member.experience;
+        else if (key === "days_per_week") beforeData[key] = member.daysPerWeek;
+        else if (key === "height_cm") beforeData[key] = member.heightCm || member.height;
+        else if (key === "weight_kg") beforeData[key] = member.weightKg || member.weight;
+        else if (key === "emergency_contact") beforeData[key] = member.emergencyContact;
+        else if (key === "notes") beforeData[key] = member.notes;
+        else beforeData[key] = (member as any)[key] ?? null;
+      }
+    }
+
+    // 2. Build update payload for public.members with requested_fields only
     const fields = request.requestedFields;
     const memberUpdate: Record<string, any> = {
       updated_at: now,
@@ -380,13 +440,53 @@ export async function reviewChangeRequest(
     request.adminNote = adminNote?.trim() || null;
     request.reviewedBy = reviewerTag;
     request.reviewedAt = now;
+
+    // 3. Audit Log: Log request_approved
+    try {
+      await logMemberAction({
+        memberUuid: request.memberUuid,
+        memberId: request.memberId,
+        action: "request_approved",
+        actorType: "admin",
+        actorLabel: reviewerTag,
+        requestId: request.id,
+        beforeData,
+        afterData: {
+          applied_fields: request.requestedFields,
+          admin_note: adminNote?.trim() || null,
+        },
+      });
+
+      // 4. Notify member via email if email exists
+      notifyMemberRequestReviewed({
+        memberUuid: request.memberUuid,
+        memberId: request.memberId,
+        memberName: member?.fullName || "Member",
+        memberEmail: member?.email || (request.requestedFields.email as string) || null,
+        action: "approve",
+        adminNote: adminNote?.trim() || null,
+        requestId: request.id,
+        requestedFields: request.requestedFields,
+      }).catch((err) =>
+        console.warn("[EmailService] Failed to notify member of approval:", err)
+      );
+    } catch (logErr) {
+      console.warn("[ChangeRequestService] Failed to log audit or trigger approval email:", logErr);
+    }
   } else if (action === "reject") {
+    // Strictly validate non-empty reason
+    if (!adminNote || !adminNote.trim()) {
+      throw new Error("A rejection reason is required before rejecting a change request.");
+    }
+
+    const trimmedReason = adminNote.trim();
+
     if (supabase) {
       const { error: reqError } = await supabase
         .from("member_change_requests")
         .update({
           status: "rejected",
-          admin_note: adminNote?.trim() || null,
+          admin_note: trimmedReason,
           reviewed_by: reviewerTag,
           reviewed_at: now,
         })
@@ -398,9 +498,41 @@ export async function reviewChangeRequest(
     }
 
     request.status = "rejected";
-    request.adminNote = adminNote?.trim() || null;
+    request.adminNote = trimmedReason;
     request.reviewedBy = reviewerTag;
     request.reviewedAt = now;
+
+    // Audit Log: Log request_rejected
+    try {
+      await logMemberAction({
+        memberUuid: request.memberUuid,
+        memberId: request.memberId,
+        action: "request_rejected",
+        actorType: "admin",
+        actorLabel: reviewerTag,
+        requestId: request.id,
+        afterData: {
+          rejection_reason: trimmedReason,
+          requested_fields: request.requestedFields,
+        },
+      });
+
+      // Notify member via email if email exists
+      notifyMemberRequestReviewed({
+        memberUuid: request.memberUuid,
+        memberId: request.memberId,
+        memberName: member?.fullName || "Member",
+        memberEmail: member?.email || null,
+        action: "reject",
+        adminNote: trimmedReason,
+        requestId: request.id,
+        requestedFields: request.requestedFields,
+      }).catch((err) =>
+        console.warn("[EmailService] Failed to notify member of rejection:", err)
+      );
+    } catch (logErr) {
+      console.warn("[ChangeRequestService] Failed to log audit or trigger rejection email:", logErr);
+    }
   }
 
   if (isMemoryFallbackAllowed()) {
