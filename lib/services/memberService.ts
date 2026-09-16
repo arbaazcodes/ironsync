@@ -19,6 +19,7 @@ import { generateBlueprint } from "../engine/index";
 import { generateMealPlan } from "../engine/mealGenerator";
 import { DietType } from "../types/onboarding";
 import { logMemberAction } from "./auditLogService";
+import { createNotification } from "./notificationService";
 
 // In-memory fallback store is ONLY used in non-production environments when explicitly enabled
 const MEMORY_MEMBERS: Map<string, GymMember> = new Map();
@@ -711,6 +712,19 @@ export async function updateMember(
         beforeData,
         afterData,
       });
+
+      // In-App Notification to Member
+      createNotification({
+        audience: "member",
+        memberUuid: member.id,
+        memberId: member.memberId,
+        type: "profile_updated",
+        title: "Profile Records Updated",
+        body: "Gym administration updated your athlete profile records.",
+        link: "/member/profile",
+      }).catch((notifErr) =>
+        console.warn("[NotificationService] Failed to notify member of direct edit:", notifErr)
+      );
     } catch (auditErr) {
       console.warn("[MemberService] Failed to log direct_edit audit:", auditErr);
     }

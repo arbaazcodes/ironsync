@@ -495,6 +495,53 @@ export type Database = {
           }
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          audience: string;
+          member_uuid: string | null;
+          member_id: string | null;
+          title: string;
+          body: string;
+          link: string | null;
+          type: string;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          audience: string;
+          member_uuid?: string | null;
+          member_id?: string | null;
+          title: string;
+          body: string;
+          link?: string | null;
+          type: string;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          audience?: string;
+          member_uuid?: string | null;
+          member_id?: string | null;
+          title?: string;
+          body?: string;
+          link?: string | null;
+          type?: string;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_member_uuid_fkey";
+            columns: ["member_uuid"];
+            isOneToOne: false;
+            referencedRelation: "members";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -521,6 +568,8 @@ export type ReminderPreferencesRow = Database["public"]["Tables"]["reminder_pref
 export type MemberRow = Database["public"]["Tables"]["members"]["Row"];
 export type MemberChangeRequestRow = Database["public"]["Tables"]["member_change_requests"]["Row"];
 export type MemberAuditLogRow = Database["public"]["Tables"]["member_audit_log"]["Row"];
+export type NotificationRow = Database["public"]["Tables"]["notifications"]["Row"];
+
 
 
 

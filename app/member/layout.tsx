@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { GymMember } from "@/lib/types/member";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -126,8 +127,9 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
             })}
           </nav>
 
-          {/* Right Action: ThemeToggle + Member Name + Logout */}
+          {/* Right Action: NotificationBell + ThemeToggle + Member Name + Logout */}
           <div className="flex items-center gap-2.5">
+            <NotificationBell audience="member" memberUuid={member?.id} />
             <ThemeToggle />
 
             <div className="hidden sm:block text-right pr-1">

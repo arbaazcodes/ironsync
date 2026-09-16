@@ -8,6 +8,7 @@ import {
 import { getMemberById, getMemberDashboardData } from "@/lib/services/memberService";
 import { AttendanceStatus } from "@/lib/types/attendance";
 import { getTodayDateIST } from "@/lib/utils/dateIST";
+import { createNotification } from "@/lib/services/notificationService";
 
 export async function GET(
   request: NextRequest,
@@ -91,6 +92,19 @@ export async function POST(
     if (!result.success) {
       return NextResponse.json({ error: result.error || "Failed to mark attendance." }, { status: 400 });
     }
+
+    // Realtime In-App Notification to Member
+    createNotification({
+      audience: "member",
+      memberUuid: member.id,
+      memberId: member.memberId,
+      type: "attendance_marked",
+      title: status === "present" ? "Gym Attendance Recorded" : `Session Marked as ${status}`,
+      body: `Front desk recorded your attendance as '${status}' for ${day || "today"}.`,
+      link: "/member/dashboard",
+    }).catch((err) =>
+      console.warn("[NotificationService] Failed to notify member of attendance:", err)
+    );
 
     return NextResponse.json({
       success: true,

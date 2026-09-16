@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -53,6 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Link>
 
         <div className="flex items-center gap-2">
+          <NotificationBell audience="admin" />
           <ThemeToggle />
           <button
             type="button"
@@ -171,7 +173,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 bg-background p-4 sm:p-8 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">{children}</div>
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Top Action Bar for Desktop Admin Portal */}
+          <div className="hidden md:flex items-center justify-between pb-4 border-b border-border">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold uppercase text-accent">
+                IronSync Gym Operations
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <NotificationBell audience="admin" />
+              <ThemeToggle />
+            </div>
+          </div>
+
+          {children}
+        </div>
       </main>
     </div>
   );

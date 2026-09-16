@@ -13,6 +13,7 @@ import {
   notifyGymAdminNewRequest,
   notifyMemberRequestReviewed,
 } from "./emailService";
+import { createNotification } from "./notificationService";
 
 // In-memory fallback store for non-production environments
 const MEMORY_REQUESTS: Map<string, MemberChangeRequest> = new Map();
@@ -167,6 +168,19 @@ export async function createChangeRequest(
       requestId: newRequest.id,
     }).catch((err) =>
       console.warn("[EmailService] Failed to dispatch admin alert:", err)
+    );
+
+    // 6. Realtime In-App Notification to Gym Admin
+    createNotification({
+      audience: "admin",
+      memberUuid: newRequest.memberUuid,
+      memberId: newRequest.memberId,
+      type: "change_request_submitted",
+      title: "New Change Request",
+      body: `${member?.fullName || newRequest.memberId} (${newRequest.memberId}) requested updates to ${Object.keys(newRequest.requestedFields).length} profile attributes.`,
+      link: "/admin/members",
+    }).catch((err) =>
+      console.warn("[NotificationService] Failed to dispatch admin in-app alert:", err)
     );
   } catch (logErr) {
     console.warn("[ChangeRequestService] Failed to log audit or trigger notification:", logErr);
@@ -470,6 +484,19 @@ export async function reviewChangeRequest(
       }).catch((err) =>
         console.warn("[EmailService] Failed to notify member of approval:", err)
       );
+
+      // 5. In-App Notification to Member
+      createNotification({
+        audience: "member",
+        memberUuid: request.memberUuid,
+        memberId: request.memberId,
+        type: "change_request_approved",
+        title: "Change Request Approved",
+        body: "Your requested profile modifications have been approved and applied to your account.",
+        link: "/member/profile",
+      }).catch((err) =>
+        console.warn("[NotificationService] Failed to dispatch member in-app approval:", err)
+      );
     } catch (logErr) {
       console.warn("[ChangeRequestService] Failed to log audit or trigger approval email:", logErr);
     }
@@ -529,6 +556,19 @@ export async function reviewChangeRequest(
         requestedFields: request.requestedFields,
       }).catch((err) =>
         console.warn("[EmailService] Failed to notify member of rejection:", err)
+      );
+
+      // In-App Notification to Member (includes rejection reason)
+      createNotification({
+        audience: "member",
+        memberUuid: request.memberUuid,
+        memberId: request.memberId,
+        type: "change_request_rejected",
+        title: "Change Request Declined",
+        body: `Reason: "${trimmedReason}"`,
+        link: "/member/profile",
+      }).catch((err) =>
+        console.warn("[NotificationService] Failed to dispatch member in-app rejection:", err)
       );
     } catch (logErr) {
       console.warn("[ChangeRequestService] Failed to log audit or trigger rejection email:", logErr);

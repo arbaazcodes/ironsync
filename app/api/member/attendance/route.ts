@@ -9,6 +9,7 @@ import {
 import { getMemberDashboardData } from "@/lib/services/memberService";
 import { getTodayDateIST } from "@/lib/utils/dateIST";
 import { AttendanceStatus } from "@/lib/types/attendance";
+import { createNotification } from "@/lib/services/notificationService";
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,6 +93,19 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Realtime In-App Notification to Gym Admin
+    createNotification({
+      audience: "admin",
+      memberUuid: payload.id,
+      memberId: payload.memberId,
+      type: "attendance_marked",
+      title: "Member Check-In",
+      body: `Member ${payload.memberId} recorded attendance as '${status}'.`,
+      link: "/admin/members",
+    }).catch((err) =>
+      console.warn("[NotificationService] Failed to notify admin of member attendance:", err)
+    );
 
     return NextResponse.json({
       success: true,
