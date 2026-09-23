@@ -76,7 +76,7 @@ export function MealCard({
                 className={`w-5 h-5 rounded-md flex items-center justify-center bg-white/95 backdrop-blur-md shadow-sm border ${
                   isVeg ? "border-emerald-600" : "border-red-600"
                 }`}
-                title={isVeg ? "100% शाकाहारी (Vegetarian)" : "मांसाहारी / अंडा (Non-Veg/Egg)"}
+                title={isVeg ? "100% Vegetarian" : "Non-Vegetarian / Contains Egg"}
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
@@ -101,7 +101,7 @@ export function MealCard({
             </Button>
           </div>
 
-          {/* Bottom Title, Hindi Name & Calories */}
+          {/* Bottom Title, Subtitle & Calories */}
           <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
             <div className="min-w-0 flex-1">
               <span className="text-base sm:text-lg font-extrabold text-white block leading-tight tracking-tight drop-shadow-sm truncate">
@@ -158,7 +158,7 @@ export function MealCard({
               <Sparkles className="w-4 h-4 text-accent shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold text-primary block text-[11px] uppercase tracking-wider">
-                  फायदे (Key Benefits):
+                  Key Benefits:
                 </span>
                 <span className="text-primary-muted font-medium text-xs leading-relaxed mt-0.5 block">
                   {media.keyBenefits}
@@ -170,8 +170,8 @@ export function MealCard({
           {/* Food Items & Portions with Circular Food Photos */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[10px] font-mono uppercase text-primary-dim tracking-wider font-bold">
-              <span>Scheduled Items (सामग्री और मात्रा)</span>
-              <span>Kitchen Portion</span>
+              <span>Scheduled Items & Portions</span>
+              <span>Estimated Portion</span>
             </div>
 
             <ul className="space-y-2">

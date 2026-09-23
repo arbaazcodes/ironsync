@@ -242,10 +242,10 @@ export function generateWeeklyDietChart(
           ];
         } else if (meal.name.includes("Dinner")) {
           const dinners = [
-            "High-Protein Soya Bhurji with 2 Phulkas",
+            "High-Protein Soya Scramble with 2 Whole Wheat Rotis",
             "Mixed Lentil Khichdi with Curd",
             "Tofu Vegetable Green Curry with Quinoa",
-            "Methi Paneer with Multigrain Roti",
+            "Paneer with Multigrain Flatbread",
             "Rajma Bowl with Steamed Jasmine Rice",
             "Grilled Paneer & Roasted Veggie Medley",
             "Warm Moong Dal Khichdi with Steamed Greens",

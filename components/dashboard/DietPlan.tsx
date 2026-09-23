@@ -226,7 +226,7 @@ export function DietPlan({
         </div>
       )}
 
-      {/* Beginner Quick Guide: डाइट फॉलो करने का आसान तरीका */}
+      {/* Beginner Quick Guide: Simple 4-Step Nutrition Guide */}
       <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-accent/10 via-emerald-500/10 to-transparent border border-accent/20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -235,23 +235,23 @@ export function DietPlan({
             </div>
             <div>
               <h3 className="text-sm font-extrabold text-primary uppercase tracking-tight">
-                डाइट फॉलो करने का आसान तरीका &bull; Simple Guide for Everyone
+                Nutrition Guide &bull; Simple Guide for Every Member
               </h3>
               <p className="text-xs text-primary-muted mt-0.5">
-                हर मील की फोटो देखकर भोजन पहचानें और बिना तराजू के कटोरी, हथेली या चम्मच से सही मात्रा लें।
+                Identify prescribed meals by real food photos and easily estimate portion sizes using standard kitchen items.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono shrink-0">
             <span className="px-2.5 py-1 rounded-xl bg-card border border-border text-primary font-bold">
-              📸 असली फोटो
+              📸 Real Food Photos
             </span>
             <span className="px-2.5 py-1 rounded-xl bg-card border border-border text-primary font-bold">
-              🥣 घरेलू माप (कटोरी/हथेली)
+              🥣 Visual Portion Guide
             </span>
             <span className="px-2.5 py-1 rounded-xl bg-card border border-border text-primary font-bold">
-              🔄 आसान Meal Swap
+              🔄 1-Click Meal Swap
             </span>
           </div>
         </div>

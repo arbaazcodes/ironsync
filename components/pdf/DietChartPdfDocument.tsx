@@ -491,7 +491,7 @@ export const DietChartPdfDocument: React.FC<DietChartPdfDocumentProps> = ({
             <View style={styles.guideItem}>
               <Text style={styles.guideItemName}>1 Glass</Text>
               <Text style={styles.guideItemMeasure}>250 ml</Text>
-              <Text style={styles.guideItemDesc}>Water, toned milk, chaas</Text>
+              <Text style={styles.guideItemDesc}>Water, skimmed milk, buttermilk</Text>
             </View>
             <View style={styles.guideItem}>
               <Text style={styles.guideItemName}>1 Scoop</Text>

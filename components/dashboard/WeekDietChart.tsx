@@ -55,7 +55,7 @@ export function WeekDietChart({
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold uppercase">
             <Apple className="w-3.5 h-3.5" />
-            7-Day Periodized Nutritional Protocol &bull; 7-दिवसीय डाइट चार्ट
+            7-Day Periodized Nutritional Protocol &bull; Weekly Meal Schedule
           </div>
           <h2 className="text-xl font-black uppercase tracking-tight text-primary mt-0.5">
             Weekly Diet Chart & Meal Guide
@@ -167,7 +167,7 @@ export function WeekDietChart({
                         className={`w-5 h-5 rounded-md flex items-center justify-center bg-white/95 backdrop-blur-md shadow-sm border ${
                           isVeg ? "border-emerald-600" : "border-red-600"
                         }`}
-                        title={isVeg ? "100% शाकाहारी (Vegetarian)" : "मांसाहारी / अंडा (Non-Veg/Egg)"}
+                        title={isVeg ? "100% Vegetarian" : "Non-Vegetarian / Contains Egg"}
                       >
                         <span
                           className={`w-2 h-2 rounded-full ${
@@ -186,7 +186,7 @@ export function WeekDietChart({
                     </span>
                   </div>
 
-                  {/* Bottom: Meal Title + Hindi Name */}
+                  {/* Bottom: Meal Title + English Subtitle */}
                   <div className="absolute bottom-3 left-4 right-4">
                     <h4 className="font-extrabold text-base sm:text-lg text-white block leading-tight drop-shadow-sm truncate">
                       {meal.name}
@@ -228,16 +228,16 @@ export function WeekDietChart({
                     <div className="p-2.5 rounded-xl bg-surface-elevated border border-border flex items-start gap-2 text-xs">
                       <Sparkles className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
                       <span className="text-primary-muted font-medium text-[11px] leading-relaxed">
-                        <strong className="text-primary">फायदे:</strong> {media.keyBenefits}
+                        <strong className="text-primary">Key Benefits:</strong> {media.keyBenefits}
                       </span>
                     </div>
                   )}
 
-                  {/* Itemized Foods Breakdown with Individual Photos & Kitchen Portion Tips */}
+                  {/* Itemized Foods Breakdown with Individual Photos & Portion Tips */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-[10px] font-mono uppercase text-primary-dim font-bold tracking-wider">
-                      <span>Prescribed Items (सामग्री और मात्रा)</span>
-                      <span>Kitchen Portion</span>
+                      <span>Prescribed Items & Portions</span>
+                      <span>Estimated Portion</span>
                     </div>
 
                     <ul className="space-y-2">
@@ -302,7 +302,7 @@ export function WeekDietChart({
           })}
         </div>
 
-        {/* Kitchen Measurement Reference Guide (रसोई माप गाइड) */}
+        {/* Kitchen Measurement Reference Guide (Visual Portion Reference) */}
         <div className="mt-8 p-5 sm:p-6 rounded-3xl bg-card border border-border shadow-sm space-y-4">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
@@ -310,10 +310,10 @@ export function WeekDietChart({
             </div>
             <div>
               <h3 className="text-sm font-extrabold uppercase text-primary tracking-tight">
-                Kitchen Measurement Guide &bull; रसोई माप गाइड (बिना तराजू के नापें)
+                Kitchen Measurement Guide &bull; Visual Portion Reference (No Scale Needed)
               </h3>
               <p className="text-xs text-primary-muted">
-                अगर आपके पास किचन वजन कांटा नहीं है, तो घरेलू बर्तनों और हाथों के इन आसान मापों से भोजन की सही मात्रा लें:
+                If you do not have a digital kitchen scale, use these standard household references for accurate portion control:
               </p>
             </div>
           </div>
@@ -321,49 +321,49 @@ export function WeekDietChart({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-1">
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
               <span className="text-xl block">🥣</span>
-              <span className="text-xs font-bold text-primary block">1 कटोरी (Katori)</span>
+              <span className="text-xs font-bold text-primary block">1 Standard Bowl (Katori)</span>
               <span className="text-[11px] font-mono text-accent font-bold block">~150g</span>
-              <span className="text-[10px] text-primary-dim block leading-tight">चावल, दाल, दही, छोले</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">Cooked rice, dal, curd, lentils</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
               <span className="text-xl block">✋</span>
-              <span className="text-xs font-bold text-primary block">1 हथेली (Palm)</span>
+              <span className="text-xs font-bold text-primary block">1 Palm Size</span>
               <span className="text-[11px] font-mono text-accent font-bold block">~150-180g</span>
-              <span className="text-[10px] text-primary-dim block leading-tight">पनीर, चिकन ब्रेस्ट, मछली</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">Paneer, chicken breast, fish</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
               <span className="text-xl block">✊</span>
-              <span className="text-xs font-bold text-primary block">1 मुट्ठी (Fist)</span>
+              <span className="text-xs font-bold text-primary block">1 Fist Size</span>
               <span className="text-[11px] font-mono text-accent font-bold block">1 Serving</span>
-              <span className="text-[10px] text-primary-dim block leading-tight">1 सेब/केला या 2 फुल्के</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">1 Apple/banana or 2 rotis</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
               <span className="text-xl block">🥄</span>
-              <span className="text-xs font-bold text-primary block">1 चम्मच (Spoon)</span>
+              <span className="text-xs font-bold text-primary block">1 Tablespoon</span>
               <span className="text-[11px] font-mono text-accent font-bold block">~15g / 5ml</span>
-              <span className="text-[10px] text-primary-dim block leading-tight">पीनट बटर, तेल/घी</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">Peanut butter, olive oil/ghee</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
               <span className="text-xl block">🥛</span>
-              <span className="text-xs font-bold text-primary block">1 ग्लास (Glass)</span>
+              <span className="text-xs font-bold text-primary block">1 Glass</span>
               <span className="text-[11px] font-mono text-accent font-bold block">250ml</span>
-              <span className="text-[10px] text-primary-dim block leading-tight">पानी, टोंड दूध, छाछ</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">Water, skimmed milk, buttermilk</span>
             </div>
 
             <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
               <span className="text-xl block">🥤</span>
-              <span className="text-xs font-bold text-primary block">1 स्कूप (Scoop)</span>
+              <span className="text-xs font-bold text-primary block">1 Scoop</span>
               <span className="text-[11px] font-mono text-accent font-bold block">~30-32g</span>
-              <span className="text-[10px] text-primary-dim block leading-tight">व्हे प्रोटीन पाउडर</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">Whey protein powder</span>
             </div>
           </div>
         </div>
 
-        {/* 4 Golden Rules of Gym Diet (डाइट के 4 सुनहरे नियम) */}
+        {/* 4 Golden Rules of Gym Nutrition */}
         <div className="p-5 sm:p-6 rounded-3xl bg-card border border-border shadow-sm space-y-4">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -371,10 +371,10 @@ export function WeekDietChart({
             </div>
             <div>
               <h3 className="text-sm font-extrabold uppercase text-primary tracking-tight">
-                4 Golden Rules of Gym Nutrition &bull; डाइट के 4 सुनहरे नियम
+                4 Golden Rules of Gym Nutrition &bull; Core Dietary Protocol
               </h3>
               <p className="text-xs text-primary-muted">
-                बेहतर परिणाम, फैट लॉस और लीन मसल के लिए इन 4 नियमों को रोजाना पूरी निष्ठा से अपनाएं:
+                Follow these four evidence-based rules daily to maximize fat loss, muscle recovery, and energy levels:
               </p>
             </div>
           </div>
@@ -383,9 +383,9 @@ export function WeekDietChart({
             <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border flex items-start gap-3">
               <span className="text-2xl shrink-0">💧</span>
               <div>
-                <h4 className="text-xs font-bold text-primary">1. पानी का नियम (Daily Hydration)</h4>
+                <h4 className="text-xs font-bold text-primary">1. Daily Hydration</h4>
                 <p className="text-[11px] text-primary-muted leading-relaxed mt-0.5">
-                  दिनभर में 3.5 से 4 लीटर सादा पानी पिएं। भोजन करते समय या तुरंत बाद ज्यादा पानी न पिएं (कम से कम 30 मिनट का अंतर रखें) ताकि पाचन तंत्र मजबूत रहे।
+                  Drink 3.5 to 4.0 liters of pure water daily. Avoid heavy water intake immediately during meals (wait at least 30 minutes) to support optimal digestive function.
                 </p>
               </div>
             </div>
@@ -393,9 +393,9 @@ export function WeekDietChart({
             <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border flex items-start gap-3">
               <span className="text-2xl shrink-0">⏰</span>
               <div>
-                <h4 className="text-xs font-bold text-primary">2. मील का सही समय (Pre & Post Workout)</h4>
+                <h4 className="text-xs font-bold text-primary">2. Nutrient Timing (Pre & Post Workout)</h4>
                 <p className="text-[11px] text-primary-muted leading-relaxed mt-0.5">
-                  जिम जाने से 45 मिनट पहले हल्का कार्ब्स (केला या पीनट बटर टोस्ट) और कसरत के 30 मिनट के अंदर प्रोटीन (व्हे शेक या अंडे/पनीर) अवश्य लें।
+                  Consume light complex carbohydrates 45 minutes prior to training (banana or toast) and high-quality protein within 30 minutes post-workout.
                 </p>
               </div>
             </div>
@@ -403,9 +403,9 @@ export function WeekDietChart({
             <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border flex items-start gap-3">
               <span className="text-2xl shrink-0">🧂</span>
               <div>
-                <h4 className="text-xs font-bold text-primary">3. तेल और नमक नियंत्रण (Oil & Salt Control)</h4>
+                <h4 className="text-xs font-bold text-primary">3. Oil & Salt Moderation</h4>
                 <p className="text-[11px] text-primary-muted leading-relaxed mt-0.5">
-                  खाना पकाते समय दिनभर में केवल 1 से 2 चम्मच ऑलिव ऑयल या सरसों का तेल ही इस्तेमाल करें। सादा सेंधा नमक सीमित मात्रा में लें ताकि ब्लोटिंग न हो।
+                  Limit total added cooking oil to 1–2 tablespoons daily. Use moderate rock or pink salt to avoid unwanted fluid retention and bloating.
                 </p>
               </div>
             </div>
@@ -413,9 +413,9 @@ export function WeekDietChart({
             <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border flex items-start gap-3">
               <span className="text-2xl shrink-0">🚫</span>
               <div>
-                <h4 className="text-xs font-bold text-primary">4. सख्त परहेज (Strictly Avoid)</h4>
+                <h4 className="text-xs font-bold text-primary">4. Foods to Strictly Avoid</h4>
                 <p className="text-[11px] text-primary-muted leading-relaxed mt-0.5">
-                  रिफाइंड चीनी, कोल्ड ड्रिंक्स, तली हुई पूड़ी-समोसे, पैकेज्ड चिप्स और शराब से पूरी तरह परहेज करें। घर का बना सादा खाना ही मसल ग्रोथ की कुंजी है।
+                  Completely eliminate refined sugars, aerated soft drinks, deep-fried street snacks, packaged chips, and alcohol for optimal physical conditioning.
                 </p>
               </div>
             </div>
