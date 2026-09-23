@@ -33,6 +33,41 @@ interface ExerciseDetailDrawerProps {
   onSwapClick?: (exercise: WorkoutExercise) => void;
 }
 
+function parseVideoSource(url?: string | null): {
+  type: "youtube" | "vimeo" | "html5" | "none";
+  embedUrl?: string;
+  directUrl?: string;
+} {
+  if (!url) return { type: "none" };
+  const trimmed = url.trim();
+  if (!trimmed) return { type: "none" };
+
+  const ytMatch = trimmed.match(
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i
+  );
+  if (ytMatch && ytMatch[1]) {
+    return {
+      type: "youtube",
+      embedUrl: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0&modestbranding=1&playsinline=1`,
+    };
+  }
+
+  const vimeoMatch = trimmed.match(
+    /(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)(\d+)/i
+  );
+  if (vimeoMatch && vimeoMatch[1]) {
+    return {
+      type: "vimeo",
+      embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}?title=0&byline=0&portrait=0`,
+    };
+  }
+
+  return {
+    type: "html5",
+    directUrl: trimmed,
+  };
+}
+
 export function ExerciseDetailDrawer({
   isOpen,
   onClose,
@@ -84,6 +119,7 @@ export function ExerciseDetailDrawer({
   const details = getExerciseDetails(exercise.name);
   const media = getExerciseMedia(exercise.name);
   const activeVideoUrl = details.videoUrl || media.videoUrl;
+  const videoSource = parseVideoSource(activeVideoUrl);
   const anatomy = MUSCLE_ANATOMY_DATA[media.muscleGroup] || MUSCLE_ANATOMY_DATA["Chest"];
 
   // Parse sets & reps from setsReps (e.g. "4 × 8-10")
@@ -309,11 +345,21 @@ export function ExerciseDetailDrawer({
               <span>{activeVideoUrl ? "Muted by Default" : "HD Movement Guide"}</span>
             </div>
 
-            {activeVideoUrl && !videoError ? (
+            {videoSource.type === "youtube" || videoSource.type === "vimeo" ? (
+              <div className="relative rounded-2xl overflow-hidden bg-black border border-border shadow-lg aspect-video w-full max-w-full">
+                <iframe
+                  src={videoSource.embedUrl}
+                  title={`Exercise demonstration video for ${exercise.name}`}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            ) : videoSource.type === "html5" && !videoError ? (
               <div className="relative rounded-2xl overflow-hidden bg-black border border-border shadow-lg aspect-video w-full max-w-full flex items-center justify-center group">
                 <video
                   ref={videoRef}
-                  src={activeVideoUrl}
+                  src={videoSource.directUrl}
                   playsInline
                   muted={isMuted}
                   preload="metadata"

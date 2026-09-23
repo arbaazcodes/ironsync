@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Info,
   Flame,
+  Play,
 } from "lucide-react";
 
 interface ExerciseCardProps {
@@ -117,11 +118,19 @@ export function ExerciseCard({
                 ~{media.caloriesBurnEstimate} kcal
               </span>
             </div>
+
+            {/* Key Form Cue */}
+            {(exercise.executionCue || details.executionCue) && (
+              <p className="text-[11px] text-primary-muted line-clamp-1 italic pt-0.5">
+                <span className="font-semibold text-accent not-italic">Cue: </span>
+                {exercise.executionCue || details.executionCue}
+              </p>
+            )}
           </div>
         </div>
 
         {/* Right side: RPE Badge, Swap button, and Execution Details button */}
-        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-border shrink-0">
           {exercise.rpe ? (
             <span className="px-2.5 py-1 rounded-lg bg-surface-elevated border border-accent/40 text-accent font-mono text-xs font-bold shadow-sm">
               {exercise.rpe}
@@ -145,11 +154,11 @@ export function ExerciseCard({
 
           <button
             onClick={handleOpenDetails}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-white font-mono text-xs font-bold hover:bg-accent-hover transition-all focus:ring-2 focus:ring-accent shadow-sm hover:shadow-accent-glow active:scale-95"
-            aria-label={`Open execution guide for ${exercise.name}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-white font-mono text-xs font-bold hover:bg-accent-hover transition-all focus:ring-2 focus:ring-accent shadow-sm hover:shadow-accent-glow active:scale-95 whitespace-nowrap"
+            aria-label={`Watch demo and details for ${exercise.name}`}
           >
-            <Info className="w-3.5 h-3.5" />
-            <span>Guide</span>
+            <Play className="w-3.5 h-3.5 fill-white" />
+            <span>Watch Demo & Details</span>
           </button>
         </div>
       </div>

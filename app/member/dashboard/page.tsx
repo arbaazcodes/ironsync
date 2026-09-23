@@ -23,11 +23,14 @@ import {
   Coffee,
   CircleAlert,
   X,
+  LayoutDashboard,
 } from "lucide-react";
 import { MemberDashboardData } from "@/lib/types/member";
 import { DayAttendanceSummary, AttendanceStatus, AttendanceRecord } from "@/lib/types/attendance";
 import { AiCoachDrawer } from "@/components/dashboard/AiCoachDrawer";
 import { AttendanceDots } from "@/components/dashboard/AttendanceDots";
+import { WorkoutRoutine } from "@/components/dashboard/WorkoutRoutine";
+import { DietPlan } from "@/components/dashboard/DietPlan";
 
 interface AttendanceState {
   todayDate: string;
@@ -62,6 +65,31 @@ export default function MemberDashboardPage() {
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
   const [startingWorkout, setStartingWorkout] = useState(false);
+  const [activeView, setActiveView] = useState<"overview" | "workout" | "diet">("overview");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get("view") || params.get("tab");
+      if (viewParam === "workout" || viewParam === "diet" || viewParam === "overview") {
+        setActiveView(viewParam as "overview" | "workout" | "diet");
+      }
+    }
+  }, []);
+
+  const handleViewChange = (view: "overview" | "workout" | "diet") => {
+    setActiveView(view);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (view === "overview") {
+        url.searchParams.delete("view");
+        url.searchParams.delete("tab");
+      } else {
+        url.searchParams.set("view", view);
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   // Timezone IST check
   const todayIST = new Intl.DateTimeFormat("en-CA", {
@@ -178,8 +206,10 @@ export default function MemberDashboardPage() {
       }
     } catch (err) {
       console.warn("Auto-attendance sync warning:", err);
+    } finally {
+      setStartingWorkout(false);
     }
-    router.push("/member/workout");
+    handleViewChange("workout");
   };
 
   if (loading) {
@@ -322,7 +352,49 @@ export default function MemberDashboardPage() {
         </div>
       </div>
 
-      {/* Check-In Notifications (Success / Error Banners) */}
+      {/* Sub-View Switcher Tabs */}
+      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-card border border-border">
+        <button
+          type="button"
+          onClick={() => handleViewChange("overview")}
+          className={`flex-1 sm:flex-initial py-2.5 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+            activeView === "overview"
+              ? "bg-accent text-white shadow-accent-glow"
+              : "text-primary-muted hover:text-primary hover:bg-surface-elevated"
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          <span>Overview</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleViewChange("workout")}
+          className={`flex-1 sm:flex-initial py-2.5 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+            activeView === "workout"
+              ? "bg-accent text-white shadow-accent-glow"
+              : "text-primary-muted hover:text-primary hover:bg-surface-elevated"
+          }`}
+        >
+          <Dumbbell className="w-4 h-4" />
+          <span>Workout Routine</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleViewChange("diet")}
+          className={`flex-1 sm:flex-initial py-2.5 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+            activeView === "diet"
+              ? "bg-accent text-white shadow-accent-glow"
+              : "text-primary-muted hover:text-primary hover:bg-surface-elevated"
+          }`}
+        >
+          <Apple className="w-4 h-4" />
+          <span>Diet Plan</span>
+        </button>
+      </div>
+
+      {activeView === "overview" && (
+        <div className="space-y-8">
+          {/* Check-In Notifications (Success / Error Banners) */}
       {checkInSuccess && (
         <div className="p-4 sm:p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3.5 text-emerald-600 dark:text-emerald-400 transition-all animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-3">
@@ -645,23 +717,33 @@ export default function MemberDashboardPage() {
               <span>Access Paused &bull; See Administrator</span>
             </div>
           ) : (
-            <button
-              onClick={handleStartWorkout}
-              disabled={startingWorkout}
-              className="w-full py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-accent-glow transition-all active:scale-[0.99]"
-            >
-              {startingWorkout ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Launching Session...</span>
-                </>
-              ) : (
-                <>
-                  <span>Start Workout Session</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleStartWorkout}
+                disabled={startingWorkout}
+                className="w-full py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-accent-glow transition-all active:scale-[0.99]"
+              >
+                {startingWorkout ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Launching Session...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Start Workout Session</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleViewChange("workout")}
+                className="w-full py-2.5 rounded-xl bg-surface-elevated hover:bg-surface border border-border text-primary-muted hover:text-primary font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+              >
+                <span>View Full Workout Routine</span>
+              </button>
+            </div>
           )}
         </div>
 
@@ -710,13 +792,14 @@ export default function MemberDashboardPage() {
             </div>
           </div>
 
-          <Link
-            href="/member/nutrition"
+          <button
+            type="button"
+            onClick={() => handleViewChange("diet")}
             className="w-full py-3.5 rounded-xl bg-surface-elevated hover:bg-surface border border-border text-primary font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
           >
             <span>View Meal Blueprint & Swaps</span>
             <ArrowRight className="w-4 h-4" />
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -748,6 +831,18 @@ export default function MemberDashboardPage() {
             </div>
           </div>
         </div>
+      )}
+        </div>
+      )}
+
+      {/* Sub-View: Workout Routine */}
+      {activeView === "workout" && (
+        <WorkoutRoutine memberData={data} />
+      )}
+
+      {/* Sub-View: Diet Plan */}
+      {activeView === "diet" && (
+        <DietPlan memberData={data} />
       )}
 
       {/* AI Coach Drawer Component */}
