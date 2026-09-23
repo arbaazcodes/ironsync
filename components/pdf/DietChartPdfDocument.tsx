@@ -257,6 +257,87 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     lineHeight: 1.4,
   },
+
+  // Kitchen Measurement Guide
+  guideContainer: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    padding: 10,
+    marginTop: 10,
+  },
+  guideTitle: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: "#111827",
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  guideGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  guideItem: {
+    width: "31%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: "#E5E7EB",
+    padding: 5,
+    marginBottom: 5,
+  },
+  guideItemName: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#059669",
+  },
+  guideItemMeasure: {
+    fontSize: 7,
+    fontFamily: "Helvetica-Bold",
+    color: "#111827",
+    marginTop: 1,
+  },
+  guideItemDesc: {
+    fontSize: 6.5,
+    color: "#6B7280",
+    marginTop: 1,
+  },
+
+  // 4 Golden Rules
+  rulesContainer: {
+    backgroundColor: "#ECFDF5",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    padding: 10,
+    marginTop: 10,
+  },
+  rulesTitle: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: "#065F46",
+    textTransform: "uppercase",
+    marginBottom: 5,
+  },
+  ruleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 3.5,
+  },
+  ruleBullet: {
+    fontSize: 7.5,
+    fontFamily: "Helvetica-Bold",
+    color: "#059669",
+    width: 14,
+  },
+  ruleText: {
+    fontSize: 7,
+    color: "#1F2937",
+    flex: 1,
+    lineHeight: 1.3,
+  },
 });
 
 export const DietChartPdfDocument: React.FC<DietChartPdfDocumentProps> = ({
@@ -383,6 +464,72 @@ export const DietChartPdfDocument: React.FC<DietChartPdfDocumentProps> = ({
           ))
         )}
 
+        {/* Kitchen Measurement Guide */}
+        <View style={styles.guideContainer} wrap={false}>
+          <Text style={styles.guideTitle}>Kitchen Measurement Guide (No Scale Needed)</Text>
+          <View style={styles.guideGrid}>
+            <View style={styles.guideItem}>
+              <Text style={styles.guideItemName}>1 Katori (Bowl)</Text>
+              <Text style={styles.guideItemMeasure}>~150g cooked</Text>
+              <Text style={styles.guideItemDesc}>Rice, dal, curd, chickpeas</Text>
+            </View>
+            <View style={styles.guideItem}>
+              <Text style={styles.guideItemName}>1 Palm Size</Text>
+              <Text style={styles.guideItemMeasure}>~150-180g</Text>
+              <Text style={styles.guideItemDesc}>Paneer, chicken breast, fish</Text>
+            </View>
+            <View style={styles.guideItem}>
+              <Text style={styles.guideItemName}>1 Fist Size</Text>
+              <Text style={styles.guideItemMeasure}>1 Serving</Text>
+              <Text style={styles.guideItemDesc}>1 Apple/banana or 2 rotis</Text>
+            </View>
+            <View style={styles.guideItem}>
+              <Text style={styles.guideItemName}>1 Spoon (Tbsp)</Text>
+              <Text style={styles.guideItemMeasure}>~15g / 5ml</Text>
+              <Text style={styles.guideItemDesc}>Peanut butter, olive oil/ghee</Text>
+            </View>
+            <View style={styles.guideItem}>
+              <Text style={styles.guideItemName}>1 Glass</Text>
+              <Text style={styles.guideItemMeasure}>250 ml</Text>
+              <Text style={styles.guideItemDesc}>Water, toned milk, chaas</Text>
+            </View>
+            <View style={styles.guideItem}>
+              <Text style={styles.guideItemName}>1 Scoop</Text>
+              <Text style={styles.guideItemMeasure}>~30-32g</Text>
+              <Text style={styles.guideItemDesc}>Whey protein powder</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 4 Golden Rules of Gym Nutrition */}
+        <View style={styles.rulesContainer} wrap={false}>
+          <Text style={styles.rulesTitle}>4 Golden Rules of Gym Nutrition</Text>
+          <View style={styles.ruleRow}>
+            <Text style={styles.ruleBullet}>1.</Text>
+            <Text style={styles.ruleText}>
+              Hydration: Drink 3.5L to 4.0L of water daily. Avoid heavy water intake immediately with meals.
+            </Text>
+          </View>
+          <View style={styles.ruleRow}>
+            <Text style={styles.ruleBullet}>2.</Text>
+            <Text style={styles.ruleText}>
+              Nutrient Timing: Consume light carbs 45m before workout; take protein within 30m post-workout.
+            </Text>
+          </View>
+          <View style={styles.ruleRow}>
+            <Text style={styles.ruleBullet}>3.</Text>
+            <Text style={styles.ruleText}>
+              Oil & Salt Control: Limit added cooking oils to 1-2 tbsp/day. Use moderate rock salt to prevent water retention.
+            </Text>
+          </View>
+          <View style={styles.ruleRow}>
+            <Text style={styles.ruleBullet}>4.</Text>
+            <Text style={styles.ruleText}>
+              Strictly Avoid: Refined sugar, sugary sodas, deep-fried street foods, and alcohol.
+            </Text>
+          </View>
+        </View>
+
         {/* Strategy Notes */}
         {assignedPlan.dietStrategyNotes && (
           <View style={styles.strategyBox} wrap={false}>
@@ -392,11 +539,14 @@ export const DietChartPdfDocument: React.FC<DietChartPdfDocumentProps> = ({
         )}
 
         {/* Footer */}
-        <View style={styles.pageFooter}>
+        <View style={styles.pageFooter} fixed>
           <Text style={styles.footerText}>
             IronSync Gym Management System &bull; 100% Free Community Gym &bull; https://www.ironsync.online
           </Text>
-          <Text style={styles.footerText}>Print-Safe A4 Layout &bull; Page 1 of 1</Text>
+          <Text
+            style={styles.footerText}
+            render={({ pageNumber, totalPages }) => `A4 Print Layout • Page ${pageNumber} of ${totalPages}`}
+          />
         </View>
       </Page>
     </Document>

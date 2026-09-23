@@ -25,6 +25,7 @@ import {
   ArrowRight,
   ShieldCheck,
   AlertTriangle,
+  Scale,
 } from "lucide-react";
 
 interface DietPlanProps {
@@ -224,6 +225,37 @@ export function DietPlan({
           </span>
         </div>
       )}
+
+      {/* Beginner Quick Guide: डाइट फॉलो करने का आसान तरीका */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-accent/10 via-emerald-500/10 to-transparent border border-accent/20">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-accent/20 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold text-primary uppercase tracking-tight">
+                डाइट फॉलो करने का आसान तरीका &bull; Simple Guide for Everyone
+              </h3>
+              <p className="text-xs text-primary-muted mt-0.5">
+                हर मील की फोटो देखकर भोजन पहचानें और बिना तराजू के कटोरी, हथेली या चम्मच से सही मात्रा लें।
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono shrink-0">
+            <span className="px-2.5 py-1 rounded-xl bg-card border border-border text-primary font-bold">
+              📸 असली फोटो
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-card border border-border text-primary font-bold">
+              🥣 घरेलू माप (कटोरी/हथेली)
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-card border border-border text-primary font-bold">
+              🔄 आसान Meal Swap
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Macro Targets Strip */}
       <div className="p-6 sm:p-7 rounded-3xl bg-card border border-border shadow-sm space-y-6">

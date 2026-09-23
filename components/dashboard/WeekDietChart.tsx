@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { DietType } from "@/lib/types/onboarding";
 import { generateWeeklyDietChart, WeekDietDay } from "@/lib/engine/mealGenerator";
-import { getMealMedia } from "@/lib/data/mealMedia";
+import { getMealMedia, getFoodItemDetail } from "@/lib/data/mealMedia";
 import {
   Printer,
   Calendar,
@@ -13,6 +13,12 @@ import {
   CheckCircle2,
   ChevronRight,
   Info,
+  Utensils,
+  Droplets,
+  Scale,
+  ShieldAlert,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 
 interface WeekDietChartProps {
@@ -45,14 +51,14 @@ export function WeekDietChart({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Top Bar: Diet specs & Print button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-card border border-border shadow-sm print:hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-3xl bg-card border border-border shadow-sm print:hidden">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold uppercase">
             <Apple className="w-3.5 h-3.5" />
-            7-Day Periodized Nutritional Protocol
+            7-Day Periodized Nutritional Protocol &bull; 7-दिवसीय डाइट चार्ट
           </div>
           <h2 className="text-xl font-black uppercase tracking-tight text-primary mt-0.5">
-            Weekly Diet Chart
+            Weekly Diet Chart & Meal Guide
           </h2>
           <p className="text-xs text-primary-muted mt-1 font-mono">
             Calorie Baseline: {totalCalories} kcal/day &bull; Dietary Tier: {dietType?.replace("_", " ") || "non vegetarian"}
@@ -103,104 +109,317 @@ export function WeekDietChart({
       </div>
 
       {/* Screen View: Selected Day Meals (Hidden in Print) */}
-      <div className="space-y-4 print:hidden">
+      <div className="space-y-5 print:hidden">
         {/* Day Focus Header */}
-        <div className="p-4 rounded-2xl bg-surface border border-border flex items-center justify-between">
+        <div className="p-4 sm:p-5 rounded-3xl bg-surface border border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-xl bg-accent/15 border border-accent/30 text-accent font-mono text-sm font-bold flex items-center justify-center">
+            <span className="w-10 h-10 rounded-2xl bg-accent/15 border border-accent/30 text-accent font-mono text-sm font-black flex items-center justify-center">
               {activeDay.dayShort}
             </span>
             <div>
               <h3 className="font-extrabold text-sm uppercase text-primary">
-                {activeDay.dayName} Strategy
+                {activeDay.dayName} Nutrition Strategy
               </h3>
               <p className="text-xs text-primary-muted font-mono">{activeDay.focus}</p>
             </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3 text-xs font-mono">
-            <span className="px-2.5 py-1 rounded-lg bg-surface-elevated border border-border text-primary">
+          <div className="flex items-center gap-2.5 text-xs font-mono">
+            <span className="px-3 py-1 rounded-xl bg-surface-elevated border border-border text-primary font-bold">
               {activeDay.totalCalories} kcal
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
-              {activeDay.totalProtein}g protein
+            <span className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+              {activeDay.totalProtein}g Protein
             </span>
           </div>
         </div>
 
-        {/* Meals Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Meals Grid with Rich Images & Hindi Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {activeDay.meals.map((meal) => {
             const media = getMealMedia(meal.name, dietType || undefined);
+            const isVeg = media.isVeg ?? (media.dietTier === "Vegetarian" || media.dietTier === "Vegan");
 
             return (
               <div
                 key={meal.id}
-                className="rounded-2xl bg-card border border-border p-4 shadow-sm hover:border-accent/40 transition-all flex flex-col justify-between space-y-3"
+                className="rounded-3xl bg-card border border-border overflow-hidden shadow-sm hover:border-accent/40 transition-all flex flex-col justify-between"
               >
-                <div className="flex items-start gap-3">
-                  {/* Photo with safe fallback */}
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-surface-elevated shrink-0 border border-border">
-                    <img
-                      src={media.thumbnailUrl}
-                      alt={meal.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        // Safe fallback to prevent broken images
-                        (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop";
-                      }}
-                    />
-                  </div>
+                {/* Visual Header Banner */}
+                <div className="relative h-44 w-full overflow-hidden bg-black/80">
+                  <img
+                    src={media.imageUrl || media.thumbnailUrl}
+                    alt={meal.name}
+                    className="w-full h-full object-cover brightness-[0.82] hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                  {/* Meal Metadata */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono text-primary-dim uppercase tracking-wider">
+                  {/* Top badges: Timing, Veg/Non-Veg */}
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {/* Veg / Non-Veg FSSAI-style Dot */}
+                      <span
+                        className={`w-5 h-5 rounded-md flex items-center justify-center bg-white/95 backdrop-blur-md shadow-sm border ${
+                          isVeg ? "border-emerald-600" : "border-red-600"
+                        }`}
+                        title={isVeg ? "100% शाकाहारी (Vegetarian)" : "मांसाहारी / अंडा (Non-Veg/Egg)"}
+                      >
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            isVeg ? "bg-emerald-600" : "bg-red-600"
+                          }`}
+                        />
+                      </span>
+
+                      <span className="px-2.5 py-0.5 rounded-lg bg-black/60 backdrop-blur-md border border-white/15 font-mono text-[10px] font-bold text-white uppercase tracking-wider">
                         {meal.timing}
                       </span>
-                      <span className="text-xs font-mono font-bold text-accent">
-                        {meal.calories} kcal
-                      </span>
                     </div>
-                    <h4 className="font-extrabold text-sm text-primary uppercase mt-0.5 truncate">
+
+                    <span className="px-2.5 py-0.5 rounded-xl bg-accent text-white font-mono text-xs font-black shadow-accent-glow">
+                      {meal.calories} kcal
+                    </span>
+                  </div>
+
+                  {/* Bottom: Meal Title + Hindi Name */}
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <h4 className="font-extrabold text-base sm:text-lg text-white block leading-tight drop-shadow-sm truncate">
                       {meal.name}
                     </h4>
-                    <div className="flex items-center gap-2 text-[11px] font-mono text-primary-muted mt-1">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                        {meal.protein}g P
-                      </span>
-                      <span>&bull;</span>
-                      <span>{meal.carbs}g C</span>
-                      <span>&bull;</span>
-                      <span>{meal.fat}g F</span>
-                    </div>
+                    {media.hindiName && (
+                      <p className="text-xs text-accent font-semibold drop-shadow mt-0.5 truncate">
+                        {media.hindiName}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* Items Breakdown */}
-                <div className="p-2.5 rounded-xl bg-surface-elevated border border-border space-y-1">
-                  <div className="text-[10px] font-mono uppercase text-primary-dim font-bold">
-                    Prescribed Food Items:
+                {/* Card Body */}
+                <div className="p-4 sm:p-5 space-y-4 flex-1 flex flex-col justify-between">
+                  {/* Macros Strip */}
+                  <div className="grid grid-cols-3 gap-2 font-mono text-center">
+                    <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                      <span className="text-[10px] text-primary-dim uppercase block font-bold">Protein</span>
+                      <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                        {meal.protein}g
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20">
+                      <span className="text-[10px] text-primary-dim uppercase block font-bold">Carbs</span>
+                      <span className="text-xs font-extrabold text-sky-600 dark:text-sky-400 mt-0.5 block">
+                        {meal.carbs}g
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                      <span className="text-[10px] text-primary-dim uppercase block font-bold">Fats</span>
+                      <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 mt-0.5 block">
+                        {meal.fat}g
+                      </span>
+                    </div>
                   </div>
-                  <ul className="space-y-1">
-                    {meal.items.map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="text-xs text-primary flex items-center justify-between font-mono"
-                      >
-                        <span className="truncate">{item.name}</span>
-                        <span className="text-primary-muted text-[11px] shrink-0 pl-2">
-                          {item.portion}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  {/* Key Benefits Callout if available */}
+                  {media.keyBenefits && (
+                    <div className="p-2.5 rounded-xl bg-surface-elevated border border-border flex items-start gap-2 text-xs">
+                      <Sparkles className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
+                      <span className="text-primary-muted font-medium text-[11px] leading-relaxed">
+                        <strong className="text-primary">फायदे:</strong> {media.keyBenefits}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Itemized Foods Breakdown with Individual Photos & Kitchen Portion Tips */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-[10px] font-mono uppercase text-primary-dim font-bold tracking-wider">
+                      <span>Prescribed Items (सामग्री और मात्रा)</span>
+                      <span>Kitchen Portion</span>
+                    </div>
+
+                    <ul className="space-y-2">
+                      {meal.items.map((item, idx) => {
+                        const itemDetail = getFoodItemDetail(item.name);
+                        return (
+                          <li
+                            key={idx}
+                            className="p-2 rounded-2xl bg-surface-elevated border border-border flex items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {/* 36x36 circular item thumbnail */}
+                              <div className="relative w-9 h-9 rounded-xl overflow-hidden shrink-0 bg-surface border border-border">
+                                <img
+                                  src={itemDetail.imageUrl}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src =
+                                      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=200&auto=format&fit=crop";
+                                  }}
+                                />
+                              </div>
+
+                              <div className="min-w-0">
+                                <span className="font-bold text-primary block truncate text-xs">
+                                  {item.name}
+                                </span>
+                                {itemDetail.hindiName && itemDetail.hindiName !== item.name && (
+                                  <span className="text-[10px] text-primary-muted block truncate">
+                                    {itemDetail.hindiName}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <span className="font-mono text-xs font-bold text-accent block">
+                                {item.portion}
+                              </span>
+                              <span className="text-[10px] font-mono text-primary-dim block">
+                                {itemDetail.portionTip}
+                              </span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
+                  {/* Timing Advice Footer */}
+                  {media.timingAdvice && (
+                    <div className="pt-2 border-t border-border flex items-center gap-1.5 text-[11px] font-mono text-primary-dim">
+                      <Clock className="w-3.5 h-3.5 text-accent shrink-0" />
+                      <span>{media.timingAdvice}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* Kitchen Measurement Reference Guide (रसोई माप गाइड) */}
+        <div className="mt-8 p-5 sm:p-6 rounded-3xl bg-card border border-border shadow-sm space-y-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+              <Scale className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold uppercase text-primary tracking-tight">
+                Kitchen Measurement Guide &bull; रसोई माप गाइड (बिना तराजू के नापें)
+              </h3>
+              <p className="text-xs text-primary-muted">
+                अगर आपके पास किचन वजन कांटा नहीं है, तो घरेलू बर्तनों और हाथों के इन आसान मापों से भोजन की सही मात्रा लें:
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-1">
+            <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
+              <span className="text-xl block">🥣</span>
+              <span className="text-xs font-bold text-primary block">1 कटोरी (Katori)</span>
+              <span className="text-[11px] font-mono text-accent font-bold block">~150g</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">चावल, दाल, दही, छोले</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
+              <span className="text-xl block">✋</span>
+              <span className="text-xs font-bold text-primary block">1 हथेली (Palm)</span>
+              <span className="text-[11px] font-mono text-accent font-bold block">~150-180g</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">पनीर, चिकन ब्रेस्ट, मछली</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
+              <span className="text-xl block">✊</span>
+              <span className="text-xs font-bold text-primary block">1 मुट्ठी (Fist)</span>
+              <span className="text-[11px] font-mono text-accent font-bold block">1 Serving</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">1 सेब/केला या 2 फुल्के</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
+              <span className="text-xl block">🥄</span>
+              <span className="text-xs font-bold text-primary block">1 चम्मच (Spoon)</span>
+              <span className="text-[11px] font-mono text-accent font-bold block">~15g / 5ml</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">पीनट बटर, तेल/घी</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
+              <span className="text-xl block">🥛</span>
+              <span className="text-xs font-bold text-primary block">1 ग्लास (Glass)</span>
+              <span className="text-[11px] font-mono text-accent font-bold block">250ml</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">पानी, टोंड दूध, छाछ</span>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-surface-elevated border border-border text-center space-y-1">
+              <span className="text-xl block">🥤</span>
+              <span className="text-xs font-bold text-primary block">1 स्कूप (Scoop)</span>
+              <span className="text-[11px] font-mono text-accent font-bold block">~30-32g</span>
+              <span className="text-[10px] text-primary-dim block leading-tight">व्हे प्रोटीन पाउडर</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Golden Rules of Gym Diet (डाइट के 4 सुनहरे नियम) */}
+        <div className="p-5 sm:p-6 rounded-3xl bg-card border border-border shadow-sm space-y-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-extrabold uppercase text-primary tracking-tight">
+                4 Golden Rules of Gym Nutrition &bull; डाइट के 4 सुनहरे नियम
+              </h3>
+              <p className="text-xs text-primary-muted">
+                बेहतर परिणाम, फैट लॉस और लीन मसल के लिए इन 4 नियमों को रोजाना पूरी निष्ठा से अपनाएं:
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+            <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border flex items-start gap-3">
+              <span className="text-2xl shrink-0">💧</span>
+              <div>
+                <h4 className="text-xs font-bold text-primary">1. पानी का नियम (Daily Hydration)</h4>
+                <p className="text-[11px] text-primary-muted leading-relaxed mt-0.5">
+                  दिनभर में 3.5 से 4 लीटर सादा पानी पिएं। भोजन करते समय या तुरंत बाद ज्यादा पानी न पिएं (कम से कम 30 मिनट का अंतर रखें) ताकि पाचन तंत्र मजबूत रहे।
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border flex items-start gap-3">
+              <span className="text-2xl shrink-0">⏰</span>
+              <div>
+                <h4 className="text-xs font-bold text-primary">2. मील का सही समय (Pre & Post Workout)</h4>
+                <p className="text-[11px] text-primary-muted leading-relaxed mt-0.5">
+                  जिम जाने से 45 मिनट पहले हल्का कार्ब्स (केला या पीनट बटर टोस्ट) और कसरत के 30 मिनट के अंदर प्रोटीन (व्हे शेक या अंडे/पनीर) अवश्य लें।
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border flex items-start gap-3">
+              <span className="text-2xl shrink-0">🧂</span>
+              <div>
+                <h4 className="text-xs font-bold text-primary">3. तेल और नमक नियंत्रण (Oil & Salt Control)</h4>
+                <p className="text-[11px] text-primary-muted leading-relaxed mt-0.5">
+                  खाना पकाते समय दिनभर में केवल 1 से 2 चम्मच ऑलिव ऑयल या सरसों का तेल ही इस्तेमाल करें। सादा सेंधा नमक सीमित मात्रा में लें ताकि ब्लोटिंग न हो।
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-surface-elevated border border-border flex items-start gap-3">
+              <span className="text-2xl shrink-0">🚫</span>
+              <div>
+                <h4 className="text-xs font-bold text-primary">4. सख्त परहेज (Strictly Avoid)</h4>
+                <p className="text-[11px] text-primary-muted leading-relaxed mt-0.5">
+                  रिफाइंड चीनी, कोल्ड ड्रिंक्स, तली हुई पूड़ी-समोसे, पैकेज्ड चिप्स और शराब से पूरी तरह परहेज करें। घर का बना सादा खाना ही मसल ग्रोथ की कुंजी है।
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -230,7 +449,7 @@ export function WeekDietChart({
                     <th className="py-1 px-2">Time</th>
                     <th className="py-1 px-2">Calories</th>
                     <th className="py-1 px-2">Protein</th>
-                    <th className="py-1 px-2">Items</th>
+                    <th className="py-1 px-2">Items & Portions</th>
                   </tr>
                 </thead>
                 <tbody>
