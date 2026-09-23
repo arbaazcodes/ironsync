@@ -202,7 +202,7 @@ export function Personalization() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-accent" />
                   <span className="text-xs font-mono uppercase tracking-wider text-accent font-semibold">
-                    INDIVIDUALIZED BLUEPRINT
+                    INDIVIDUALIZED WORKOUT SPLIT
                   </span>
                 </div>
                 <Badge variant="accent" size="sm">
@@ -263,12 +263,12 @@ export function Personalization() {
         {/* Action Prompt */}
         <div className="mt-12 text-center">
           <Button
-            href="/login?tab=member"
+            href="/login"
             variant="primary"
             size="md"
             icon={<ArrowRight className="w-4 h-4" />}
           >
-            Access Member Portal &rarr;
+            Member Portal &rarr;
           </Button>
         </div>
       </Container>

@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error || "Failed to record attendance." },
+        { success: false, error: result.error || "Failed to record attendance." },
         { status: 400 }
       );
     }

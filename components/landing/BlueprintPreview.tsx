@@ -80,7 +80,7 @@ export function BlueprintPreview() {
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-accent shadow-[0_0_8px_rgba(255,30,30,0.9)] animate-pulse" />
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-primary">
-              IRONSYNC BLUEPRINT ENGINE
+              IRONSYNC TRAINING ENGINE
             </span>
           </div>
           <Badge variant="accent" size="sm" dot>

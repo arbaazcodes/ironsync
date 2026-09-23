@@ -2,33 +2,33 @@ import React from "react";
 import { Container } from "@/components/layout/Container";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Sliders, Cpu, PlayCircle } from "lucide-react";
+import { UserCheck, Dumbbell, LogIn } from "lucide-react";
 
 export function HowItWorks() {
   const steps = [
     {
       number: "01",
-      title: "Tell us about you",
-      subtitle: "Goals, body metrics, experience and lifestyle.",
+      title: "Front Desk Enrollment",
+      subtitle: "Staff creates your member profile & credentials.",
       description:
-        "Input your fitness targets, schedule constraints, equipment setup, and dietary preferences in a focused 60-second questionnaire.",
-      icon: Sliders,
+        "Your gym administrator creates your profile, assigns your training track, and securely issues your unique Member ID and 4-digit security PIN.",
+      icon: UserCheck,
     },
     {
       number: "02",
-      title: "We build your blueprint",
-      subtitle: "Calculated targets for training and nutrition.",
+      title: "Assigned Workout Split",
+      subtitle: "Periodized training tailored to your goals.",
       description:
-        "Our engine computes your personalized calorie needs, macro distribution, workout frequency, and recovery windows based on your profile.",
-      icon: Cpu,
+        "Follow structured training routines and nutritional guidelines configured specifically for your experience level and gym equipment.",
+      icon: Dumbbell,
     },
     {
       number: "03",
-      title: "Start your plan",
-      subtitle: "Get your personalized blueprint and take action.",
+      title: "Member Portal Access",
+      subtitle: "Sign in with your Member ID and PIN.",
       description:
-        "Receive a clear, actionable roadmap with day-by-day routines and nutrition directives ready to execute immediately.",
-      icon: PlayCircle,
+        "Log into your free member dashboard to view scheduled workout splits, log attendance, and review training progress with zero recurring fees.",
+      icon: LogIn,
     },
   ];
 
@@ -41,10 +41,10 @@ export function HowItWorks() {
             PROCESS
           </Badge>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-primary tracking-tight">
-            Your plan. Your body. Your routine.
+            How IronSync Works
           </h2>
           <p className="text-base text-primary-muted leading-relaxed max-w-lg">
-            A frictionless, scientific method to move from generic fitness advice to an individualized plan built specifically for you.
+            A frictionless, roster-managed system connecting gym administration with athlete training and attendance.
           </p>
         </div>
 

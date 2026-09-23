@@ -2,11 +2,11 @@ import React from "react";
 import Link from "next/link";
 import { Container } from "@/components/layout/Container";
 import { Card } from "@/components/ui/Card";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle, ShieldAlert, KeyRound, HelpCircle } from "lucide-react";
 
 export const metadata = {
-  title: "Terms of Service — IronSync",
-  description: "Terms and conditions for utilizing IronSync fitness blueprint software.",
+  title: "Terms of Service — IronSync Free Gym Platform",
+  description: "Terms and conditions for utilizing the IronSync free gym management and workout platform.",
 };
 
 export default function TermsPage() {
@@ -30,36 +30,49 @@ export default function TermsPage() {
               Terms of Service
             </h1>
             <p className="text-sm text-primary-muted font-mono">
-              Last updated: September 2026
+              Last updated: September 2026 &bull; IronSync Free Gym Platform
             </p>
           </div>
 
           <Card variant="elevated" padding="lg" className="space-y-6 text-sm text-primary-muted leading-relaxed">
             <div>
-              <h2 className="text-base font-bold text-primary mb-2">
-                1. General Fitness Disclaimer
-              </h2>
+              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
+                <CheckCircle className="w-4 h-4 text-accent" />
+                <h2>1. 100% Free Platform Terms</h2>
+              </div>
               <p>
-                IronSync provides software for fitness planning, progressive overload structuring, and nutritional estimation. The blueprints and calculators generated are for informational and educational purposes only and do not replace certified medical consultation or physical therapy.
+                IronSync is provided completely free of charge to gyms, trainers, and athletes. There are no software usage fees, mandatory dues, recurring charges, or paid premium tiers for accessing the member or admin portals.
               </p>
             </div>
 
             <div className="border-t border-border/60 pt-6">
-              <h2 className="text-base font-bold text-primary mb-2">
-                2. Use of Service
-              </h2>
+              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
+                <KeyRound className="w-4 h-4 text-accent" />
+                <h2>2. Member & Staff Account Access</h2>
+              </div>
               <p>
-                You agree to use IronSync responsibly and ensure your physical capability before attempting any intense resistance training or caloric adjustments suggested in your blueprint.
+                Member access credentials (Member ID and 4-digit security PIN) are issued directly by your local gym front-desk staff upon enrollment. You agree to access only the account assigned to you and to keep your security PIN confidential. Unauthorized attempts to access accounts or brute-force member credentials will trigger security lockouts.
               </p>
             </div>
 
             <div className="border-t border-border/60 pt-6">
-              <h2 className="text-base font-bold text-primary mb-2">
-                3. Inquiries
-              </h2>
+              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
+                <ShieldAlert className="w-4 h-4 text-accent" />
+                <h2>3. Physical Fitness & Health Disclaimer</h2>
+              </div>
               <p>
-                Questions regarding our terms of service may be directed to{" "}
-                <a href="mailto:support@ironsync.online" className="text-accent hover:underline font-mono">
+                IronSync provides workout tracking, exercise logging, and attendance tools for athletic training. The exercise libraries and training templates provided are for informational and organizational purposes only. Always consult with a qualified fitness professional, personal trainer, or physician before beginning any strenuous physical exercise program.
+              </p>
+            </div>
+
+            <div className="border-t border-border/60 pt-6">
+              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
+                <HelpCircle className="w-4 h-4 text-accent" />
+                <h2>4. Support & Questions</h2>
+              </div>
+              <p>
+                For questions regarding these terms, gym onboarding, or system use, please contact our support team at{" "}
+                <a href="mailto:support@ironsync.online" className="text-accent hover:underline font-mono font-medium">
                   support@ironsync.online
                 </a>.
               </p>

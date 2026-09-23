@@ -359,10 +359,22 @@ function MembersManager() {
 
   // Copy credentials helper
   const handleCopyCredentials = () => {
-    const text = `IRONSYNC GYM CREDENTIALS\nMember: ${credentialsModal.fullName}\nMember ID: ${credentialsModal.memberId}\nSecurity PIN: ${credentialsModal.rawPin}\nLogin URL: ${window.location.origin}/login?tab=member`;
+    const text = `Member ID: ${credentialsModal.memberId} | PIN: ${credentialsModal.rawPin}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  // Close and purge plain PIN from client state
+  const handleCloseCredentials = () => {
+    setCredentialsModal({
+      isOpen: false,
+      fullName: "",
+      memberId: "",
+      rawPin: "",
+      type: "new",
+    });
+    setCopied(false);
   };
 
   return (
@@ -462,14 +474,49 @@ function MembersManager() {
             <Loader2 className="w-6 h-6 animate-spin text-accent" />
             <span className="text-xs font-mono">Querying member database...</span>
           </div>
+        ) : members.length === 0 ? (
+          <div className="py-20 text-center space-y-4 max-w-sm mx-auto px-4">
+            <div className="w-12 h-12 rounded-2xl bg-surface-elevated border border-border flex items-center justify-center mx-auto text-primary-dim">
+              <Users className="w-6 h-6 text-accent" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-primary uppercase tracking-tight">
+                No members on the roster yet.
+              </h3>
+              <p className="text-xs text-primary-muted leading-relaxed">
+                Start by adding your first gym member to issue their access credentials.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFormData({
+                  fullName: "",
+                  phone: "",
+                  email: "",
+                  pin: "",
+                  fitnessGoal: "hypertrophy",
+                  planId: "plan-hypertrophy-ppl",
+                  startDate: new Date().toISOString().split("T")[0],
+                  expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                  dateOfBirth: "",
+                  gender: "male",
+                  notes: "",
+                });
+                setIsAddModalOpen(true);
+              }}
+              className="py-2.5 px-5 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider shadow-accent-glow inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Add Member</span>
+            </button>
+          </div>
         ) : filteredMembers.length === 0 ? (
           <div className="py-16 text-center space-y-3">
             <Users className="w-8 h-8 mx-auto text-primary-dim" />
-            <div className="text-sm font-semibold text-primary">No athletes found</div>
+            <div className="text-sm font-semibold text-primary">No matching members found</div>
             <p className="text-xs text-primary-muted max-w-xs mx-auto">
-              {searchQuery || statusFilter !== "all"
-                ? "Try clearing your filters or search terms."
-                : "Get started by adding your first gym member."}
+              Try clearing your search terms or status filter.
             </p>
           </div>
         ) : (
@@ -901,7 +948,7 @@ function MembersManager() {
             <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5 leading-relaxed">
               <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
               <span>
-                <strong>SECURITY PROTOCOL:</strong> This 4-digit PIN is displayed only once. It is stored exclusively as an encrypted scrypt hash. If forgotten, an administrator must generate a new PIN.
+                This 4-digit PIN is only shown once. Copy and share it directly with the member.
               </span>
             </div>
 
@@ -910,16 +957,16 @@ function MembersManager() {
               <button
                 type="button"
                 onClick={handleCopyCredentials}
-                className="py-2.5 px-3 rounded-xl bg-surface-elevated hover:bg-surface text-primary font-semibold text-xs flex items-center justify-center gap-2 border border-border transition-colors"
+                className="py-2.5 px-3 rounded-xl bg-surface-elevated hover:bg-surface text-primary font-semibold text-xs flex items-center justify-center gap-2 border border-border transition-colors cursor-pointer"
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                {copied ? "Copied to Clipboard!" : "Copy Details"}
+                <span>{copied ? "Copied!" : "Copy Details"}</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setCredentialsModal({ ...credentialsModal, isOpen: false })}
-                className="py-2.5 px-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider shadow-accent-glow transition-all"
+                onClick={handleCloseCredentials}
+                className="py-2.5 px-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-bold text-xs uppercase tracking-wider shadow-accent-glow transition-all cursor-pointer"
               >
                 Done / Close
               </button>

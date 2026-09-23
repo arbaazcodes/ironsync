@@ -3,7 +3,7 @@
 import React from "react";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/Button";
-import { ArrowRight, ShieldCheck, Clock, Zap } from "lucide-react";
+import { ArrowRight, ShieldCheck, Zap, LogIn, Dumbbell } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
 export function FinalCTA() {
@@ -20,36 +20,46 @@ export function FinalCTA() {
           <div className="max-w-2xl mx-auto space-y-7">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/30 text-accent font-mono text-xs font-bold uppercase tracking-wider">
               <Zap className="w-3.5 h-3.5" />
-              <span>START YOUR TRANSFORMATION</span>
+              <span>FREE COMMUNITY GYM PORTAL</span>
             </div>
 
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-primary tracking-tight uppercase leading-[1.08]">
-              ONE MINUTE TO <br />
+              ONE PORTAL FOR <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-accent">
-                TOTAL CLARITY.
+                YOUR ENTIRE GYM.
               </span>
             </h2>
 
             <p className="text-base sm:text-lg text-primary-muted leading-relaxed max-w-xl mx-auto">
-              No subscription or credit card required. Fill out your core body metrics and lifestyle constraints to unlock your deterministic blueprint immediately.
+              100% free community gym management. Access your coach-assigned workout splits and track your training progress directly through your member portal.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
-                href="/login?tab=member"
+                href="/login"
                 variant="primary"
                 size="lg"
                 icon={<ArrowRight className="w-5 h-5" />}
                 className="w-full sm:w-auto font-extrabold text-sm uppercase tracking-wider px-10 py-4 shadow-accent-glow"
               >
-                Access Member Portal
+                Member Portal
+              </Button>
+
+              <Button
+                href="/login?tab=admin"
+                variant="secondary"
+                size="lg"
+                icon={<LogIn className="w-5 h-5 text-accent" />}
+                className="w-full sm:w-auto font-bold text-sm uppercase tracking-wider px-8 py-4"
+              >
+                Admin Login
               </Button>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-6 pt-3 text-xs text-primary-dim font-mono">
               <span className="flex items-center gap-1.5 text-primary">
-                <Clock className="w-4 h-4 text-accent" />
-                60 seconds completion time
+                <Dumbbell className="w-4 h-4 text-accent" />
+                100% Free Gym Access
               </span>
               <span className="flex items-center gap-1.5 text-primary">
                 <ShieldCheck className="w-4 h-4 text-accent" />

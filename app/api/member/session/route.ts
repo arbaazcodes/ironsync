@@ -26,12 +26,7 @@ export async function GET() {
       );
     }
 
-    if (member.status !== "active") {
-      return NextResponse.json(
-        { authenticated: false, error: `Account status is ${member.status}`, member: null },
-        { status: 403 }
-      );
-    }
+    // Return session data with current member status
 
     return NextResponse.json({
       authenticated: true,

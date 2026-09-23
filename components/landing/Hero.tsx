@@ -36,7 +36,7 @@ export function Hero() {
             {/* Eyebrow */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent font-mono text-xs font-extrabold tracking-wider uppercase shadow-sm">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span>PRECISION FITNESS &bull; ZERO GUESSWORK</span>
+              <span>FREE COMMUNITY GYM &bull; ZERO GUESSWORK</span>
             </div>
 
             {/* Main Headline */}
@@ -49,29 +49,29 @@ export function Hero() {
 
             {/* Supporting Copy */}
             <p className="text-base sm:text-lg text-primary-muted max-w-xl leading-relaxed">
-              Periodized resistance training, macro-precision meal design, and systemic recovery protocols. Engineered together so every session produces measurable physical adaptation.
+              Coach-assigned workout splits, macro-precision nutrition guidelines, and daily attendance tracking. Managed directly by your gym administration with zero fees or dues.
             </p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto pt-2">
               <Button
-                href={user ? "/admin" : "/login?tab=member"}
+                href={user ? "/admin" : "/login"}
                 variant="primary"
                 size="lg"
                 icon={<ArrowRight className="w-4 h-4" />}
                 className="w-full sm:w-auto font-extrabold text-sm uppercase tracking-wider py-3.5 px-8 shadow-accent-glow"
               >
-                {user ? "Admin Portal" : "Enter Gym Portal"}
+                {user ? "Admin Dashboard" : "Member Portal"}
               </Button>
 
               <Button
-                href={user ? "/admin" : "/login?tab=member"}
+                href={user ? "/admin" : "/login?tab=admin"}
                 variant="secondary"
                 size="lg"
                 icon={<LogIn className="w-4 h-4 text-accent" />}
                 className="w-full sm:w-auto font-bold text-sm uppercase tracking-wider py-3.5 px-6"
               >
-                {user ? "Admin" : "Member Login"}
+                {user ? "Admin Panel" : "Admin Login"}
               </Button>
             </div>
 
@@ -79,15 +79,15 @@ export function Hero() {
             <div className="flex flex-wrap items-center gap-6 pt-2 text-xs text-primary-dim font-mono">
               <span className="inline-flex items-center gap-1.5 text-primary">
                 <Zap className="w-4 h-4 text-accent" />
-                Generated in 60 seconds
+                Free Community Gym
               </span>
               <span className="inline-flex items-center gap-1.5 text-primary">
                 <ShieldCheck className="w-4 h-4 text-accent" />
-                Deterministic biomechanics
+                Admin-Enrolled Athletes
               </span>
               <span className="inline-flex items-center gap-1.5 text-primary">
                 <Activity className="w-4 h-4 text-accent" />
-                Zero credit card required
+                100% Free Forever
               </span>
             </div>
           </div>

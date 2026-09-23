@@ -13,7 +13,7 @@ export function BlueprintFeatures() {
             THE ARCHITECTURE
           </Badge>
           <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-primary tracking-tight uppercase">
-            MORE THAN A WORKOUT PLAN.
+            PRECISION ATHLETIC TRAINING.
           </h2>
           <p className="text-base sm:text-lg text-primary-muted leading-relaxed max-w-2xl">
             A cohesive three-pillar operating system engineered for athletic progression. Training, nutrition, and recovery synchronized to produce measurable adaptation.
@@ -108,7 +108,7 @@ export function BlueprintFeatures() {
               </h3>
 
               <p className="text-base text-primary-muted leading-relaxed">
-                Forget generic meal plans. IronSync calculates exact daily caloric output, protein synthesis requirements, and optimal peri-workout nutrient timing for your exact dietary tier.
+                Forget generic meal advice. IronSync calculates exact daily caloric output, protein synthesis requirements, and optimal peri-workout nutrient timing for your exact dietary tier.
               </p>
 
               <ul className="space-y-3 pt-2 text-sm text-primary font-medium">

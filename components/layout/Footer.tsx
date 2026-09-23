@@ -23,8 +23,8 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-primary-muted max-w-sm leading-relaxed pretty-text">
-              Algorithmic fitness blueprints tailored to your specific schedule,
-              body metrics, gym equipment, and food preferences. Built around real life.
+              Free community gym management, coach-assigned workout tracking,
+              and athlete roster portal. Built for real gym communities.
             </p>
             <div className="text-xs text-primary-dim">
               Designed with high-precision athletic wellness standards.
@@ -63,7 +63,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/login?tab=member"
+                  href="/login"
                   className="text-accent hover:text-accent-hover transition-colors font-medium inline-flex items-center gap-1"
                 >
                   Member Portal &rarr;
@@ -110,7 +110,7 @@ export function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-primary-dim">
           <p>&copy; {new Date().getFullYear()} IronSync Inc. All rights reserved.</p>
           <p className="font-mono text-[11px]">
-            Zero account required to generate your personal blueprint.
+            100% Free Community Gym Management System.
           </p>
         </div>
       </Container>

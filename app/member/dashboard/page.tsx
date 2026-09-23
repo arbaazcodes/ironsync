@@ -22,16 +22,34 @@ import {
   UserCheck,
   Coffee,
   CircleAlert,
+  X,
 } from "lucide-react";
 import { MemberDashboardData } from "@/lib/types/member";
-import { DayAttendanceSummary, AttendanceStatus } from "@/lib/types/attendance";
+import { DayAttendanceSummary, AttendanceStatus, AttendanceRecord } from "@/lib/types/attendance";
 import { AiCoachDrawer } from "@/components/dashboard/AiCoachDrawer";
 import { AttendanceDots } from "@/components/dashboard/AttendanceDots";
 
 interface AttendanceState {
   todayDate: string;
   today: AttendanceStatus | "unmarked";
+  todayRecord?: AttendanceRecord | null;
   weekSummary: DayAttendanceSummary[];
+}
+
+function formatCheckInTime(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(d);
+  } catch {
+    return "";
+  }
 }
 
 export default function MemberDashboardPage() {
@@ -41,7 +59,21 @@ export default function MemberDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isCoachOpen, setIsCoachOpen] = useState(false);
   const [markingAttendance, setMarkingAttendance] = useState(false);
+  const [checkInSuccess, setCheckInSuccess] = useState(false);
+  const [checkInError, setCheckInError] = useState<string | null>(null);
   const [startingWorkout, setStartingWorkout] = useState(false);
+
+  // Timezone IST check
+  const todayIST = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
+
+  const isInactiveOrExpired =
+    !data?.member ||
+    data.member.status === "inactive" ||
+    data.member.status === "expired" ||
+    data.member.status === "suspended" ||
+    Boolean(data.member.expiryDate && data.member.expiryDate < todayIST);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -61,6 +93,7 @@ export default function MemberDashboardPage() {
           setAttendance({
             todayDate: attData.todayDate,
             today: attData.today,
+            todayRecord: attData.todayRecord || null,
             weekSummary: attData.weekSummary || [],
           });
         }
@@ -74,9 +107,10 @@ export default function MemberDashboardPage() {
     loadDashboard();
   }, []);
 
-  const handleMarkPresent = async () => {
-    if (!data?.member || isExpired || markingAttendance || attendance?.today === "present") return;
+  const handleCheckIn = async () => {
+    if (!data?.member || isInactiveOrExpired || markingAttendance || attendance?.today === "present") return;
     setMarkingAttendance(true);
+    setCheckInError(null);
     try {
       const res = await fetch("/api/member/attendance", {
         method: "POST",
@@ -84,27 +118,54 @@ export default function MemberDashboardPage() {
         body: JSON.stringify({ status: "present" }),
       });
 
-      if (res.ok) {
-        // Refetch updated attendance summary
-        const attRes = await fetch("/api/member/attendance");
-        if (attRes.ok) {
-          const attData = await attRes.json();
-          setAttendance({
-            todayDate: attData.todayDate,
-            today: attData.today,
-            weekSummary: attData.weekSummary || [],
-          });
-        }
+      const resData = await res.json();
+
+      if (!res.ok || !resData.success) {
+        setCheckInError(resData.error || "Failed to record check-in.");
+        return;
       }
-    } catch (err) {
+
+      setCheckInSuccess(true);
+
+      const newRecord: AttendanceRecord = resData.record || {
+        id: `att-${Date.now()}`,
+        memberUuid: data.member.id,
+        day: todayIST,
+        status: "present",
+        source: "member",
+        createdAt: new Date().toISOString(),
+      };
+
+      setAttendance((prev) => ({
+        todayDate: prev?.todayDate || todayIST,
+        today: "present",
+        todayRecord: newRecord,
+        weekSummary: prev?.weekSummary || [],
+      }));
+
+      // Background refetch to update weekSummary
+      const attRes = await fetch("/api/member/attendance");
+      if (attRes.ok) {
+        const attData = await attRes.json();
+        setAttendance({
+          todayDate: attData.todayDate,
+          today: attData.today,
+          todayRecord: attData.todayRecord || newRecord,
+          weekSummary: attData.weekSummary || [],
+        });
+      }
+    } catch (err: any) {
       console.error("Failed to mark attendance:", err);
+      setCheckInError(err?.message || "Network error while checking in.");
     } finally {
       setMarkingAttendance(false);
     }
   };
 
+  const handleMarkPresent = handleCheckIn;
+
   const handleStartWorkout = async () => {
-    if (isExpired || startingWorkout) return;
+    if (isInactiveOrExpired || startingWorkout) return;
     setStartingWorkout(true);
     try {
       // Auto mark attendance as present if not marked yet
@@ -147,23 +208,12 @@ export default function MemberDashboardPage() {
 
   const { member, assignedPlan } = data;
 
-  // Timezone IST check
-  const todayIST = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-  }).format(new Date());
-
-  // Expiration calculation
-  const isExpired =
-    member.status === "expired" ||
-    member.status === "suspended" ||
-    Boolean(member.expiryDate && member.expiryDate < todayIST);
-
   let daysRemaining: number | null = null;
   if (member.expiryDate) {
     const diff = new Date(member.expiryDate).getTime() - new Date().getTime();
     daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }
-  const isExpiringSoon = daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7;
+  const isExpiringSoon = daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7 && !isInactiveOrExpired;
 
   // Resolve today's workout matching IST weekday
   const todayWeekday = new Intl.DateTimeFormat("en-US", {
@@ -189,22 +239,6 @@ export default function MemberDashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* EXPIRED BANNER ALERT (IF APPLICABLE) */}
-      {isExpired && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3.5 text-rose-700 dark:text-rose-300">
-          <CircleAlert className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-          <div className="space-y-1 text-xs">
-            <div className="font-bold uppercase tracking-wide text-rose-700 dark:text-rose-200">
-              Membership Expired or Inactive
-            </div>
-            <p className="text-rose-700/80 dark:text-rose-300/80 leading-relaxed">
-              Your gym access plan expired on{" "}
-              <span className="font-mono font-bold text-primary">{member.expiryDate || "N/A"}</span>. Workout sessions and attendance self-marking are locked. Please visit the front desk to renew your membership.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Top Banner / Hero */}
       <div className="relative overflow-hidden rounded-3xl bg-card border border-border shadow-sm p-6 sm:p-8">
         <div className="absolute right-0 top-0 w-72 h-full bg-accent/5 blur-3xl pointer-events-none rounded-full" />
@@ -216,9 +250,9 @@ export default function MemberDashboardPage() {
                 Gym Member ID: {member.memberId}
               </span>
 
-              {isExpired ? (
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-[10px] font-mono font-bold uppercase text-rose-600 dark:text-rose-400 flex items-center gap-1">
-                  <Lock className="w-3 h-3" /> Expired
+              {isInactiveOrExpired ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] font-mono font-bold uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Access Paused
                 </span>
               ) : isExpiringSoon ? (
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] font-mono font-bold uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -243,40 +277,38 @@ export default function MemberDashboardPage() {
 
           {/* Quick Action Buttons Group */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Action 1: Mark Present Quick Button */}
-            <button
-              onClick={handleMarkPresent}
-              disabled={isExpired || markingAttendance || attendance?.today === "present"}
-              className={`py-3 px-4 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all border ${
-                attendance?.today === "present"
-                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 cursor-default"
-                  : isExpired
-                  ? "bg-surface border-border text-primary-dim cursor-not-allowed"
-                  : "bg-surface-elevated hover:bg-surface border-border text-primary hover:border-emerald-500/50"
-              }`}
-              title={
-                attendance?.today === "present"
-                  ? "Already marked present today"
-                  : isExpired
-                  ? "Membership expired"
-                  : "Mark yourself present for today's workout"
-              }
-            >
-              {markingAttendance ? (
-                <Loader2 className="w-4 h-4 animate-spin text-emerald-600 dark:text-emerald-400" />
-              ) : attendance?.today === "present" ? (
-                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <UserCheck className="w-4 h-4 text-primary-muted" />
-              )}
-              <span>
-                {attendance?.today === "present"
-                  ? "Present Today"
-                  : markingAttendance
-                  ? "Marking..."
-                  : "Mark Present"}
-              </span>
-            </button>
+            {/* Action 1: Check In Quick Button (Hidden if Access Paused) */}
+            {!isInactiveOrExpired && (
+              <button
+                onClick={handleCheckIn}
+                disabled={markingAttendance || attendance?.today === "present"}
+                className={`py-3 px-4 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all border ${
+                  attendance?.today === "present"
+                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 cursor-default"
+                    : "bg-surface-elevated hover:bg-surface border-border text-primary hover:border-accent/50"
+                }`}
+                title={
+                  attendance?.today === "present"
+                    ? "Already checked in today"
+                    : "Check in for today's workout"
+                }
+              >
+                {markingAttendance ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                ) : attendance?.today === "present" ? (
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <UserCheck className="w-4 h-4 text-primary-muted" />
+                )}
+                <span>
+                  {attendance?.today === "present"
+                    ? "Present Today"
+                    : markingAttendance
+                    ? "Checking In..."
+                    : "Check In"}
+                </span>
+              </button>
+            )}
 
             {/* Action 2: Ask Coach Launcher */}
             <button
@@ -288,6 +320,150 @@ export default function MemberDashboardPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Check-In Notifications (Success / Error Banners) */}
+      {checkInSuccess && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3.5 text-emerald-600 dark:text-emerald-400 transition-all animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <p className="text-xs sm:text-sm font-semibold">
+              Checked in successfully! Have a great workout.
+            </p>
+          </div>
+          <button
+            onClick={() => setCheckInSuccess(false)}
+            className="p-1 rounded-lg hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+            title="Dismiss notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {checkInError && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between gap-3.5 text-rose-600 dark:text-rose-400 transition-all animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <p className="text-xs sm:text-sm font-semibold">{checkInError}</p>
+          </div>
+          <button
+            onClick={() => setCheckInError(null)}
+            className="p-1 rounded-lg hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
+            title="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Daily Check-In Status Card */}
+      <div className="p-6 sm:p-7 rounded-3xl bg-card border border-border shadow-sm">
+        {isInactiveOrExpired ? (
+          /* State 1: Inactive / Expired Member */
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center shrink-0">
+                <Lock className="w-6 h-6 text-amber-500" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-bold">
+                    Access Paused
+                  </span>
+                </div>
+                <p className="text-sm sm:text-base font-semibold text-primary">
+                  Access Paused. Please see the gym administrator to update your account.
+                </p>
+                <p className="text-xs text-primary-muted">
+                  Daily check-in and workout session logging are disabled for paused accounts.
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-elevated border border-border text-xs font-mono text-primary-dim">
+                <Lock className="w-3.5 h-3.5" /> Check-in Disabled
+              </span>
+            </div>
+          </div>
+        ) : attendance?.today === "present" ? (
+          /* State 4: Already Checked In Today */
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold">
+                    Daily Attendance
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    Logged
+                  </span>
+                </div>
+                <p className="text-sm sm:text-base font-semibold text-primary">
+                  {attendance?.todayRecord?.createdAt
+                    ? `You're all set! Already checked in today at ${formatCheckInTime(attendance.todayRecord.createdAt)}.`
+                    : "You're all set! Already checked in today."}
+                </p>
+                <p className="text-xs text-primary-muted">
+                  Your workout attendance has been recorded for today ({todayIST}).
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <div className="py-2.5 px-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <Check className="w-4 h-4" />
+                <span>Checked In</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* State 2: First-Run / Ready to Check In */
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">
+                <UserCheck className="w-6 h-6 text-accent" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono uppercase tracking-wider text-accent font-bold">
+                    Daily Check-In
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-surface-elevated border border-border text-[10px] font-mono text-primary-muted">
+                    IST
+                  </span>
+                </div>
+                <p className="text-sm sm:text-base font-semibold text-primary">
+                  Welcome back, {member.fullName.split(" ")[0]}! Ready for your workout?
+                </p>
+                <p className="text-xs text-primary-muted">
+                  Mark your presence for today to keep your workout streak active.
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <button
+                onClick={handleCheckIn}
+                disabled={markingAttendance}
+                className="w-full sm:w-auto py-3 px-6 rounded-2xl bg-accent hover:bg-accent-hover text-white text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-accent-glow transition-all active:scale-[0.99]"
+              >
+                {markingAttendance ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Checking In...</span>
+                  </>
+                ) : (
+                  <>
+                    <UserCheck className="w-4 h-4" />
+                    <span>Check In</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* KPI Metrics Strip */}
@@ -325,7 +501,11 @@ export default function MemberDashboardPage() {
             <UserCheck className="w-3.5 h-3.5 text-sky-500" />
           </div>
           <div className="text-lg sm:text-2xl font-extrabold uppercase truncate">
-            {attendance?.today === "present" ? (
+            {isInactiveOrExpired ? (
+              <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                <Lock className="w-5 h-5 inline" /> Paused
+              </span>
+            ) : attendance?.today === "present" ? (
               <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                 <CheckCircle2 className="w-5 h-5 inline" /> Present
               </span>
@@ -343,19 +523,19 @@ export default function MemberDashboardPage() {
         {/* Membership Access Term */}
         <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border shadow-sm space-y-1.5">
           <div className="flex items-center justify-between text-primary-muted text-[11px] font-mono uppercase">
-            <span>Membership</span>
+            <span>Member Status</span>
             <Clock className="w-3.5 h-3.5 text-amber-500" />
           </div>
           <div
             className={`text-lg sm:text-xl font-bold font-mono truncate ${
-              isExpired ? "text-rose-500" : isExpiringSoon ? "text-amber-500" : "text-primary"
+              isInactiveOrExpired ? "text-amber-500" : isExpiringSoon ? "text-amber-500" : "text-primary"
             }`}
           >
-            {member.expiryDate || "Active Access"}
+            {isInactiveOrExpired ? "Access Paused" : member.expiryDate || "Active Access"}
           </div>
           <div className="text-[10px] text-primary-dim font-mono">
-            {isExpired
-              ? "Plan Expired — See Desk"
+            {isInactiveOrExpired
+              ? "See Gym Administrator"
               : daysRemaining !== null
               ? `${daysRemaining} days remaining`
               : "Gym Access Valid"}
@@ -459,10 +639,10 @@ export default function MemberDashboardPage() {
           </div>
 
           {/* Action 1: Start Workout or Locked */}
-          {isExpired ? (
+          {isInactiveOrExpired ? (
             <div className="w-full py-3.5 px-4 rounded-xl bg-surface border border-border text-primary-dim font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-not-allowed">
-              <Lock className="w-4 h-4 text-rose-500" />
-              <span>Workout Locked &bull; See Front Desk to Renew</span>
+              <Lock className="w-4 h-4 text-amber-500" />
+              <span>Access Paused &bull; See Administrator</span>
             </div>
           ) : (
             <button

@@ -19,21 +19,41 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ironsync.online"),
-  title: "IronSync — Personalized Fitness Blueprint",
+  metadataBase: new URL("https://www.ironsync.online"),
+  title: {
+    default: "IronSync | Free Community Gym Management",
+    template: "%s | IronSync",
+  },
   description:
-    "Build a fitness plan that actually fits your life. Tailored workouts, personalized calories, and structured recovery engineered around your real schedule and goals.",
+    "Free community gym management and member workout platform. Streamline member check-in, attendance tracking, daily training workouts, and front-desk floor operations for gyms.",
   keywords: [
-    "fitness plan",
-    "personalized workout",
-    "nutrition blueprint",
-    "macro calculator",
+    "gym management",
+    "free gym software",
+    "member workout portal",
+    "gym check-in system",
+    "attendance tracking",
     "strength training",
-    "recovery protocol",
+    "athlete management",
+    "IronSync",
   ],
   authors: [{ name: "IronSync" }],
   icons: {
     icon: "/favicon.ico",
+  },
+  openGraph: {
+    title: "IronSync | Free Community Gym Management",
+    description:
+      "Free community gym management and member workout platform. Streamline member check-in, attendance tracking, daily training workouts, and front-desk floor operations.",
+    url: "https://www.ironsync.online",
+    siteName: "IronSync",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "IronSync | Free Community Gym Management",
+    description:
+      "Free community gym management and member workout platform. Streamline member check-in, attendance tracking, daily training workouts, and front-desk floor operations.",
   },
 };
 

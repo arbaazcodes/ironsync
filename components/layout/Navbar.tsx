@@ -150,21 +150,21 @@ export function Navbar() {
             /* Case 3: Logged Out */
             <>
               <Link
-                href="/login?tab=member"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-muted hover:text-primary transition-colors px-3.5 py-1.5 rounded-xl hover:bg-surface border border-border/60 hover:border-border"
+                href="/login?tab=admin"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-muted hover:text-primary transition-colors px-3 py-1.5 rounded-xl hover:bg-surface border border-transparent hover:border-border"
               >
-                <LogIn className="w-3.5 h-3.5 text-accent" />
-                <span>Login</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                <span>Admin Login</span>
               </Link>
 
               <Button
-                href="/login?tab=member"
+                href="/login"
                 variant="primary"
                 size="sm"
                 icon={<ArrowRight className="w-4 h-4" />}
                 className="font-bold text-xs uppercase tracking-wider shadow-accent-glow"
               >
-                Get Started
+                Member Portal
               </Button>
             </>
           )}
@@ -248,7 +248,7 @@ export function Navbar() {
               </>
             ) : (
               <Link
-                href="/login?tab=member"
+                href="/login"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-base font-semibold text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
               >
@@ -262,14 +262,14 @@ export function Navbar() {
 
             <div className="pt-2">
               <Button
-                href={user ? "/admin" : member ? "/member/dashboard" : "/login?tab=member"}
+                href={user ? "/admin" : member ? "/member/dashboard" : "/login"}
                 variant="primary"
                 size="lg"
                 className="w-full justify-center font-bold text-sm uppercase tracking-wider"
                 icon={<ArrowRight className="w-4 h-4" />}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {user ? "Admin Portal" : member ? "Member Dashboard" : "Get Started"}
+                {user ? "Admin Portal" : member ? "Member Dashboard" : "Member Portal"}
               </Button>
             </div>
           </nav>

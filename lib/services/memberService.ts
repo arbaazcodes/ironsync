@@ -750,37 +750,6 @@ export async function authenticateMember(
     return { success: false, error: "Invalid Member ID or PIN." };
   }
 
-  // Check member status
-  if (member.status !== "active") {
-    if (member.status === "expired") {
-      return {
-        success: false,
-        error: "Your gym membership plan has expired. Please see the front desk.",
-      };
-    }
-    if (member.status === "suspended") {
-      return {
-        success: false,
-        error: "Your membership account is suspended. Please contact gym management.",
-      };
-    }
-    return {
-      success: false,
-      error: "Your membership account is currently inactive.",
-    };
-  }
-
-  // Check expiry date if set
-  if (member.expiryDate) {
-    const today = new Date().toISOString().split("T")[0];
-    if (member.expiryDate < today) {
-      return {
-        success: false,
-        error: "Your gym membership plan has expired. Please see the front desk.",
-      };
-    }
-  }
-
   // Verify PIN against pin_hash
   const isMatch = verifyPin(pin, member.pinHash);
   if (!isMatch) {
