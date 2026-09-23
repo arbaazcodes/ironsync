@@ -63,6 +63,25 @@ body {
   overflow-x: hidden;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   transition: background-color 0.25s ease, color 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile & Touch Ergonomics */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Safe area utilities for mobile devices */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Typography refinements */

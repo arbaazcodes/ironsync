@@ -13,7 +13,8 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/login") ||
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/member") ||
-    pathname?.startsWith("/dashboard");
+    pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/mobile");
 
   if (isDedicatedFlow) {
     return <main className="flex-1 flex flex-col">{children}</main>;

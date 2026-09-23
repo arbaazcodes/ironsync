@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { AdminMobileBottomNav } from "@/components/layout/AdminMobileBottomNav";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -172,7 +173,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 bg-background p-4 sm:p-8 overflow-y-auto">
+      <main className="flex-1 min-w-0 bg-background p-4 sm:p-8 pb-24 md:pb-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Top Action Bar for Desktop Admin Portal */}
           <div className="hidden md:flex items-center justify-between pb-4 border-b border-border">
@@ -190,6 +191,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </div>
       </main>
+
+      {/* Admin Mobile Bottom Navigation */}
+      <AdminMobileBottomNav />
     </div>
   );
 }

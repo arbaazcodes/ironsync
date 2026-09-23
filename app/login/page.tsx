@@ -432,7 +432,7 @@ function LoginContent() {
                       placeholder="IS-2026-0001"
                       required
                       autoComplete="username"
-                      className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-primary font-mono text-sm uppercase placeholder:text-primary-dim/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                      className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-primary font-mono text-base sm:text-sm uppercase placeholder:text-primary-dim/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                     />
                   </div>
                 </div>
@@ -460,7 +460,7 @@ function LoginContent() {
                       placeholder="••••"
                       required
                       autoComplete="current-password"
-                      className="w-full pl-10 pr-11 py-2.5 bg-surface border border-border rounded-xl text-primary font-mono text-base tracking-widest placeholder:text-primary-dim/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                      className="w-full pl-10 pr-11 py-3 bg-surface border border-border rounded-xl text-primary font-mono text-base tracking-widest placeholder:text-primary-dim/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                     />
                     <button
                       type="button"
@@ -539,7 +539,7 @@ function LoginContent() {
                       placeholder="admin@ironsync.com"
                       required
                       autoComplete="email"
-                      className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-primary text-sm placeholder:text-primary-dim/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                      className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-primary text-base sm:text-sm placeholder:text-primary-dim/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                     />
                   </div>
                 </div>
@@ -560,7 +560,7 @@ function LoginContent() {
                       placeholder="••••••••••••"
                       required
                       autoComplete="current-password"
-                      className="w-full pl-10 pr-11 py-2.5 bg-surface border border-border rounded-xl text-primary text-sm placeholder:text-primary-dim/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+                      className="w-full pl-10 pr-11 py-3 bg-surface border border-border rounded-xl text-primary text-base sm:text-sm placeholder:text-primary-dim/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
                     />
                     <button
                       type="button"

@@ -16,6 +16,7 @@ import {
 import { GymMember } from "@/lib/types/member";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -184,9 +185,12 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
         {children}
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }

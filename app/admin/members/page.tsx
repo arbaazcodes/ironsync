@@ -520,8 +520,150 @@ function MembersManager() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <>
+            {/* Mobile Cards View (< 768px) */}
+            <div className="block md:hidden divide-y divide-border/60">
+              {filteredMembers.map((member) => {
+                const plan = GYM_PLAN_TEMPLATES.find((p) => p.id === member.planId);
+                const isResetting = resettingId === member.id;
+                const memberPendingReq = changeRequests.find(
+                  (r) => (r.memberUuid === member.id || r.memberId === member.memberId) && r.status === "pending"
+                );
+                const todayIST = new Intl.DateTimeFormat("en-CA", {
+                  timeZone: "Asia/Kolkata",
+                }).format(new Date());
+                const isPresentToday = (attendanceMap[member.id] || []).some(
+                  (r) => r.day === todayIST && r.status === "present"
+                );
+                const isMarking = markingAttendanceId === member.id;
+
+                return (
+                  <div key={member.id} className="p-4 space-y-3 bg-card hover:bg-surface-elevated/40 transition-colors">
+                    {/* Header: Member ID & Status */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2 py-0.5 rounded font-mono font-bold text-xs bg-surface-elevated border border-border text-primary">
+                        {member.memberId}
+                      </span>
+
+                      <select
+                        value={member.status}
+                        onChange={(e) => handleUpdateStatus(member.id, e.target.value as MemberStatus)}
+                        className={`text-[10px] font-mono uppercase px-2 py-1 rounded-full border bg-surface cursor-pointer focus:outline-none ${
+                          member.status === "active"
+                            ? "text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            : member.status === "suspended"
+                            ? "text-amber-600 dark:text-amber-400 border-amber-500/30"
+                            : "text-rose-500 border-rose-500/30"
+                        }`}
+                      >
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="expired">Expired</option>
+                      </select>
+                    </div>
+
+                    {/* Athlete Name & Goal */}
+                    <div>
+                      <div className="font-bold text-sm text-primary flex items-center gap-2 flex-wrap">
+                        <span>{member.fullName}</span>
+                        {memberPendingReq && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedChangeRequestId(memberPendingReq.id);
+                              setIsChangeDrawerOpen(true);
+                            }}
+                            className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400 font-mono text-[9px] font-bold uppercase tracking-wider flex items-center gap-1"
+                          >
+                            <Clock className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400 animate-pulse" />
+                            <span>Pending Edit</span>
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-primary-dim uppercase font-mono mt-0.5">
+                        Goal: {member.fitnessGoal} &bull; Blueprint: {plan?.name || member.planId || "Default"}
+                      </div>
+                    </div>
+
+                    {/* Contact & Attendance */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-border/40 text-xs">
+                      <div className="flex items-center gap-3 font-mono text-primary-muted text-[11px]">
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-primary-dim" />
+                          {member.phone}
+                        </span>
+                      </div>
+                      <AttendanceDots
+                        summary={getMemberWeekSummary(attendanceMap[member.id] || [])}
+                        compact
+                      />
+                    </div>
+
+                    {/* Actions Row */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60">
+                      {isPresentToday ? (
+                        <span className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Present Today</span>
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleQuickMarkPresent(member)}
+                          disabled={isMarking}
+                          className="px-3 py-1.5 rounded-xl bg-surface-elevated hover:bg-emerald-500/15 border border-border hover:border-emerald-500/40 text-primary hover:text-emerald-600 font-mono text-xs font-bold flex items-center gap-1.5 transition-all"
+                        >
+                          {isMarking ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                          ) : (
+                            <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          )}
+                          <span>Check In</span>
+                        </button>
+                      )}
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setDirectEditMember(member)}
+                          className="p-2 rounded-xl bg-surface-elevated border border-border text-primary-muted hover:text-primary transition-colors"
+                          title="Edit Member"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setAuditMember(member)}
+                          className="p-2 rounded-xl bg-surface-elevated border border-border text-primary-muted hover:text-accent transition-colors"
+                          title="Audit History"
+                        >
+                          <History className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleResetPin(member)}
+                          disabled={isResetting}
+                          className="p-2 rounded-xl bg-surface-elevated border border-border text-primary-muted hover:text-primary transition-colors"
+                          title="Reset PIN"
+                        >
+                          {isResetting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <KeyRound className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
               <thead className="border-b border-border bg-surface text-primary-dim font-mono uppercase text-[10px]">
                 <tr>
                   <th className="py-3.5 px-4 font-semibold">Member ID</th>
@@ -735,8 +877,9 @@ function MembersManager() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </>
+      )}
+    </div>
 
       {/* MODAL 1: ADD NEW MEMBER */}
       {isAddModalOpen && (

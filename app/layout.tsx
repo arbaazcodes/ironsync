@@ -57,11 +57,15 @@ export const metadata: Metadata = {
   },
 };
 
+import { CapacitorProvider } from "@/components/mobile/CapacitorProvider";
+
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#FFFFFF",
+  viewportFit: "cover",
+  themeColor: "#0C0C0C",
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({
@@ -73,10 +77,12 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} light`}>
       <body className="font-sans antialiased bg-background text-primary min-h-screen flex flex-col selection:bg-accent/30 selection:text-white relative">
         <ThemeProvider>
-          <MotionBackground />
-          <AuthProvider>
-            <SiteLayout>{children}</SiteLayout>
-          </AuthProvider>
+          <CapacitorProvider>
+            <MotionBackground />
+            <AuthProvider>
+              <SiteLayout>{children}</SiteLayout>
+            </AuthProvider>
+          </CapacitorProvider>
         </ThemeProvider>
       </body>
     </html>

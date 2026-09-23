@@ -559,7 +559,7 @@ export function ExerciseDetailDrawer({
         </div>
 
         {/* Drawer Bottom Action Bar */}
-        <div className="p-4 sm:p-5 border-t border-border bg-card flex items-center justify-between gap-3 shrink-0">
+        <div className="p-4 sm:p-5 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-border bg-card flex items-center justify-between gap-3 shrink-0">
           {onSwapClick ? (
             <Button
               onClick={() => {

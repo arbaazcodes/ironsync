@@ -525,7 +525,7 @@ ${todayScheduleItem.exercises?.map((e, idx) => `  ${idx + 1}. **${e.name}** (${e
 
         {/* Input Footer */}
         {activeView === "chat" && (
-          <div className="p-3 sm:p-4 border-t border-border bg-surface-elevated shrink-0">
+          <div className="p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-border bg-surface-elevated shrink-0">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -540,7 +540,7 @@ ${todayScheduleItem.exercises?.map((e, idx) => `  ${idx + 1}. **${e.name}** (${e
                 placeholder="Ask coach (e.g. swap exercise, veg dinner, easier variation)..."
                 disabled={isLoading}
                 maxLength={600}
-                className="flex-1 bg-surface border border-border text-primary rounded-xl px-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-primary-dim transition-all"
+                className="flex-1 bg-surface border border-border text-primary rounded-xl px-4 py-3 sm:py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-primary-dim transition-all"
               />
               <button
                 type="submit"
