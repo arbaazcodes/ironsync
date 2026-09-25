@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">IronSync</string>
+    <string name="title_activity_main">IronSync</string>
+    <string name="package_name">com.ironsync.app</string>
+    <string name="custom_url_scheme">com.ironsync.app</string>
+</resources>

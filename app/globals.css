@@ -48,6 +48,54 @@
   color-scheme: dark;
 }
 
+/* ── IronSync Mobile Theme ──────────────────────────────── */
+.is-mobile-shell {
+  --is-bg: #0A0A0C;
+  --is-surface1: #16161A;
+  --is-surface2: #18181D;
+  --is-surface3: #202026;
+  --is-accent: #FF3D41;
+  --is-accent-muted: rgba(255,61,65,0.12);
+  --is-amber: #FFC72C;
+  --is-amber-muted: rgba(255,199,44,0.12);
+  --is-green: #30D158;
+  --is-border: rgba(255,255,255,0.08);
+  --is-border-subtle: rgba(255,255,255,0.04);
+  --is-text-primary: #F5F5F7;
+  --is-text-secondary: #8E8E93;
+  --is-text-dim: #48484A;
+  color-scheme: dark;
+}
+
+/* Spin animation for loading states */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Slider track accent color override for mobile */
+.is-mobile-shell input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  border-radius: 4px;
+}
+.is-mobile-shell input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #FFC72C;
+  border: 2px solid #0A0A0C;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255,199,44,0.5);
+}
+.is-mobile-shell input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #FFC72C 0%, #FFC72C var(--slider-pct, 50%), #202026 var(--slider-pct, 50%));
+}
+
 html {
   scroll-behavior: smooth;
   background-color: var(--background);
