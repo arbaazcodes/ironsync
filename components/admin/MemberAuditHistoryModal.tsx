@@ -123,11 +123,11 @@ export function MemberAuditHistoryModal({
                   Member Audit History
                 </h2>
                 <span className="px-2 py-0.5 rounded bg-surface-elevated border border-border text-xs font-mono font-bold text-accent">
-                  {member.memberId}
+                  {member?.memberId || "Member"}
                 </span>
               </div>
               <p className="text-xs text-primary-muted font-mono">
-                {member.fullName} • Immutable timeline of changes & reviews
+                {member?.fullName || "Athlete"} • Immutable timeline of changes & reviews
               </p>
             </div>
           </div>

@@ -35,10 +35,24 @@ export default function Error({ error, reset }: ErrorProps) {
           <p className="text-xs text-primary-muted leading-relaxed max-w-sm mx-auto">
             An unexpected error occurred while rendering this page. Our telemetry has captured the event.
           </p>
+          {error.message && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-left overflow-x-auto">
+              <p className="text-[11px] font-mono text-red-400 break-words">
+                {error.message}
+              </p>
+            </div>
+          )}
           {error.digest && (
-            <p className="text-[10px] font-mono text-primary-dim pt-1">
-              Error Reference: {error.digest}
-            </p>
+            <div className="flex items-center justify-between gap-2 p-2 bg-surface rounded-lg border border-border text-[10px] font-mono text-primary-dim">
+              <span className="truncate">Reference: {error.digest}</span>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard?.writeText(error.digest || "")}
+                className="text-primary hover:text-accent font-semibold underline shrink-0 cursor-pointer"
+              >
+                Copy
+              </button>
+            </div>
           )}
         </div>
 
@@ -53,14 +67,14 @@ export default function Error({ error, reset }: ErrorProps) {
             <span>Try Again</span>
           </Button>
 
-          <Link href="/dashboard" className="w-full sm:w-auto">
+          <Link href="/admin" className="w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               className="w-full flex items-center justify-center gap-2"
             >
               <Home className="w-3.5 h-3.5" />
-              <span>Go to Dashboard</span>
+              <span>Go to Admin</span>
             </Button>
           </Link>
         </div>

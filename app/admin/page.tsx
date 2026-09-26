@@ -28,9 +28,9 @@ export default function AdminOverviewPage() {
     try {
       setLoading(true);
       const res = await fetch("/api/admin/members");
-      if (res.ok) {
-        const data = await res.json();
-        setMembers(data.members || []);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.members)) {
+        setMembers(data.members);
       }
     } catch (err) {
       console.error("Failed to load members:", err);
@@ -43,25 +43,27 @@ export default function AdminOverviewPage() {
     fetchMembers();
   }, []);
 
-  const totalMembers = members.length;
-  const activeMembers = members.filter((m) => m.status === "active").length;
+  const totalMembers = Array.isArray(members) ? members.length : 0;
+  const activeMembers = Array.isArray(members) ? members.filter((m) => m && m.status === "active").length : 0;
   
   // Expiring within 30 days
   const now = new Date();
   const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const expiringSoon = members.filter((m) => {
-    if (!m.expiryDate) return false;
+  const expiringSoon = Array.isArray(members) ? members.filter((m) => {
+    if (!m || !m.expiryDate) return false;
     const exp = new Date(m.expiryDate);
-    return exp >= now && exp <= thirtyDaysLater;
-  }).length;
+    return !isNaN(exp.getTime()) && exp >= now && exp <= thirtyDaysLater;
+  }).length : 0;
 
-  const newThisMonth = members.filter((m) => {
+  const newThisMonth = Array.isArray(members) ? members.filter((m) => {
+    if (!m || !m.createdAt) return false;
     const created = new Date(m.createdAt);
     return (
+      !isNaN(created.getTime()) &&
       created.getMonth() === now.getMonth() &&
       created.getFullYear() === now.getFullYear()
     );
-  }).length;
+  }).length : 0;
 
   return (
     <div className="space-y-8">
@@ -252,17 +254,18 @@ export default function AdminOverviewPage() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {members.slice(0, 6).map((member) => {
+                  if (!member) return null;
                   const plan = GYM_PLAN_TEMPLATES.find((p) => p.id === member.planId);
                   return (
-                    <tr key={member.id} className="hover:bg-surface-elevated/50 transition-colors">
+                    <tr key={member.id || Math.random().toString()} className="hover:bg-surface-elevated/50 transition-colors">
                       <td className="py-3 font-mono font-bold text-primary">
-                        {member.memberId}
+                        {member.memberId || "Pending"}
                       </td>
                       <td className="py-3 font-medium text-primary">
-                        {member.fullName}
+                        {member.fullName || "Gym Member"}
                       </td>
                       <td className="py-3 font-mono text-primary-muted">
-                        {member.phone}
+                        {member.phone || "No phone"}
                       </td>
                       <td className="py-3">
                         <span
@@ -274,7 +277,7 @@ export default function AdminOverviewPage() {
                               : "bg-red-500/10 text-rose-500 border border-rose-500/20"
                           }`}
                         >
-                          {member.status}
+                          {member.status || "active"}
                         </span>
                       </td>
                       <td className="py-3 text-primary-muted">

@@ -47,6 +47,7 @@ function MembersManager() {
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceRecord[]>>({});
   const [markingAttendanceId, setMarkingAttendanceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -176,25 +177,31 @@ function MembersManager() {
   const fetchMembers = async () => {
     try {
       setLoading(true);
+      setApiError(null);
       const [membersRes, reqRes] = await Promise.all([
         fetch("/api/admin/members?includeAttendance=true"),
         fetch("/api/admin/change-requests"),
       ]);
 
       if (membersRes.ok) {
-        const data = await membersRes.json();
-        setMembers(data.members || []);
+        const data = await membersRes.json().catch(() => ({}));
+        setMembers(Array.isArray(data.members) ? data.members : []);
         if (data.attendance) {
           setAttendanceMap(data.attendance);
         }
+      } else {
+        const errData = await membersRes.json().catch(() => ({}));
+        setApiError(errData.error || `Server responded with status ${membersRes.status}`);
+        setMembers([]);
       }
 
       if (reqRes.ok) {
-        const reqData = await reqRes.json();
-        setChangeRequests(reqData.requests || []);
+        const reqData = await reqRes.json().catch(() => ({}));
+        setChangeRequests(Array.isArray(reqData.requests) ? reqData.requests : []);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching members or change requests:", err);
+      setApiError(err?.message || "Failed to load member roster from server.");
     } finally {
       setLoading(false);
     }
@@ -210,15 +217,21 @@ function MembersManager() {
     }
   }, [searchParams]);
 
-  // Filtered list
-  const filteredMembers = members.filter((m) => {
+  // Filtered list with defensive null guards
+  const filteredMembers = (Array.isArray(members) ? members : []).filter((m) => {
+    if (!m) return false;
     const q = searchQuery.toLowerCase().trim();
+    const fullName = (m.fullName || "").toLowerCase();
+    const memberId = (m.memberId || "").toLowerCase();
+    const phone = (m.phone || "");
+    const email = (m.email || "").toLowerCase();
+
     const matchesSearch =
       !q ||
-      m.fullName.toLowerCase().includes(q) ||
-      m.memberId.toLowerCase().includes(q) ||
-      m.phone.includes(q) ||
-      (m.email && m.email.toLowerCase().includes(q));
+      fullName.includes(q) ||
+      memberId.includes(q) ||
+      phone.includes(q) ||
+      email.includes(q);
 
     const matchesStatus = statusFilter === "all" || m.status === statusFilter;
 
@@ -402,9 +415,9 @@ function MembersManager() {
           >
             <FileEdit className="w-4 h-4 text-accent" />
             <span>Change Requests</span>
-            {changeRequests.filter((r) => r.status === "pending").length > 0 && (
+            {(Array.isArray(changeRequests) ? changeRequests : []).filter((r) => r && r.status === "pending").length > 0 && (
               <span className="px-2 py-0.5 rounded-full bg-accent text-white text-[10px] font-mono font-bold">
-                {changeRequests.filter((r) => r.status === "pending").length}
+                {(Array.isArray(changeRequests) ? changeRequests : []).filter((r) => r && r.status === "pending").length}
               </span>
             )}
           </button>
@@ -434,6 +447,19 @@ function MembersManager() {
           </button>
         </div>
       </div>
+
+      {/* API Error Notice Banner if Server Fetch Failed */}
+      {apiError && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+          <div className="space-y-1">
+            <div className="font-bold uppercase tracking-wider font-mono text-amber-700 dark:text-amber-300">
+              Notice from Database / Server
+            </div>
+            <p className="leading-relaxed">{apiError}</p>
+          </div>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="p-4 rounded-2xl bg-card border border-border shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
@@ -524,30 +550,31 @@ function MembersManager() {
             {/* Mobile Cards View (< 768px) */}
             <div className="block md:hidden divide-y divide-border/60">
               {filteredMembers.map((member) => {
+                if (!member) return null;
                 const plan = GYM_PLAN_TEMPLATES.find((p) => p.id === member.planId);
                 const isResetting = resettingId === member.id;
-                const memberPendingReq = changeRequests.find(
-                  (r) => (r.memberUuid === member.id || r.memberId === member.memberId) && r.status === "pending"
+                const memberPendingReq = (Array.isArray(changeRequests) ? changeRequests : []).find(
+                  (r) => r && (r.memberUuid === member.id || r.memberId === member.memberId) && r.status === "pending"
                 );
                 const todayIST = new Intl.DateTimeFormat("en-CA", {
                   timeZone: "Asia/Kolkata",
                 }).format(new Date());
-                const isPresentToday = (attendanceMap[member.id] || []).some(
-                  (r) => r.day === todayIST && r.status === "present"
+                const isPresentToday = ((member.id && attendanceMap[member.id]) || []).some(
+                  (r) => r && r.day === todayIST && r.status === "present"
                 );
                 const isMarking = markingAttendanceId === member.id;
 
                 return (
-                  <div key={member.id} className="p-4 space-y-3 bg-card hover:bg-surface-elevated/40 transition-colors">
+                  <div key={member.id || Math.random()} className="p-4 space-y-3 bg-card hover:bg-surface-elevated/40 transition-colors">
                     {/* Header: Member ID & Status */}
                     <div className="flex items-center justify-between gap-2">
                       <span className="px-2 py-0.5 rounded font-mono font-bold text-xs bg-surface-elevated border border-border text-primary">
-                        {member.memberId}
+                        {member.memberId || "Pending"}
                       </span>
 
                       <select
-                        value={member.status}
-                        onChange={(e) => handleUpdateStatus(member.id, e.target.value as MemberStatus)}
+                        value={member.status || "active"}
+                        onChange={(e) => member.id && handleUpdateStatus(member.id, e.target.value as MemberStatus)}
                         className={`text-[10px] font-mono uppercase px-2 py-1 rounded-full border bg-surface cursor-pointer focus:outline-none ${
                           member.status === "active"
                             ? "text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
@@ -566,7 +593,7 @@ function MembersManager() {
                     {/* Athlete Name & Goal */}
                     <div>
                       <div className="font-bold text-sm text-primary flex items-center gap-2 flex-wrap">
-                        <span>{member.fullName}</span>
+                        <span>{member.fullName || "Unnamed Member"}</span>
                         {memberPendingReq && (
                           <button
                             type="button"
@@ -582,7 +609,7 @@ function MembersManager() {
                         )}
                       </div>
                       <div className="text-[11px] text-primary-dim uppercase font-mono mt-0.5">
-                        Goal: {member.fitnessGoal} &bull; Blueprint: {plan?.name || member.planId || "Default"}
+                        Goal: {member.fitnessGoal || "General"} &bull; Blueprint: {plan?.name || member.planId || "Default Blueprint"}
                       </div>
                     </div>
 
@@ -591,11 +618,11 @@ function MembersManager() {
                       <div className="flex items-center gap-3 font-mono text-primary-muted text-[11px]">
                         <span className="flex items-center gap-1">
                           <Phone className="w-3 h-3 text-primary-dim" />
-                          {member.phone}
+                          {member.phone || "No phone"}
                         </span>
                       </div>
                       <AttendanceDots
-                        summary={getMemberWeekSummary(attendanceMap[member.id] || [])}
+                        summary={getMemberWeekSummary(member.id ? (attendanceMap[member.id] || []) : [])}
                         compact
                       />
                     </div>
@@ -678,25 +705,28 @@ function MembersManager() {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {filteredMembers.map((member) => {
+                  if (!member) return null;
                   const plan = GYM_PLAN_TEMPLATES.find((p) => p.id === member.planId);
                   const isResetting = resettingId === member.id;
-                  const memberPendingReq = changeRequests.find(
-                    (r) => (r.memberUuid === member.id || r.memberId === member.memberId) && r.status === "pending"
+                  const safeChangeRequests = Array.isArray(changeRequests) ? changeRequests : [];
+                  const memberPendingReq = safeChangeRequests.find(
+                    (r) => r && (r.memberUuid === member.id || r.memberId === member.memberId) && r.status === "pending"
                   );
+                  const memberHistory = (attendanceMap && attendanceMap[member.id]) || [];
 
                   return (
-                    <tr key={member.id} className="hover:bg-surface-elevated/50 transition-colors">
+                    <tr key={member.id || Math.random().toString()} className="hover:bg-surface-elevated/50 transition-colors">
                       {/* Member ID */}
                       <td className="py-3.5 px-4 font-mono font-bold text-primary">
                         <span className="px-2 py-0.5 rounded bg-surface-elevated border border-border">
-                          {member.memberId}
+                          {member.memberId || "Pending"}
                         </span>
                       </td>
 
                       {/* Athlete Name */}
                       <td className="py-3.5 px-4">
                         <div className="font-semibold text-primary flex items-center gap-2 flex-wrap">
-                          <span>{member.fullName}</span>
+                          <span>{member.fullName || "Unnamed Member"}</span>
                           {memberPendingReq && (
                             <button
                               type="button"
@@ -713,7 +743,7 @@ function MembersManager() {
                           )}
                         </div>
                         <div className="text-[10px] text-primary-dim uppercase font-mono">
-                          Goal: {member.fitnessGoal}
+                          Goal: {member.fitnessGoal || "General Fitness"}
                         </div>
                       </td>
 
@@ -721,7 +751,7 @@ function MembersManager() {
                       <td className="py-3.5 px-4 font-mono text-primary-muted">
                         <div className="flex items-center gap-1.5">
                           <Phone className="w-3 h-3 text-primary-dim" />
-                          {member.phone}
+                          {member.phone || "No phone"}
                         </div>
                         {member.email && (
                           <div className="flex items-center gap-1.5 text-[10px] text-primary-dim truncate max-w-[180px]">
@@ -734,7 +764,7 @@ function MembersManager() {
                       {/* Status */}
                       <td className="py-3.5 px-4">
                         <select
-                          value={member.status}
+                          value={member.status || "active"}
                           onChange={(e) => handleUpdateStatus(member.id, e.target.value as MemberStatus)}
                           className={`text-[10px] font-mono uppercase px-2 py-1 rounded-full border bg-surface cursor-pointer focus:outline-none ${
                             member.status === "active"
@@ -754,7 +784,7 @@ function MembersManager() {
                       {/* 7-Day Attendance Dots */}
                       <td className="py-3.5 px-4">
                         <AttendanceDots
-                          summary={getMemberWeekSummary(attendanceMap[member.id] || [])}
+                          summary={getMemberWeekSummary(memberHistory)}
                           compact
                         />
                       </td>
@@ -786,8 +816,8 @@ function MembersManager() {
                             const todayIST = new Intl.DateTimeFormat("en-CA", {
                               timeZone: "Asia/Kolkata",
                             }).format(new Date());
-                            const isPresentToday = (attendanceMap[member.id] || []).some(
-                              (r) => r.day === todayIST && r.status === "present"
+                            const isPresentToday = memberHistory.some(
+                              (r) => r && r.day === todayIST && r.status === "present"
                             );
                             const isMarking = markingAttendanceId === member.id;
 

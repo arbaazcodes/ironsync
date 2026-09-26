@@ -36,9 +36,10 @@ export function ChangeRequestsDrawer({
   initialSelectedId,
   onReviewed,
 }: ChangeRequestsDrawerProps) {
+  const safeRequests = Array.isArray(requests) ? requests : [];
   const [filter, setFilter] = useState<ChangeRequestStatus | "all">("pending");
   const [selectedId, setSelectedId] = useState<string | null>(
-    initialSelectedId || requests.find((r) => r.status === "pending")?.id || requests[0]?.id || null
+    initialSelectedId || safeRequests.find((r) => r && r.status === "pending")?.id || safeRequests[0]?.id || null
   );
   const [adminNote, setAdminNote] = useState("");
   const [actionLoading, setActionLoading] = useState<"approve" | "reject" | null>(null);
@@ -47,13 +48,14 @@ export function ChangeRequestsDrawer({
 
   if (!isOpen) return null;
 
-  const filteredRequests = requests.filter((r) => {
+  const filteredRequests = safeRequests.filter((r) => {
+    if (!r) return false;
     if (filter === "all") return true;
     return r.status === filter;
   });
 
   const activeRequest =
-    requests.find((r) => r.id === selectedId) || filteredRequests[0] || null;
+    safeRequests.find((r) => r && r.id === selectedId) || filteredRequests[0] || null;
 
   const handleReview = async (action: "approve" | "reject") => {
     if (!activeRequest) return;
@@ -165,7 +167,7 @@ export function ChangeRequestsDrawer({
             ) : (
               filteredRequests.map((req) => {
                 const isSelected = activeRequest?.id === req.id;
-                const fieldCount = Object.keys(req.requestedFields).length;
+                const fieldCount = Object.keys(req.requestedFields || {}).length;
 
                 return (
                   <button
@@ -287,7 +289,7 @@ export function ChangeRequestsDrawer({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/60">
-                        {Object.entries(activeRequest.requestedFields).map(([key, newVal]) => {
+                        {Object.entries(activeRequest?.requestedFields || {}).map(([key, newVal]) => {
                           const meta = CHANGE_FIELD_METADATA[key as AllowedChangeFieldKey];
                           const label = meta ? meta.label : key.replace(/_/g, " ");
                           const unit = meta?.unit ? ` ${meta.unit}` : "";

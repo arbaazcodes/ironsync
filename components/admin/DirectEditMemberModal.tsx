@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Save, Loader2, AlertCircle, Edit3 } from "lucide-react";
 import { GymMember, MemberStatus } from "@/lib/types/member";
 import { GYM_PLAN_TEMPLATES } from "@/lib/data/gymPlans";
@@ -8,7 +8,7 @@ import { GYM_PLAN_TEMPLATES } from "@/lib/data/gymPlans";
 interface DirectEditMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  member: GymMember;
+  member: GymMember | null;
   onSaved: () => void;
 }
 
@@ -22,25 +22,48 @@ export function DirectEditMemberModal({
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    fullName: member.fullName || "",
-    phone: member.phone || "",
-    email: member.email || "",
-    status: member.status || "active",
-    fitnessGoal: member.fitnessGoal || "hypertrophy",
-    planId: member.planId || "plan-hypertrophy-ppl",
-    expiryDate: member.expiryDate || "",
-    gender: member.gender || "male",
-    dateOfBirth: member.dateOfBirth || "",
-    height: member.heightCm || member.height || "",
-    weight: member.weightKg || member.weight || "",
-    dietType: member.dietType || "non_vegetarian",
-    experience: member.experience || "intermediate",
-    daysPerWeek: member.daysPerWeek || 4,
-    emergencyContact: member.emergencyContact || "",
-    notes: member.notes || "",
+    fullName: "",
+    phone: "",
+    email: "",
+    status: "active",
+    fitnessGoal: "hypertrophy",
+    planId: "plan-hypertrophy-ppl",
+    expiryDate: "",
+    gender: "male",
+    dateOfBirth: "",
+    height: "",
+    weight: "",
+    dietType: "non_vegetarian",
+    experience: "intermediate",
+    daysPerWeek: 4,
+    emergencyContact: "",
+    notes: "",
   });
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (member) {
+      setFormData({
+        fullName: member.fullName || "",
+        phone: member.phone || "",
+        email: member.email || "",
+        status: member.status || "active",
+        fitnessGoal: member.fitnessGoal || "hypertrophy",
+        planId: member.planId || "plan-hypertrophy-ppl",
+        expiryDate: member.expiryDate || "",
+        gender: member.gender || "male",
+        dateOfBirth: member.dateOfBirth || "",
+        height: (member as any).heightCm || member.height || "",
+        weight: (member as any).weightKg || member.weight || "",
+        dietType: member.dietType || "non_vegetarian",
+        experience: member.experience || "intermediate",
+        daysPerWeek: member.daysPerWeek || 4,
+        emergencyContact: member.emergencyContact || "",
+        notes: member.notes || "",
+      });
+    }
+  }, [member]);
+
+  if (!isOpen || !member) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   try {
     if (!isServiceRoleConfigured()) {
       return NextResponse.json(
-        { error: "Server is missing Supabase service configuration" },
+        { success: false, error: "Server is missing Supabase service configuration", members: [], count: 0, attendance: {} },
         { status: 503 }
       );
     }
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     });
   } catch (err: any) {
     console.error("Admin members GET error:", err);
-    return NextResponse.json({ error: err?.message || "Internal server error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: err?.message || "Internal server error", members: [], count: 0, attendance: {} }, { status: 500 });
   }
 }
 
