@@ -55,7 +55,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Link>
 
         <div className="flex items-center gap-2">
-          <NotificationBell audience="admin" />
           <ThemeToggle />
           <button
             type="button"
@@ -175,8 +174,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 bg-background p-4 sm:p-8 pb-24 md:pb-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Top Action Bar for Desktop Admin Portal */}
-          <div className="hidden md:flex items-center justify-between pb-4 border-b border-border">
+          {/* Top Action Bar for Admin Portal */}
+          <div className="flex items-center justify-between pb-4 border-b border-border">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold uppercase text-accent">
                 IronSync Gym Operations
@@ -184,7 +183,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="flex items-center gap-3">
               <NotificationBell audience="admin" />
-              <ThemeToggle />
+              <div className="hidden md:block">
+                <ThemeToggle />
+              </div>
             </div>
           </div>
 

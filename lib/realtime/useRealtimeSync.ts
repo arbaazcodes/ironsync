@@ -80,38 +80,46 @@ export function useRealtimeSync({
     if (!enabled) return;
 
     // 1. Supabase Realtime Channel
-    const supabase = getSupabase();
     let channel: any = null;
+    let supabase: any = null;
 
-    if (supabase) {
-      const generatedChannelName =
-        channelName ||
-        `sync:${tables.sort().join("+")}:${filter || "all"}:${Math.random().toString(36).substring(2, 7)}`;
+    try {
+      supabase = getSupabase();
+      if (supabase) {
+        const generatedChannelName =
+          channelName ||
+          `sync-${tables.slice().sort().join("-")}-${filter || "all"}-${Math.random().toString(36).substring(2, 7)}`;
 
-      channel = supabase.channel(generatedChannelName);
+        channel = supabase.channel(generatedChannelName);
 
-      tables.forEach((table) => {
-        channel.on(
-          "postgres_changes" as any,
-          {
-            event: "*",
-            schema: "public",
-            table,
-            ...(filter ? { filter } : {}),
-          },
-          () => {
-            debouncedSync();
+        tables.forEach((table) => {
+          channel.on(
+            "postgres_changes" as any,
+            {
+              event: "*",
+              schema: "public",
+              table,
+              ...(filter ? { filter } : {}),
+            },
+            () => {
+              debouncedSync();
+            }
+          );
+        });
+
+        channel.subscribe((status: string, err?: any) => {
+          if (err) {
+            console.warn("[useRealtimeSync] subscribe warning:", status, err);
           }
-        );
-      });
-
-      channel.subscribe((status: string) => {
-        if (status === "SUBSCRIBED") {
-          setIsConnected(true);
-        } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
-          setIsConnected(false);
-        }
-      });
+          if (status === "SUBSCRIBED") {
+            setIsConnected(true);
+          } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+            setIsConnected(false);
+          }
+        });
+      }
+    } catch (realtimeErr) {
+      console.warn("[useRealtimeSync] Realtime subscription warning:", realtimeErr);
     }
 
     // 2. Foreground / Visibility Revalidation

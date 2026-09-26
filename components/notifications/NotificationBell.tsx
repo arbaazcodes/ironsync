@@ -72,63 +72,111 @@ export function NotificationBell({ audience, memberUuid }: NotificationBellProps
 
   // 2. Realtime Listener via Browser Supabase Client (Anon Key)
   useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) return;
+    let channel: any = null;
+    let pollInterval: NodeJS.Timeout | null = null;
 
-    const channelName =
-      audience === "admin"
-        ? "realtime:notifications:admin"
-        : `realtime:notifications:member:${memberUuid || "all"}`;
+    try {
+      const supabase = getSupabase();
+      if (supabase) {
+        const channelName =
+          audience === "admin"
+            ? "notifications-admin"
+            : `notifications-member-${memberUuid || "all"}`;
 
-    const filter =
-      audience === "admin"
-        ? "audience=eq.admin"
-        : memberUuid
-        ? `member_uuid=eq.${memberUuid}`
-        : "audience=eq.member";
+        const filter =
+          audience === "admin"
+            ? "audience=eq.admin"
+            : memberUuid
+            ? `member_uuid=eq.${memberUuid}`
+            : "audience=eq.member";
 
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter,
-        },
-        (payload) => {
-          const row = payload.new as any;
-          const newNotification: InAppNotification = {
-            id: row.id,
-            audience: row.audience as NotificationAudience,
-            memberUuid: row.member_uuid || null,
-            memberId: row.member_id || null,
-            title: row.title,
-            body: row.body,
-            link: row.link || null,
-            type: row.type,
-            readAt: row.read_at || null,
-            createdAt: row.created_at,
-          };
-
-          setNotifications((prev) => {
-            if (prev.some((n) => n.id === newNotification.id)) return prev;
-            return [newNotification, ...prev].slice(0, 20);
-          });
-          setUnreadCount((prev) => prev + 1);
+        // Remove any existing duplicate or lingering channels for notifications
+        try {
+          const existingChannels =
+            typeof (supabase as any).getChannels === "function"
+              ? (supabase as any).getChannels()
+              : [];
+          if (Array.isArray(existingChannels)) {
+            existingChannels.forEach((ch: any) => {
+              if (
+                ch?.topic &&
+                (ch.topic.includes("notifications-admin") ||
+                  ch.topic.includes("notifications-member"))
+              ) {
+                supabase.removeChannel(ch);
+              }
+            });
+          }
+        } catch (cleanupErr) {
+          console.warn("[notifications] cleanup before subscribe warning:", cleanupErr);
         }
-      )
-      .subscribe();
 
-    // 3. Fallback Polling every 60s
-    const pollInterval = setInterval(() => {
+        channel = supabase
+          .channel(channelName)
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "notifications",
+              filter,
+            },
+            (payload) => {
+              try {
+                const row = payload.new as any;
+                if (!row) return;
+                const newNotification: InAppNotification = {
+                  id: row.id,
+                  audience: row.audience as NotificationAudience,
+                  memberUuid: row.member_uuid || null,
+                  memberId: row.member_id || null,
+                  title: row.title,
+                  body: row.body,
+                  link: row.link || null,
+                  type: row.type,
+                  readAt: row.read_at || null,
+                  createdAt: row.created_at,
+                };
+
+                setNotifications((prev) => {
+                  if (prev.some((n) => n.id === newNotification.id)) return prev;
+                  return [newNotification, ...prev].slice(0, 20);
+                });
+                setUnreadCount((prev) => prev + 1);
+              } catch (payloadErr) {
+                console.warn("[notifications] payload error:", payloadErr);
+              }
+            }
+          )
+          .subscribe((status, err) => {
+            if (err) {
+              console.warn("[notifications] subscribe warning:", status, err);
+            }
+          });
+      }
+    } catch (realtimeErr) {
+      console.warn("[notifications] Realtime setup warning (falling back to polling):", realtimeErr);
+    }
+
+    // 3. Fallback Polling every 30s
+    pollInterval = setInterval(() => {
       fetchNotifications();
-    }, 60000);
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
-      clearInterval(pollInterval);
+      try {
+        if (channel) {
+          const supabase = getSupabase();
+          if (supabase) {
+            supabase.removeChannel(channel);
+          }
+        }
+      } catch (teardownErr) {
+        console.warn("[notifications] channel teardown warning:", teardownErr);
+      }
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
     };
   }, [audience, memberUuid, fetchNotifications]);
 
