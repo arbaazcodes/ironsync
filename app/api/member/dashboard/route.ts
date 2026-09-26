@@ -2,9 +2,17 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { MEMBER_COOKIE_NAME, verifyMemberSessionToken } from "@/lib/security/memberSession";
 import { getMemberDashboardData } from "@/lib/services/memberService";
+import { isServiceRoleConfigured } from "@/lib/supabase/admin";
 
 export async function GET() {
   try {
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json(
+        { error: "Server is missing Supabase service configuration" },
+        { status: 503 }
+      );
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get(MEMBER_COOKIE_NAME)?.value;
 

@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/security/adminAuth";
 import { resetMemberPin, getMemberById } from "@/lib/services/memberService";
+import { isServiceRoleConfigured } from "@/lib/supabase/admin";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json(
+        { error: "Server is missing Supabase service configuration" },
+        { status: 503 }
+      );
+    }
+
     const admin = await getAdminUser();
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized. Admin authentication required." }, { status: 401 });

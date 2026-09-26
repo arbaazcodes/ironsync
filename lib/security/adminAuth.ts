@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServiceClient } from "@/lib/supabase/admin";
 
 export interface AdminSessionUser {
   id: string;
@@ -43,7 +44,8 @@ export async function getAdminUser(): Promise<AdminSessionUser | null> {
 
     // If gym_admins table exists, verify that the authenticated user is listed in it
     try {
-      const { data: gymAdmin, error: adminErr } = await (supabase as any)
+      const dbClient = createServiceClient() || supabase;
+      const { data: gymAdmin, error: adminErr } = await (dbClient as any)
         .from("gym_admins")
         .select("user_id")
         .eq("user_id", user.id)

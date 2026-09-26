@@ -425,3 +425,22 @@ drop trigger if exists on_members_updated on public.members;
 create trigger on_members_updated
   before update on public.members
   for each row execute procedure public.handle_updated_at();
+
+-- ==============================================================================
+-- 9. Gym Admins Table (Staff & Management Access Control)
+-- ==============================================================================
+create table if not exists public.gym_admins (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null unique,
+  role text default 'admin' not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_gym_admins_user_id on public.gym_admins(user_id);
+
+alter table public.gym_admins enable row level security;
+
+drop policy if exists "Admins can view own gym_admins record" on public.gym_admins;
+create policy "Admins can view own gym_admins record"
+  on public.gym_admins for select
+  using (auth.uid() = user_id);

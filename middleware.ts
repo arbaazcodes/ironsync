@@ -63,6 +63,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  const isUnauthorizedAdmin = Boolean(
+    supabaseUrl && supabaseKey && !adminUser && request.cookies.getAll().some((c) => c.name.startsWith("sb-"))
+  );
+
   // Member session cookie check (timing-safe HMAC-SHA256 verification)
   const memberCookie = request.cookies.get("ironsync_member_session")?.value;
   const memberSession = await verifyMemberSessionTokenEdge(memberCookie);
@@ -80,6 +84,9 @@ export async function middleware(request: NextRequest) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/login";
       redirectUrl.searchParams.set("tab", "admin");
+      if (isUnauthorizedAdmin) {
+        redirectUrl.searchParams.set("error", "unauthorized_admin");
+      }
       redirectUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(redirectUrl);
     }
@@ -87,6 +94,12 @@ export async function middleware(request: NextRequest) {
 
   // 2. Guard /member routes -> Requires valid member cookie
   if (pathname.startsWith("/member")) {
+    // If admin is hitting /member, redirect to /admin/members
+    if (adminUser) {
+      const adminUrl = request.nextUrl.clone();
+      adminUrl.pathname = "/admin/members";
+      return NextResponse.redirect(adminUrl);
+    }
     if (!hasValidMemberSession) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/login";
@@ -105,7 +118,7 @@ export async function middleware(request: NextRequest) {
     }
     if (adminUser) {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/admin";
+      redirectUrl.pathname = "/admin/members";
       return NextResponse.redirect(redirectUrl);
     }
     const redirectUrl = request.nextUrl.clone();
@@ -123,7 +136,7 @@ export async function middleware(request: NextRequest) {
     }
     if (adminUser) {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/admin";
+      redirectUrl.pathname = "/admin/members";
       return NextResponse.redirect(redirectUrl);
     }
     const redirectUrl = request.nextUrl.clone();
@@ -147,7 +160,7 @@ export async function middleware(request: NextRequest) {
     // If logged in admin visits /login with tab=admin (or default tab if not a member):
     if (adminUser && (tab === "admin" || (!tab && !hasValidMemberSession))) {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/admin";
+      redirectUrl.pathname = "/admin/members";
       redirectUrl.search = "";
       return NextResponse.redirect(redirectUrl);
     }

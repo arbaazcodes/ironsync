@@ -1,5 +1,20 @@
 import type { MemberSessionPayload } from "../types/member";
 
+export function getMemberSessionSecret(): string | null {
+  const secret = process.env.MEMBER_SESSION_SECRET;
+  if (secret && secret.trim().length > 0) {
+    return secret.trim();
+  }
+  // No hardcoded fallback in production
+  if (process.env.NODE_ENV !== "production") {
+    return (
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      "ironsync-dev-member-secret"
+    );
+  }
+  return null;
+}
+
 /**
  * Timing-safe Web Crypto HMAC-SHA256 session verifier compatible with Next.js Edge Runtime.
  * Verifies that the ironsync_member_session cookie signature was signed with MEMBER_SESSION_SECRET,
@@ -18,18 +33,8 @@ export async function verifyMemberSessionTokenEdge(
   const [payloadEncoded, signature] = parts;
   if (!payloadEncoded || !signature) return null;
 
-  // Resolve secret key
-  const secret = process.env.MEMBER_SESSION_SECRET;
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      // In production, reject all sessions if secret is missing
-      return null;
-    }
-  }
-  const effectiveSecret =
-    secret ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "ironsync-gym-platform-member-secret-salt-2026";
+  const secret = getMemberSessionSecret();
+  if (!secret) return null;
 
   try {
     // 1. Decode base64url signature to raw bytes
@@ -46,7 +51,7 @@ export async function verifyMemberSessionTokenEdge(
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
       "raw",
-      encoder.encode(effectiveSecret),
+      encoder.encode(secret),
       { name: "HMAC", hash: "SHA-256" },
       false,
       ["verify"]

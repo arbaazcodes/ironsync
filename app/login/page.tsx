@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/AuthContext";
+import { getSupabase } from "@/lib/supabase/client";
 import {
   ShieldCheck,
   Lock,
@@ -60,18 +61,51 @@ function LoginContent() {
   useEffect(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "unauthorized_admin") {
-      setAdminError("Access denied. Your account does not have administrator privileges.");
+      setAdminError("This account is not authorized for the admin portal.");
     } else if (errorParam) {
       setAdminError("Authentication error. Please sign in with your administrator credentials.");
     }
   }, [searchParams]);
 
-  // If already logged in as admin, redirect to /admin
+  // If already logged in as admin, verify gym_admins and redirect to /admin/members
   useEffect(() => {
     if (!user) return;
-    if (activeTab === "admin") {
-      router.push(redirectTarget || "/admin");
+    if (activeTab !== "admin") return;
+
+    const currentUserId = user.id;
+    let isMounted = true;
+    async function verifyAdminAndRedirect() {
+      const supabase = getSupabase();
+      if (supabase) {
+        try {
+          const { data: gymAdmin, error: adminErr } = await (supabase as any)
+            .from("gym_admins")
+            .select("user_id")
+            .eq("user_id", currentUserId)
+            .maybeSingle();
+
+          if (!adminErr && !gymAdmin) {
+            await supabase.auth.signOut();
+            if (isMounted) {
+              setAdminError("This account is not authorized for the admin portal.");
+            }
+            return;
+          }
+        } catch {
+          // Table doesn't exist
+        }
+      }
+
+      if (isMounted) {
+        router.push(redirectTarget || "/admin/members");
+      }
     }
+
+    verifyAdminAndRedirect();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, activeTab, redirectTarget, router]);
 
   // If already logged in as member, redirect to /member/dashboard
@@ -135,15 +169,15 @@ function LoginContent() {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
+      if (!res.ok || (!data.ok && !data.success)) {
         setMemberError(
-          data.error || "Authentication failed. Please verify your Member ID and PIN."
+          data.error || "Invalid Member ID or PIN."
         );
         setMemberLoading(false);
         return;
       }
 
-      router.push(redirectTarget || "/member/dashboard");
+      router.push(data.redirect || redirectTarget || "/member/dashboard");
     } catch (err: any) {
       setMemberError(err?.message || "An unexpected error occurred. Please try again.");
       setMemberLoading(false);
@@ -167,7 +201,7 @@ function LoginContent() {
     setAdminLoading(true);
 
     try {
-      const { error } = await signInWithEmail(adminEmail.trim(), adminPassword);
+      const { user: authedUser, error } = await signInWithEmail(adminEmail.trim(), adminPassword);
 
       if (error) {
         setAdminError(error.message || "Invalid administrator credentials.");
@@ -175,7 +209,29 @@ function LoginContent() {
         return;
       }
 
-      router.push(redirectTarget || "/admin");
+      // Gate: User must exist in public.gym_admins
+      const supabase = getSupabase();
+      const targetUserId = authedUser?.id;
+      if (supabase && targetUserId) {
+        try {
+          const { data: gymAdmin, error: adminErr } = await (supabase as any)
+            .from("gym_admins")
+            .select("user_id")
+            .eq("user_id", targetUserId)
+            .maybeSingle();
+
+          if (!adminErr && !gymAdmin) {
+            await supabase.auth.signOut();
+            setAdminError("This account is not authorized for the admin portal.");
+            setAdminLoading(false);
+            return;
+          }
+        } catch {
+          // gym_admins table doesn't exist yet, proceed with existing admin auth
+        }
+      }
+
+      router.push(redirectTarget || "/admin/members");
     } catch (err: any) {
       setAdminError(err?.message || "Failed to authenticate administrator.");
       setAdminLoading(false);

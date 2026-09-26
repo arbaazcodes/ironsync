@@ -11,6 +11,7 @@ import {
   hashPin,
   verifyPin,
   generateRandomPin,
+  isValidPin,
   formatMemberId,
   parseMemberIdSequence,
 } from "../security/pinSecurity";
@@ -745,15 +746,40 @@ export async function authenticateMember(
     return { success: false, error: "Member ID and PIN are required." };
   }
 
-  const member = await getMemberByMemberId(memberId, true);
+  const cleanId = memberId.trim().toUpperCase();
+  const cleanPin = pin.trim();
+
+  if (!isValidPin(cleanPin)) {
+    return { success: false, error: "Invalid Member ID or PIN." };
+  }
+
+  const member = await getMemberByMemberId(cleanId, true);
   if (!member) {
     return { success: false, error: "Invalid Member ID or PIN." };
   }
 
-  // Verify PIN against pin_hash
-  const isMatch = verifyPin(pin, member.pinHash);
+  // Verify PIN against pin_hash using constant-time verification
+  const isMatch = verifyPin(cleanPin, member.pinHash);
   if (!isMatch) {
     return { success: false, error: "Invalid Member ID or PIN." };
+  }
+
+  // Reject inactive, suspended, or expired members
+  if (member.status !== "active") {
+    return {
+      success: false,
+      error: `Your membership account is ${member.status}. Please contact the gym front desk.`,
+    };
+  }
+
+  if (member.expiryDate) {
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+    if (member.expiryDate < today) {
+      return {
+        success: false,
+        error: "Your membership has expired. Please contact the gym front desk.",
+      };
+    }
   }
 
   // Update last_login_at in PostgreSQL

@@ -3,9 +3,17 @@ import { getAdminUser } from "@/lib/security/adminAuth";
 import { getMembers, createMember } from "@/lib/services/memberService";
 import { getAttendanceForMembersBatch } from "@/lib/services/attendanceService";
 import { CreateMemberInput, MemberStatus } from "@/lib/types/member";
+import { isServiceRoleConfigured } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   try {
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json(
+        { error: "Server is missing Supabase service configuration" },
+        { status: 503 }
+      );
+    }
+
     const admin = await getAdminUser();
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized. Admin authentication required." }, { status: 401 });
@@ -51,6 +59,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json(
+        { error: "Server is missing Supabase service configuration" },
+        { status: 503 }
+      );
+    }
+
     const admin = await getAdminUser();
     if (!admin) {
       return NextResponse.json({ error: "Unauthorized. Admin authentication required." }, { status: 401 });

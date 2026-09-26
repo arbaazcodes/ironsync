@@ -8,5 +8,5 @@ export async function getPostLoginRedirect(
   userId?: string | null,
   supabaseClient?: any
 ): Promise<string> {
-  return "/admin";
+  return "/admin/members";
 }

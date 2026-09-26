@@ -4,28 +4,29 @@ import { MemberSessionPayload, MemberStatus } from "../types/member";
 export const MEMBER_COOKIE_NAME = "ironsync_member_session";
 const SESSION_DURATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
-function getSecretKey(): string {
+export function getMemberSessionSecret(): string | null {
   const secret = process.env.MEMBER_SESSION_SECRET;
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "CRITICAL SECURITY CONFIGURATION ERROR: MEMBER_SESSION_SECRET environment variable is missing in production. " +
-        "Please configure MEMBER_SESSION_SECRET in your production deployment settings."
-      );
-    }
+  if (secret && secret.trim().length > 0) {
+    return secret.trim();
+  }
+  // No hardcoded fallback in production
+  if (process.env.NODE_ENV !== "production") {
     return (
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "ironsync-gym-platform-member-secret-salt-2026"
+      "ironsync-dev-member-secret"
     );
   }
-  return secret;
+  return null;
 }
 
 /**
  * Creates an HMAC-SHA256 signed, base64url-encoded session token for an authenticated gym member.
  */
 export function createMemberSessionToken(payload: Omit<MemberSessionPayload, "exp">): string {
-  const secret = getSecretKey();
+  const secret = getMemberSessionSecret();
+  if (!secret) {
+    throw new Error("MEMBER_SESSION_SECRET is not configured on the server.");
+  }
   const exp = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
 
   const fullPayload: MemberSessionPayload = {
@@ -53,7 +54,8 @@ export function verifyMemberSessionToken(token: string): MemberSessionPayload | 
     if (parts.length !== 2) return null;
 
     const [payloadEncoded, signature] = parts;
-    const secret = getSecretKey();
+    const secret = getMemberSessionSecret();
+    if (!secret) return null;
 
     const expectedSignature = crypto
       .createHmac("sha256", secret)
