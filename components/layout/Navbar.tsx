@@ -79,8 +79,8 @@ export function Navbar() {
   };
 
   const navLinks = [
+    { label: "Exercises", href: "/exercises" },
     { label: "How it works", href: "/#how-it-works" },
-    { label: "Features", href: "/#features" },
     { label: "Get started", href: "/#personalization" },
   ];
 

@@ -37,6 +37,7 @@ export function Footer() {
               Product
             </h3>
             <ul className="space-y-2.5 text-sm">
+              <li><Link href="/exercises" className="hover:text-primary transition-colors">Exercise library</Link></li>
               <li>
                 <Link
                   href="/#how-it-works"

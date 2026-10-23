@@ -65,12 +65,12 @@ export function Hero() {
               </Button>
 
               <Button
-                href="/#how-it-works"
+                href="/exercises"
                 variant="secondary"
                 size="lg"
                 className="w-full sm:w-auto font-bold text-sm uppercase tracking-wider py-3.5 px-6"
               >
-                See How It Works
+                Browse Exercises
               </Button>
             </div>
 

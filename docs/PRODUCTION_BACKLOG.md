@@ -6,7 +6,9 @@ See the [product and architecture plan](D:/Projects/IronSync/PRODUCTION_PLAN.md)
 
 **Implementation follow-up:** Core work for R01, R02, R04, R09, R10, and R11, plus part of R03, is now implemented. The live security migration is applied. Full task acceptance still requires the remaining production checks in the [implementation and rollout guide](IMPLEMENTATION_2026-10-23.md); this does not mark the complete public release as finished.
 
-**Homepage follow-up:** Public workout messaging and metadata now replace gym-management marketing on the homepage. Mobile navigation and responsive browser checks are complete for this page; see the [homepage release report](HOMEPAGE_RELEASE_2026-10-23.md). This is partial work on R19 and R15; exercise publishing, full-site accessibility/SEO, and physical-device acceptance remain open.
+**Homepage follow-up:** Public workout messaging and metadata now replace gym-management marketing on the homepage. Mobile navigation and responsive browser checks are complete for this page; see the [homepage release report](HOMEPAGE_RELEASE_2026-10-23.md). This is partial work on R19 and R15; full-site accessibility/SEO and physical-device acceptance remain open.
+
+**Exercise library follow-up:** Public search, combined muscle/equipment/difficulty filters, URL state, pagination, and 24 exercise detail pages are implemented, with homepage links and public-page SEO. See the [exercise library release report](EXERCISE_LIBRARY_RELEASE_2026-10-23.md). This delivers the discovery/detail portion of R06 and partial R05/R15/R19. Source comparison was AI-assisted; qualified trainer review, licensed media, direct add-to-routine integration, expanded content, and physical-device acceptance remain open.
 
 ## 1. Sequencing, ownership, and effort
 
