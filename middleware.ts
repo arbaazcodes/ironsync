@@ -44,17 +44,17 @@ export async function middleware(request: NextRequest) {
     if (path.startsWith("/member") && !member) return redirect("/login?tab=member&next=" + encodeURIComponent(path));
     if (path === "/login" && member) return redirect("/member/dashboard");
   }
-  if (path.startsWith("/dashboard") && !signedIn) {
+  if ((path.startsWith("/dashboard") || path.startsWith("/onboarding")) && !signedIn) {
     return redirect("/auth?mode=signin&next=" + encodeURIComponent(path + request.nextUrl.search));
   }
   if (path === "/login") {
     const tab = request.nextUrl.searchParams.get("tab");
     if (tab === "admin" && isAdmin) return redirect("/admin/members");
     if (tab !== "admin" && tab !== "member") {
-      return redirect("/auth?mode=signin&next=" + encodeURIComponent(request.nextUrl.searchParams.get("next") || "/dashboard/workout"));
+      return redirect("/auth?mode=signin&next=" + encodeURIComponent(request.nextUrl.searchParams.get("next") || "/dashboard"));
     }
   }
-  // Onboarding and signup are public. APIs authorize their own data access.
+  // Sign in before collecting preferences. APIs authorize their own data access.
   if (path.startsWith("/dashboard") || path.startsWith("/admin") || path.startsWith("/member")) response.headers.set("Cache-Control", "private, no-store");
   return response;
 }

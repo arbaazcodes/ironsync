@@ -8,6 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 export function SiteLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isDedicatedFlow =
+    pathname === "/" ||
     pathname?.startsWith("/onboarding") ||
     pathname?.startsWith("/auth") ||
     pathname?.startsWith("/login") ||

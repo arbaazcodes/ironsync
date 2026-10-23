@@ -10,6 +10,8 @@ See the [product and architecture plan](D:/Projects/IronSync/PRODUCTION_PLAN.md)
 
 **Exercise library follow-up:** Public search, combined muscle/equipment/difficulty filters, URL state, pagination, and 24 exercise detail pages are implemented, with homepage links and public-page SEO. See the [exercise library release report](EXERCISE_LIBRARY_RELEASE_2026-10-23.md). This delivers the discovery/detail portion of R06 and partial R05/R15/R19. Source comparison was AI-assisted; qualified trainer review, licensed media, direct add-to-routine integration, expanded content, and physical-device acceptance remain open.
 
+**Consumer redesign, 23 October 2026:** The user superseded the broad dashboard with a minimal mobile/web personal-training flow. Login-first onboarding, rule-based exercise selection, 18 photo guides, USDA portion calculations, immutable plan versions and completed/skipped/rest-day calendars are implemented and locally verified. Android now uses real web authentication; the legacy native mock-login path was removed. See [CONSUMER-REBUILD.md](./CONSUMER-REBUILD.md). Trainer/dietitian review, physical-device acceptance, store signing/publication, self-service account deletion and operational release gates remain open; implementation does not close those acceptance criteria automatically.
+
 ## 1. Sequencing, ownership, and effort
 
 P0 = blocks a safe/useful release. P1 = required for the intended public product. P2 = post-launch experiment. Effort is estimated engineering person-days, including task-level tests and review, excluding exercise filming, trainer/editorial review, recruitment, and legal review. Tasks can overlap where dependencies permit. Estimates must be revised after the first vertical slice and live-schema inventory.

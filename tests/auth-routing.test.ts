@@ -18,7 +18,7 @@ describe("public authentication routing", () => {
       } },
     } as never));
     const response = await GET(new NextRequest("https://app.test/auth/callback?code=valid&next=//evil.test", { headers: { "x-forwarded-host": "evil.test" } }));
-    expect(response.headers.get("location")).toBe("https://app.test/dashboard/workout");
+    expect(response.headers.get("location")).toBe("https://app.test/dashboard");
     expect(response.cookies.get("session-test")?.value).toBe("cookie");
     expect(response.headers.get("cache-control")).toBe("no-store");
   });
@@ -39,14 +39,15 @@ describe("public authentication routing", () => {
     expect((await middleware(new NextRequest("https://app.test/dashboard/workout"))).headers.get("location")).toBeNull();
     expect((await middleware(new NextRequest("https://app.test/admin/members"))).headers.get("location")).toContain("/login?tab=admin");
   });
-  it("leaves signup/onboarding public and preserves refresh cookies on redirects", async () => {
+  it("leaves signup public, requires login for onboarding and preserves refresh cookies on redirects", async () => {
     vi.mocked(createServerClient).mockImplementation((_url, _key, options: any) => ({
       auth: { getUser: async () => {
         options.cookies.setAll([{ name: "refresh-test", value: "new", options: { path: "/" } }]);
         return { data: { user: null }, error: null };
       } },
     } as never));
-    expect((await middleware(new NextRequest("https://app.test/onboarding"))).headers.get("location")).toBeNull();
+    expect((await middleware(new NextRequest("https://app.test/auth"))).headers.get("location")).toBeNull();
+    expect((await middleware(new NextRequest("https://app.test/onboarding"))).headers.get("location")).toContain("/auth?mode=signin");
     const response = await middleware(new NextRequest("https://app.test/dashboard/workout"));
     expect(response.headers.get("location")).toContain("/auth?mode=signin");
     expect(response.cookies.get("refresh-test")?.value).toBe("new");

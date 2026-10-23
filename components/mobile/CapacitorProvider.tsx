@@ -38,7 +38,7 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
           // Status bar styling
           try {
             await StatusBar.setStyle({ style: Style.Dark });
-            await StatusBar.setBackgroundColor({ color: "#0C0C0C" });
+            await StatusBar.setBackgroundColor({ color: "#FAFAF8" });
           } catch (e) {
             // Non-critical if platform doesn't support status bar coloring
           }
@@ -52,19 +52,10 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
 
           // Hardware back button navigation
           backButtonListener = await App.addListener("backButton", ({ canGoBack }) => {
-            const currentUrl = typeof window !== "undefined" ? window.location.href : "";
-            const isSubViewInMobile =
-              currentUrl.includes("view=member") || currentUrl.includes("view=admin");
-
-            if (pathname === "/mobile" && isSubViewInMobile) {
-              // Return to the two-door selection screen
-              router.push("/mobile");
-              return;
-            }
-
             const isRootPage =
               pathname === "/" ||
               pathname === "/mobile" ||
+              pathname === "/dashboard" ||
               pathname === "/login" ||
               pathname === "/member/dashboard" ||
               pathname === "/admin";
@@ -76,7 +67,7 @@ export function CapacitorProvider({ children }: { children: React.ReactNode }) {
             } else if (pathname.startsWith("/admin")) {
               router.push("/admin");
             } else {
-              router.push("/member/dashboard");
+              router.push("/dashboard");
             }
           });
         } catch (err) {

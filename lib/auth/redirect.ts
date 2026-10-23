@@ -1,4 +1,4 @@
-export function safeRedirectPath(next: string | null, fallback = "/dashboard/workout"): string {
+export function safeRedirectPath(next: string | null, fallback = "/dashboard"): string {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return fallback;
   try {
     const decoded = decodeURIComponent(next);

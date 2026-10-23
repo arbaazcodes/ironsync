@@ -1,16 +1,58 @@
 "use client";
 import { useEffect } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
-import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { useProgram } from "@/components/consumer/ProgramProvider";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading, activePlan } = useAuth();
+import { WorkoutProvider } from "@/components/workout/WorkoutProvider";
+import { secondary } from "@/components/consumer/ui";
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, isLoading } = useAuth();
+  const { program, loading, error, refresh } = useProgram();
   const router = useRouter();
   const path = usePathname();
-  useEffect(() => { if (!isLoading && !user) router.replace("/auth?mode=signin"); }, [isLoading, user, router]);
-  if (isLoading || !user) return <DashboardSkeleton />;
-  if (!activePlan && path !== "/dashboard/workout") return <DashboardShell><div className="space-y-4 p-6"><h1 className="text-2xl font-bold">Your training starts here</h1><p>Create a blueprint to use this section, or start logging a workout now.</p><div className="flex gap-6"><Link href="/onboarding" className="underline">Create a blueprint</Link><Link href="/dashboard/workout" className="underline">Log a workout</Link></div></div></DashboardShell>;
-  return <DashboardShell>{children}</DashboardShell>;
+  useEffect(() => {
+    if (!isLoading && !user) router.replace("/auth?mode=signin");
+    else if (
+      user &&
+      !loading &&
+      !error &&
+      !program &&
+      path !== "/dashboard/workout"
+    )
+      router.replace("/onboarding");
+  }, [isLoading, user, program, loading, error, router, path]);
+  if (isLoading || !user || loading)
+    return (
+      <div className="p-8" role="status">
+        Opening your training space…
+      </div>
+    );
+  if (error && path !== "/dashboard/workout")
+    return (
+      <DashboardShell>
+        <h1 className="text-2xl font-semibold">Let’s reconnect.</h1>
+        <p className="my-4" role="alert">
+          {error}
+        </p>
+        <button className={secondary} onClick={() => void refresh()}>
+          Try again
+        </button>
+      </DashboardShell>
+    );
+  if (!program && path !== "/dashboard/workout")
+    return (
+      <p className="p-8" role="status">
+        Opening your preferences…
+      </p>
+    );
+  return (
+    <WorkoutProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </WorkoutProvider>
+  );
 }

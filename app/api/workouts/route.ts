@@ -17,8 +17,15 @@ export async function GET(request: Request) {
   try {
     const auth = await identity();
     if (!auth) return json({ error: "Sign in to load your workouts." }, 401);
-    const { data, error } = await auth.client.from("workout_sessions").select("*").eq("user_id", auth.user.id)
-      .order("started_at", { ascending: false }).limit(50);
+    const params = new URL(request.url).searchParams;
+    const from = params.get("from"); const to = params.get("to");
+    let query = auth.client.from("workout_sessions").select("*").eq("user_id", auth.user.id);
+    if (from || to) {
+      const start = Date.parse(from || ""); const end = Date.parse(to || "");
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end - start > 64 * 86400000) return json({ error: "Choose a valid history range of up to 64 days." }, 400);
+      query = query.gte("started_at", new Date(start).toISOString()).lt("started_at", new Date(end).toISOString());
+    }
+    const { data, error } = await query.order("started_at", { ascending: false }).limit(from ? 1000 : 50);
     if (error) return json({ error: "Cloud workouts are unavailable. Your device draft is safe." }, 503);
     return json({ sessions: (data || []).map(remote) });
   } catch { return json({ error: "Could not load workouts." }, 503); }

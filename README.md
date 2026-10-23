@@ -1,8 +1,10 @@
 # IronSync — Public Workout App
 
-IronSync is a public workout app built with Next.js, Tailwind CSS, and Supabase (PostgreSQL + Auth), with existing gym administration and member tools.
+IronSync is a mobile-first personal workout app built with Next.js, Tailwind CSS and Supabase, with an Android Capacitor client using the same web experience.
 
-The first consumer milestone adds public signup, a persistent workout logger, and authorization fixes. Read the [implementation and rollout guide](./docs/IMPLEMENTATION_2026-10-23.md) for verified results and remaining deployment steps. The live database migration is applied; the updated app still needs deployment, custom SMTP configuration, and live email/OAuth checks.
+The consumer flow is **sign in → goals and preferences → Today / Plan / Food / Calendar / Profile**. It includes equipment-aware starter routines, real movement photos, gram-based food menus from USDA records, persistent workout sets and a truthful training calendar. Existing gym tools remain separate from the consumer navigation.
+
+Read the [consumer rebuild and verification guide](./docs/CONSUMER-REBUILD.md) for data sources, implementation details, tests, Android instructions and remaining release limitations. Earlier security, authentication and public exercise-library milestones are documented in `docs/`.
 
 ---
 

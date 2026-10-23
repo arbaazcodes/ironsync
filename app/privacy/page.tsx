@@ -1,101 +1,90 @@
-import React from "react";
 import Link from "next/link";
-import { Container } from "@/components/layout/Container";
-import { Card } from "@/components/ui/Card";
-import { ArrowLeft, Shield, Lock, CreditCard, UserCheck, HelpCircle } from "lucide-react";
-
 export const metadata = {
-  title: "Privacy Policy — IronSync Free Gym Platform",
-  description: "Privacy policy for the IronSync free gym management and member workout platform.",
+  title: "Privacy — IronSync",
+  description:
+    "How IronSync uses your account, training preferences and workout records.",
 };
-
 export default function PrivacyPage() {
   return (
-    <div className="py-24 sm:py-32">
-      <Container size="narrow">
-        <div className="space-y-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-primary-muted hover:text-accent transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Return to Overview
-          </Link>
-
-          <div className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-surface-elevated border border-border flex items-center justify-center text-accent">
-              <Shield className="w-5 h-5 text-accent" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight">
-              Privacy Policy
-            </h1>
-            <p className="text-sm text-primary-muted font-mono">
-              Last updated: September 2026 &bull; IronSync Free Gym Platform
-            </p>
-          </div>
-
-          <Card variant="elevated" padding="lg" className="space-y-6 text-sm text-primary-muted leading-relaxed">
-            <div>
-              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
-                <Shield className="w-4 h-4 text-accent" />
-                <h2>1. Free Gym Platform Privacy Commitment</h2>
-              </div>
-              <p>
-                IronSync is a 100% free gym management and athlete workout tracking platform. We do not sell, monetize, rent, or trade member or gym data to third parties or advertising networks. All operational data is collected solely to power your gym&apos;s attendance, check-ins, and daily workout tracking.
-              </p>
-            </div>
-
-            <div className="border-t border-border/60 pt-6">
-              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
-                <CreditCard className="w-4 h-4 text-accent" />
-                <h2>2. Zero Payment & Financial Data Processing</h2>
-              </div>
-              <p>
-                IronSync does not charge gym members or operators for using this application. We do not collect, process, or store credit card numbers, bank account information, or financial billing credentials anywhere in our system.
-              </p>
-            </div>
-
-            <div className="border-t border-border/60 pt-6">
-              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
-                <UserCheck className="w-4 h-4 text-accent" />
-                <h2>3. Information We Collect and Manage</h2>
-              </div>
-              <p className="mb-3">
-                To support gym check-ins and member workout access, IronSync manages:
-              </p>
-              <ul className="list-disc list-inside space-y-1 pl-1 text-primary-dim">
-                <li><strong className="text-primary">Gym Member ID:</strong> Assigned by your local gym front desk (e.g., IS-2026-0001).</li>
-                <li><strong className="text-primary">Basic Profile:</strong> Name, phone number, and optional emergency contact provided upon enrollment.</li>
-                <li><strong className="text-primary">Attendance Records:</strong> Date and time timestamps for gym check-in sessions.</li>
-                <li><strong className="text-primary">Workout & Fitness Splits:</strong> Exercise routines and training logs assigned by gym staff.</li>
-              </ul>
-            </div>
-
-            <div className="border-t border-border/60 pt-6">
-              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
-                <Lock className="w-4 h-4 text-accent" />
-                <h2>4. Credential Security & PIN Protection</h2>
-              </div>
-              <p>
-                Member security PINs are strictly protected using cryptographic salted scrypt hashing. Plaintext PINs are never stored in databases or logged. Session tokens are signed using HMAC-SHA256 and transmitted exclusively via encrypted, secure, HttpOnly cookies.
-              </p>
-            </div>
-
-            <div className="border-t border-border/60 pt-6">
-              <div className="flex items-center gap-2 text-primary font-bold text-base mb-2">
-                <HelpCircle className="w-4 h-4 text-accent" />
-                <h2>5. Contact & Privacy Inquiries</h2>
-              </div>
-              <p>
-                If you have questions about privacy practices or data handling, please contact our team at{" "}
-                <a href="mailto:support@ironsync.online" className="text-accent hover:underline font-mono font-medium">
-                  support@ironsync.online
-                </a>.
-              </p>
-            </div>
-          </Card>
-        </div>
-      </Container>
-    </div>
+    <article className="mx-auto max-w-2xl space-y-8 px-5 py-24 text-sm leading-relaxed">
+      <Link
+        href="/dashboard"
+        className="inline-flex min-h-11 items-center underline"
+      >
+        Back to your app
+      </Link>
+      <header>
+        <h1 className="text-3xl font-semibold">Your privacy.</h1>
+        <p className="mt-3 text-primary-muted">Updated 23 October 2026</p>
+      </header>
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">What you share</h2>
+        <p>
+          Your account includes your email and display name. When you make a
+          plan, we save your age, height, weight, optional sex used for calorie
+          estimation, goal, experience, equipment, schedule, activity, food
+          preferences, exclusions and timezone. The form also records whether
+          you need professional guidance; it does not ask for a diagnosis.
+        </p>
+        <p>
+          Workout records contain the exercises, weights, repetitions or hold
+          times, completion status and dates you enter. Skipped-day choices are
+          saved separately.
+        </p>
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Why we use it</h2>
+        <p>
+          These details generate and display your training and meal suggestions,
+          restore your workout log and build your calendar. Suggestions use
+          rules in the app; this flow does not send your body details to an
+          external generative AI service.
+        </p>
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Storage and service providers</h2>
+        <p>
+          Supabase provides account authentication and database storage. Vercel
+          hosts the web application. Your account data is restricted to your
+          account through database access controls; authorized service operators
+          can access data needed to maintain the service. Authentication emails
+          pass through the configured email delivery provider.
+        </p>
+        <p>
+          Session cookies keep you signed in. The browser or Android WebView
+          also keeps your theme and an account-specific workout draft so
+          interrupted edits can recover. Unsubmitted preferences remain in this
+          tab’s session storage and are restored only when the draft is less
+          than 24 hours old. Sign out on shared devices, and clear site data if
+          you need to remove local copies.
+        </p>
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">History and your choices</h2>
+        <p>
+          Updating preferences creates a new plan version. Earlier versions and
+          workouts are retained to keep your training history accurate. Local
+          workout drafts can remain on a device after sign-out and are only
+          loaded when the matching account signs in.
+        </p>
+        <p>
+          For account-data access, correction or deletion requests, contact{" "}
+          <a className="underline" href="mailto:support@ironsync.online">
+            support@ironsync.online
+          </a>
+          . Account deletion is currently handled through support rather than a
+          button in the app. Hosting and database providers may retain
+          operational logs or backups under their own retention policies.
+        </p>
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">External sources</h2>
+        <p>
+          Food and exercise source links open external websites. Those sites
+          have their own privacy practices. Exercise photos are served as app
+          assets; no third-party video player is embedded in the training flow.
+        </p>
+      </section>
+    </article>
   );
 }

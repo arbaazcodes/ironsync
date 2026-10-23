@@ -25,9 +25,31 @@ beforeAll(async () => {
     alter table public.notifications enable row level security;
     create policy unsafe_old_policy on public.notifications for all using (true) with check (true);`);
   await db.exec(migration);
+  await db.exec(readFileSync("supabase/migrations/20261023085028_consumer_program_and_calendar.sql", "utf8"));
 }, 60000);
 afterAll(async () => { await db.close(); });
 describe("Postgres security migration", () => {
+  it("isolates immutable plan versions and per-owner calendar updates", async () => {
+    await asUser(a);
+    await db.query("insert into training_programs(id,user_id,revision,snapshot) values (gen_random_uuid(),$1,1,'{}')", [a]);
+    await expect(db.query("insert into training_programs(id,user_id,revision,snapshot) values (gen_random_uuid(),$1,1,'{}')", [a])).rejects.toThrow(/duplicate key/);
+    await expect(db.query("update training_programs set snapshot='{}'")).rejects.toThrow(/permission denied/);
+    await expect(db.query("delete from training_programs")).rejects.toThrow(/permission denied/);
+    await db.query("insert into training_day_overrides(user_id,day,status) values ($1,'2026-10-23','skipped')", [a]);
+    await asUser(b);
+    expect((await db.query("select * from training_programs")).rows).toHaveLength(0);
+    expect((await db.query("select * from training_day_overrides")).rows).toHaveLength(0);
+    await expect(db.query("insert into training_programs(id,user_id,revision,snapshot) values (gen_random_uuid(),$1,2,'{}')", [a])).rejects.toThrow(/row-level security/);
+    await expect(db.query("insert into training_day_overrides(user_id,day,status) values ($1,'2026-10-23','planned') on conflict (user_id,day) do update set status=excluded.status", [a])).rejects.toThrow(/row-level security/);
+    await asUser(a);
+    await db.query("insert into training_day_overrides(user_id,day,status) values ($1,'2026-10-23','planned') on conflict (user_id,day) do update set status=excluded.status", [a]);
+    expect((await db.query<{status:string}>("select status from training_day_overrides")).rows[0].status).toBe("planned");
+    await db.exec("reset role; set role anon");
+    await expect(db.query("select * from training_programs")).rejects.toThrow(/permission denied/);
+    await expect(db.query("select * from training_day_overrides")).rejects.toThrow(/permission denied/);
+    await db.exec("reset role");
+  });
+
   it("revokes legacy anon/authenticated access, including notifications", async () => {
     const result = await db.query<{ denied: boolean }>("select not has_table_privilege('anon','public.notifications','select') and not has_table_privilege('authenticated','public.members','update') as denied");
     expect(result.rows[0].denied).toBe(true);

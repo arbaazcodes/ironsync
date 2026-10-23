@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase/server", () => ({ createServerSupabaseClient: vi.fn() })
 beforeEach(() => { vi.clearAllMocks(); process.env.MEMBER_SESSION_SECRET = "test-only-secret-with-more-than-thirty-two-characters"; });
 describe("authorization", () => {
   it.each(["https://evil.test", "//evil.test", "/\\evil.test", "/%5cevil.test", "/%2f%2fevil.test", "/%0aevil.test", "javascript:alert(1)", "/%ZZ"])("rejects unsafe redirects: %s", input => {
-    expect(safeRedirectPath(input)).toBe("/dashboard/workout");
+    expect(safeRedirectPath(input)).toBe("/dashboard");
   });
   it("preserves safe internal destinations", () => expect(safeRedirectPath("/dashboard/workout?day=2")).toBe("/dashboard/workout?day=2"));
   it.each([{ data: null, error: null }, { data: null, error: { message: "relation missing" } }, { data: { user_id: "a" }, error: { message: "permission denied" } }])("fails closed on an absent or failed admin lookup", async lookup => {

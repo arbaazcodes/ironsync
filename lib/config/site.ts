@@ -13,7 +13,7 @@ export const SUPPORT_EMAIL = "support@ironsync.online";
 export const siteConfig = {
   name: "IronSync",
   description:
-    "Algorithmic fitness blueprints tailored to your schedule, body metrics, gym equipment, and food preferences.",
+    "Your workout, movement guides, food plan and training calendar in one simple app.",
   url: CANONICAL_SITE_URL,
   supportEmail: SUPPORT_EMAIL,
   links: {

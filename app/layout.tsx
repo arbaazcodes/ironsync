@@ -4,7 +4,7 @@ import "./globals.css";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { ThemeProvider } from "@/lib/context/ThemeContext";
-import { MotionBackground } from "@/components/ui/MotionBackground";
+import { ProgramProvider } from "@/components/consumer/ProgramProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -83,9 +83,8 @@ export default function RootLayout({
       <body className="font-sans antialiased bg-background text-primary min-h-screen flex flex-col selection:bg-accent/30 selection:text-white relative">
         <ThemeProvider>
           <CapacitorProvider>
-            <MotionBackground />
             <AuthProvider>
-              <SiteLayout>{children}</SiteLayout>
+              <ProgramProvider><SiteLayout>{children}</SiteLayout></ProgramProvider>
             </AuthProvider>
           </CapacitorProvider>
         </ThemeProvider>

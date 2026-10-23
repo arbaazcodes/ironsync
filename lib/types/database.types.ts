@@ -12,6 +12,16 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      training_programs: {
+        Row: { id: string; user_id: string; revision: number; snapshot: Json; created_at: string };
+        Insert: { id: string; user_id: string; revision: number; snapshot: Json; created_at?: string };
+        Update: never; Relationships: [];
+      };
+      training_day_overrides: {
+        Row: { user_id: string; day: string; status: string; updated_at: string };
+        Insert: { user_id: string; day: string; status: string; updated_at?: string };
+        Update: { status?: string; updated_at?: string }; Relationships: [];
+      };
       gym_admins: { Row: { user_id: string }; Insert: { user_id: string }; Update: { user_id?: string }; Relationships: [] };
       workout_sessions: {
         Row: { id: string; user_id: string; status: string; snapshot: Json; revision: number; last_mutation_id: string; started_at: string; completed_at: string | null; updated_at: string };

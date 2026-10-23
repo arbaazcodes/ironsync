@@ -9,7 +9,7 @@ export default function UpdatePassword() {
   const [done, setDone] = useState(false);
   return <main className="mx-auto max-w-md p-6 py-20 space-y-6">
     <h1 className="text-2xl font-bold">Choose a new password</h1>
-    {done ? <Link href="/dashboard/workout">Password updated. Open your workouts →</Link> :
+    {done ? <Link href="/dashboard">Password updated. Open your workouts →</Link> :
       <form className="space-y-4" onSubmit={async event => {
         event.preventDefault(); setBusy(true); setMessage("");
         try {
