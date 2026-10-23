@@ -550,7 +550,9 @@ export function WorkoutEditor({ store }: { store: WorkoutStore }) {
                         .filter((s) => s.completed)
                         .map(
                           (s) =>
-                            s.weight + " " + row.session.unit + " × " + s.reps,
+                            e.measure === "seconds"
+                              ? `${s.reps}s hold`
+                              : s.weight + " " + row.session.unit + " × " + s.reps,
                         )
                         .join(", ") || "No completed sets"}
                     </li>

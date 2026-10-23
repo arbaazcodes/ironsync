@@ -245,7 +245,7 @@ export function TodayPage() {
                 {state.error
                   ? "History unavailable"
                   : state.ready
-                    ? `${completed} days trained`
+                    ? `${completed} ${completed === 1 ? "day" : "days"} trained`
                     : "Loading…"}
               </span>
             </div>
