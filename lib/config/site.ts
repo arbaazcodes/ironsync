@@ -68,5 +68,5 @@ export function getSiteUrl(): string {
  * Returns the canonical OAuth and authentication callback URL for this deployment.
  */
 export function getAuthCallbackUrl(): string {
-  return `${getSiteUrl()}/auth/callback`;
+  return (typeof window !== "undefined" ? window.location.origin : getSiteUrl()) + "/auth/callback";
 }

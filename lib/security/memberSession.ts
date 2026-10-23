@@ -6,15 +6,8 @@ const SESSION_DURATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 export function getMemberSessionSecret(): string | null {
   const secret = process.env.MEMBER_SESSION_SECRET;
-  if (secret && secret.trim().length > 0) {
+  if (secret && secret.trim().length >= 32) {
     return secret.trim();
-  }
-  // No hardcoded fallback in production
-  if (process.env.NODE_ENV !== "production") {
-    return (
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "ironsync-dev-member-secret"
-    );
   }
   return null;
 }
@@ -78,12 +71,12 @@ export function verifyMemberSessionToken(token: string): MemberSessionPayload | 
 
     // Check expiration
     const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < now) {
+    if (!Number.isSafeInteger(payload.exp) || payload.exp <= now) {
       return null;
     }
 
     // Check minimum required fields
-    if (!payload.id || !payload.memberId || !payload.fullName) {
+    if (typeof payload.id !== "string" || typeof payload.memberId !== "string" || typeof payload.fullName !== "string" || !/^[a-f0-9]{64}$/.test(payload.credentialVersion || "")) {
       return null;
     }
 

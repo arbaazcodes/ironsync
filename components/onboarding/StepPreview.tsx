@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOnboarding } from "@/lib/context/OnboardingContext";
@@ -27,12 +27,13 @@ import { trackEvent } from "@/lib/analytics";
 
 export function StepPreview() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshPlan } = useAuth();
   const { data, calculatedBlueprint } = useOnboarding();
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // Fallback if accessed directly
-  const blueprint = calculatedBlueprint || generateBlueprint(data);
+  const blueprint = useMemo(() => calculatedBlueprint || generateBlueprint(data), [calculatedBlueprint, data]);
 
   useEffect(() => {
     cachePendingBlueprint(data, blueprint);
@@ -44,16 +45,18 @@ export function StepPreview() {
     if (user) {
       setIsSaving(true);
       try {
-        await syncPendingBlueprintToDatabase(
+        const result = await syncPendingBlueprintToDatabase(
           user.id,
           user.user_metadata?.full_name || user.email?.split("@")[0]
         );
+        if (result.error) throw result.error;
+        await refreshPlan();
+        router.push("/dashboard/workout");
       } catch (err) {
-        console.warn("Could not sync blueprint to Supabase:", err);
-      }
-      router.push("/dashboard");
+        setSaveError(err instanceof Error ? err.message : "Could not save your blueprint. Try again.");
+      } finally { setIsSaving(false); }
     } else {
-      router.push("/login?next=/dashboard");
+      router.push("/auth?mode=signup&next=/dashboard/workout");
     }
   };
 
@@ -71,6 +74,7 @@ export function StepPreview() {
 
   return (
     <div className="space-y-10 py-4 animate-in fade-in slide-in-from-bottom-3 duration-300 pb-16">
+      {saveError && <p role="alert" className="text-red-400">{saveError}</p>}
       {/* Header Banner */}
       <div className="text-center space-y-3 max-w-2xl mx-auto">
         <Badge variant="accent" size="md" dot>

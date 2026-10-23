@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getAdminUser } from "@/lib/security/adminAuth";
-import { MEMBER_COOKIE_NAME, verifyMemberSessionToken } from "@/lib/security/memberSession";
+import { MEMBER_COOKIE_NAME } from "@/lib/security/memberSession";
+import { verifyActiveMemberSession } from "@/lib/security/memberAuth";
 import { markNotificationRead } from "@/lib/services/notificationService";
 
 export async function POST(request: Request) {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const token = cookieStore.get(MEMBER_COOKIE_NAME)?.value;
     if (token) {
-      const payload = verifyMemberSessionToken(token);
+      const payload = await verifyActiveMemberSession(token);
       if (payload) {
         await markNotificationRead({
           id,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { MEMBER_COOKIE_NAME, verifyMemberSessionToken } from "@/lib/security/memberSession";
+import { MEMBER_COOKIE_NAME } from "@/lib/security/memberSession";
+import { verifyActiveMemberSession } from "@/lib/security/memberAuth";
 import {
   createChangeRequest,
   getMemberChangeRequests,
@@ -15,7 +16,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized. Member session required." }, { status: 401 });
     }
 
-    const payload = verifyMemberSessionToken(token);
+    const payload = await verifyActiveMemberSession(token);
     if (!payload) {
       return NextResponse.json({ error: "Invalid or expired member session." }, { status: 401 });
     }
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized. Member session required." }, { status: 401 });
     }
 
-    const payload = verifyMemberSessionToken(token);
+    const payload = await verifyActiveMemberSession(token);
     if (!payload) {
       return NextResponse.json({ error: "Invalid or expired member session." }, { status: 401 });
     }

@@ -31,35 +31,35 @@ export function FinalCTA() {
             </h2>
 
             <p className="text-base sm:text-lg text-primary-muted leading-relaxed max-w-xl mx-auto">
-              100% free community gym management. Access your coach-assigned workout splits and track your training progress directly through your member portal.
+              Build your training routine, log each set, and return to your saved workouts.
             </p>
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
-                href="/login"
+                href="/auth?mode=signup"
                 variant="primary"
                 size="lg"
                 icon={<ArrowRight className="w-5 h-5" />}
                 className="w-full sm:w-auto font-extrabold text-sm uppercase tracking-wider px-10 py-4 shadow-accent-glow"
               >
-                Member Portal
+                Start Training
               </Button>
 
               <Button
-                href="/login?tab=admin"
+                href="/auth?mode=signin"
                 variant="secondary"
                 size="lg"
                 icon={<LogIn className="w-5 h-5 text-accent" />}
                 className="w-full sm:w-auto font-bold text-sm uppercase tracking-wider px-8 py-4"
               >
-                Admin Login
+                Sign In
               </Button>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-6 pt-3 text-xs text-primary-dim font-mono">
               <span className="flex items-center gap-1.5 text-primary">
                 <Dumbbell className="w-4 h-4 text-accent" />
-                100% Free Gym Access
+                Workout Tracking
               </span>
               <span className="flex items-center gap-1.5 text-primary">
                 <ShieldCheck className="w-4 h-4 text-accent" />

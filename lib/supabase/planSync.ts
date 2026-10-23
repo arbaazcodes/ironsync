@@ -115,7 +115,7 @@ export function clearActivePlanCache() {
  * - New plan receives version = max(versions) + 1 with 'active' status
  * - If save fails, does NOT clear pending blueprint so progress is preserved.
  */
-export async function syncPendingBlueprintToDatabase(
+async function performPendingBlueprintSync(
   userId: string,
   userDisplayName?: string
 ): Promise<{ plan: SavedPlanData | null; error: Error | null }> {
@@ -303,7 +303,7 @@ export async function syncPendingBlueprintToDatabase(
         training_days: fallbackPlan.trainingDays,
       });
 
-      return { plan: fallbackPlan, error: null };
+      return { plan: fallbackPlan, error: new Error("Your blueprint is saved on this device but cloud saving failed. Please try again.") };
     }
   }
 
@@ -338,7 +338,7 @@ export async function syncPendingBlueprintToDatabase(
     training_days: localSavedPlan.trainingDays,
   });
 
-  return { plan: localSavedPlan, error: null };
+  return { plan: localSavedPlan, error: new Error("Account service is unavailable. Your blueprint is still on this device.") };
 }
 
 /**
@@ -346,7 +346,8 @@ export async function syncPendingBlueprintToDatabase(
  */
 export async function fetchUserActivePlan(userId: string): Promise<SavedPlanData | null> {
   const supabase = getSupabase();
-  const cached = getCachedActivePlan();
+  const candidate = getCachedActivePlan();
+  const cached = candidate?.userId === userId ? candidate : null;
 
   if (supabase && userId) {
     try {
@@ -496,3 +497,12 @@ export async function updatePlanMeals(
   return { success: true };
 }
 
+
+const pendingSyncs = new Map<string, ReturnType<typeof performPendingBlueprintSync>>();
+export function syncPendingBlueprintToDatabase(userId: string, displayName?: string) {
+  const existing = pendingSyncs.get(userId);
+  if (existing) return existing;
+  const pending = performPendingBlueprintSync(userId, displayName).finally(() => pendingSyncs.delete(userId));
+  pendingSyncs.set(userId, pending);
+  return pending;
+}

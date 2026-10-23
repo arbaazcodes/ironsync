@@ -1,6 +1,8 @@
-# IronSync — Gym Management & Member Platform
+# IronSync — Public Workout App
 
-IronSync is a production-ready gym management platform and personalized athletic portal built with Next.js, Tailwind CSS, Supabase (PostgreSQL + Auth), and cryptographically verified member sessions.
+IronSync is a public workout app built with Next.js, Tailwind CSS, and Supabase (PostgreSQL + Auth), with existing gym administration and member tools.
+
+The first consumer milestone adds public signup, a persistent workout logger, and authorization fixes. Read the [implementation and rollout guide](./docs/IMPLEMENTATION_2026-10-23.md) for verified results and remaining deployment steps. The live database migration is applied; the updated app still needs deployment, custom SMTP configuration, and live email/OAuth checks.
 
 ---
 
@@ -37,7 +39,7 @@ Add these variables to `.env.local` for local development and to **Vercel Projec
 
 ## 3. Database Schema Setup (Supabase SQL)
 
-Ensure your Supabase project has the schema applied from [`supabase/schema.sql`](./supabase/schema.sql).
+For a new environment, review the historical schema in [`supabase/schema.sql`](./supabase/schema.sql), then apply the subsequent migrations in a reviewed sequence. Do not replay this baseline over the existing live project: old policies are superseded by the [public signup and workout security migration](./supabase/migrations/20261023043606_public_signup_and_workout_security.sql), already applied to the configured project on 23 October 2026. See the rollout guide before using `db push`.
 
 If your `public.members` table already exists, run this single SQL migration in the [Supabase SQL Editor](https://supabase.com/dashboard/project/fdduamdeepiqdytqfwmb/sql):
 
@@ -76,9 +78,9 @@ To ensure `https://www.ironsync.online` serves this authentic IronSync applicati
 
 ---
 
-## 5. End-to-End Verification Loop
+## 5. Legacy Gym Verification Loop
 
-Follow these steps to verify the core operational loop:
+Public signup and workout verification are covered in the [rollout guide](./docs/IMPLEMENTATION_2026-10-23.md). The following checks cover the retained gym tools. Admin users must have an explicit `gym_admins` row.
 
 1. **Admin Login**:
    - Visit `/login?tab=admin`.

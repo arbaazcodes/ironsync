@@ -50,3 +50,9 @@ Thumbs.db
 # TypeScript cache
 *.tsbuildinfo
 next-env.d.ts
+
+# Supabase CLI and browser test output
+supabase/.temp/
+playwright-report/
+test-results/
+docs/evidence/

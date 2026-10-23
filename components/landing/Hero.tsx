@@ -36,7 +36,7 @@ export function Hero() {
             {/* Eyebrow */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent font-mono text-xs font-extrabold tracking-wider uppercase shadow-sm">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span>FREE COMMUNITY GYM &bull; ZERO GUESSWORK</span>
+              <span>YOUR WORKOUTS &bull; YOUR PROGRESS</span>
             </div>
 
             {/* Main Headline */}
@@ -49,29 +49,29 @@ export function Hero() {
 
             {/* Supporting Copy */}
             <p className="text-base sm:text-lg text-primary-muted max-w-xl leading-relaxed">
-              Coach-assigned workout splits, macro-precision nutrition guidelines, and daily attendance tracking. Managed directly by your gym administration with zero fees or dues.
+              Build a workout routine, record each set, and pick up where you left off. Your training, saved to your account.
             </p>
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto pt-2">
               <Button
-                href={user ? "/admin" : "/login"}
+                href={user ? "/dashboard/workout" : "/auth?mode=signup"}
                 variant="primary"
                 size="lg"
                 icon={<ArrowRight className="w-4 h-4" />}
                 className="w-full sm:w-auto font-extrabold text-sm uppercase tracking-wider py-3.5 px-8 shadow-accent-glow"
               >
-                {user ? "Admin Dashboard" : "Member Portal"}
+                {user ? "My Workouts" : "Start Training"}
               </Button>
 
               <Button
-                href={user ? "/admin" : "/login?tab=admin"}
+                href={user ? "/dashboard/workout" : "/auth?mode=signin"}
                 variant="secondary"
                 size="lg"
                 icon={<LogIn className="w-4 h-4 text-accent" />}
                 className="w-full sm:w-auto font-bold text-sm uppercase tracking-wider py-3.5 px-6"
               >
-                {user ? "Admin Panel" : "Admin Login"}
+                {user ? "My Workouts" : "Sign In"}
               </Button>
             </div>
 

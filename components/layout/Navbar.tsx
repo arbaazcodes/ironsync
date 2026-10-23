@@ -116,11 +116,11 @@ export function Navbar() {
           {user ? (
             <>
               <Link
-                href="/admin"
+                href="/dashboard/workout"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-muted hover:text-primary transition-colors px-3 py-1.5 rounded-xl hover:bg-surface border border-transparent hover:border-border"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-                <span>Admin</span>
+                <span>My Workouts</span>
               </Link>
               <button
                 onClick={handleAdminLogout}
@@ -150,21 +150,21 @@ export function Navbar() {
             /* Case 3: Logged Out */
             <>
               <Link
-                href="/login?tab=admin"
+                href="/auth?mode=signin"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-muted hover:text-primary transition-colors px-3 py-1.5 rounded-xl hover:bg-surface border border-transparent hover:border-border"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-                <span>Admin Login</span>
+                <span>Sign In</span>
               </Link>
 
               <Button
-                href="/login"
+                href="/auth?mode=signup"
                 variant="primary"
                 size="sm"
                 icon={<ArrowRight className="w-4 h-4" />}
                 className="font-bold text-xs uppercase tracking-wider shadow-accent-glow"
               >
-                Member Portal
+                Start Training
               </Button>
             </>
           )}
@@ -203,13 +203,13 @@ export function Navbar() {
             {user ? (
               <>
                 <Link
-                  href="/admin"
+                  href="/dashboard/workout"
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-base font-semibold text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
                 >
                   <span className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-accent" />
-                    Admin Portal
+                    My Workouts
                   </span>
                   <ArrowRight className="w-4 h-4 text-primary-dim" />
                 </Link>
@@ -248,13 +248,13 @@ export function Navbar() {
               </>
             ) : (
               <Link
-                href="/login"
+                href="/auth?mode=signup"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-base font-semibold text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
               >
                 <span className="flex items-center gap-2">
                   <LogIn className="w-4 h-4 text-accent" />
-                  Log in (Member &amp; Admin)
+                  Sign in
                 </span>
                 <ArrowRight className="w-4 h-4 text-primary-dim" />
               </Link>
@@ -262,14 +262,14 @@ export function Navbar() {
 
             <div className="pt-2">
               <Button
-                href={user ? "/admin" : member ? "/member/dashboard" : "/login"}
+                href={user ? "/dashboard/workout" : member ? "/member/dashboard" : "/auth?mode=signup"}
                 variant="primary"
                 size="lg"
                 className="w-full justify-center font-bold text-sm uppercase tracking-wider"
                 icon={<ArrowRight className="w-4 h-4" />}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {user ? "Admin Portal" : member ? "Member Dashboard" : "Member Portal"}
+                {user ? "My Workouts" : member ? "Member Dashboard" : "Start Training"}
               </Button>
             </div>
           </nav>

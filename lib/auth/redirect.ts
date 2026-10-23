@@ -1,28 +1,13 @@
-/**
- * IronSync Safe Redirect Validation
- *
- * Validates that a redirect target is a safe relative path belonging strictly to the application origin.
- * Defends against open redirect attacks via protocol-relative URLs (//evil.com), backslash evasion, or external hosts.
- */
-export function validateSafeRedirect(next: string | null, origin: string): string {
-  const fallback = `${origin}/dashboard`;
-  if (!next || typeof next !== "string") {
-    return fallback;
-  }
-
-  // Strictly disallow absolute external URLs, protocol-relative (//), or backslash evasions
-  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\") || next.includes("\\")) {
-    return fallback;
-  }
-
+export function safeRedirectPath(next: string | null, fallback = "/dashboard/workout"): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return fallback;
   try {
-    const targetUrl = new URL(next, origin);
-    if (targetUrl.origin === origin) {
-      return targetUrl.toString();
-    }
-  } catch {
-    return fallback;
-  }
-
-  return fallback;
+    const decoded = decodeURIComponent(next);
+    if (/[\\\x00-\x20]/.test(decoded) || decoded.startsWith("//")) return fallback;
+    const url = new URL(next, "https://ironsync.invalid");
+    if (url.origin !== "https://ironsync.invalid") return fallback;
+    return url.pathname + url.search + url.hash;
+  } catch { return fallback; }
+}
+export function validateSafeRedirect(next: string | null, origin: string): string {
+  return new URL(safeRedirectPath(next), origin).toString();
 }

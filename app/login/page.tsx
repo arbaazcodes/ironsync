@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { safeRedirectPath } from "@/lib/auth/redirect";
 import { useAuth } from "@/lib/context/AuthContext";
 import { getSupabase } from "@/lib/supabase/client";
 import {
@@ -28,7 +29,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const initialTab: LoginTab = tabParam === "admin" ? "admin" : "member";
-  const redirectTarget = searchParams.get("next") || null;
+  const redirectTarget = searchParams.get("next") ? safeRedirectPath(searchParams.get("next")) : null;
 
   const [activeTab, setActiveTab] = useState<LoginTab>(initialTab);
 
@@ -84,15 +85,15 @@ function LoginContent() {
             .eq("user_id", currentUserId)
             .maybeSingle();
 
-          if (!adminErr && !gymAdmin) {
-            await supabase.auth.signOut();
+          if (adminErr || !gymAdmin) {
+
             if (isMounted) {
               setAdminError("This account is not authorized for the admin portal.");
             }
             return;
           }
         } catch {
-          // Table doesn't exist
+          return; // Fail closed when role lookup fails.
         }
       }
 
@@ -220,14 +221,16 @@ function LoginContent() {
             .eq("user_id", targetUserId)
             .maybeSingle();
 
-          if (!adminErr && !gymAdmin) {
-            await supabase.auth.signOut();
+          if (adminErr || !gymAdmin) {
+
             setAdminError("This account is not authorized for the admin portal.");
             setAdminLoading(false);
             return;
           }
         } catch {
-          // gym_admins table doesn't exist yet, proceed with existing admin auth
+          setAdminError("Could not verify administrator access.");
+          setAdminLoading(false);
+          return;
         }
       }
 

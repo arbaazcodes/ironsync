@@ -1,16 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getPendingBlueprint, getCachedActivePlan } from "@/lib/supabase/planSync";
+import { getPendingBlueprint } from "@/lib/supabase/planSync";
 import { Flame, Dumbbell, Sparkles, CheckCircle2 } from "lucide-react";
 
 export function BlueprintMiniSummary() {
-  const [metrics, setMetrics] = useState({
-    calories: "2,640",
-    protein: "165g",
-    split: "5-day training",
-    goal: "Muscle Gain",
-  });
+  const [metrics, setMetrics] = useState<{ calories: string; protein: string; split: string; goal: string } | null>(null);
 
   useEffect(() => {
     const pending = getPendingBlueprint();
@@ -30,19 +25,10 @@ export function BlueprintMiniSummary() {
         split: `${pending.data.daysPerWeek || 5}-day training`,
         goal: pending.data.goal ? goalLabels[pending.data.goal] || "Custom Goal" : "Custom Goal",
       });
-    } else {
-      const cached = getCachedActivePlan();
-      if (cached) {
-        setMetrics({
-          calories: cached.calories.toLocaleString(),
-          protein: `${cached.protein}g`,
-          split: `${cached.trainingDays}-day training`,
-          goal: cached.goal,
-        });
-      }
     }
   }, []);
 
+  if (!metrics) return null;
   return (
     <div className="rounded-2xl bg-surface border border-accent/30 p-5 shadow-xl relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-2xl rounded-full pointer-events-none" />

@@ -5,11 +5,8 @@ import {
   MEMBER_COOKIE_NAME,
   getMemberCookieOptions,
 } from "@/lib/security/memberSession";
-import {
-  isMemberLocked,
-  recordFailedAttempt,
-  clearRateLimit,
-} from "@/lib/security/rate-limit";
+import { memberCredentialVersion } from "@/lib/security/memberAuth";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { isValidPin } from "@/lib/security/pinSecurity";
 
@@ -26,7 +23,7 @@ export async function POST(request: Request) {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const { memberId, pin } = body;
 
-    if (!memberId || typeof memberId !== "string" || !pin || typeof pin !== "string") {
+    if (!memberId || typeof memberId !== "string" || memberId.length > 64 || !pin || typeof pin !== "string") {
       return NextResponse.json(
         { ok: false, success: false, error: "Invalid Member ID or PIN." },
         { status: 400 }
@@ -44,7 +41,8 @@ export async function POST(request: Request) {
     }
 
     // 1. Check if Member ID is currently locked out
-    if (isMemberLocked(cleanMemberId)) {
+    const quota = await consumeRateLimit("member-login", cleanMemberId, 5, 900);
+    if (!quota.allowed) {
       return NextResponse.json(
         {
           ok: false,
@@ -65,7 +63,7 @@ export async function POST(request: Request) {
 
     if (!authResult.success || !authResult.member) {
       // Record failed attempt
-      recordFailedAttempt(cleanMemberId);
+
 
       const isAccountSuspended =
         authResult.error?.includes("inactive") ||
@@ -83,7 +81,7 @@ export async function POST(request: Request) {
     }
 
     // 3. Clear rate limit tracking on successful login
-    clearRateLimit(cleanMemberId);
+
 
     const member = authResult.member;
 
@@ -92,6 +90,7 @@ export async function POST(request: Request) {
     try {
       token = createMemberSessionToken({
         id: member.id,
+        credentialVersion: memberCredentialVersion(member.pinHash),
         memberId: member.memberId,
         fullName: member.fullName,
         status: member.status,
@@ -127,8 +126,8 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "Internal server error";
     console.error("Member login API error:", message);
     return NextResponse.json(
-      { ok: false, success: false, error: message },
-      { status: 500 }
+      { ok: false, success: false, error: "Login is temporarily unavailable. Please try again." },
+      { status: 503 }
     );
   }
 }

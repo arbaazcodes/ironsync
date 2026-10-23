@@ -76,6 +76,7 @@ export interface UpdateMemberInput {
 }
 
 export interface MemberSessionPayload {
+  credentialVersion: string;
   id: string;
   memberId: string;
   fullName: string;

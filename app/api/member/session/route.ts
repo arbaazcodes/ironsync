@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { MEMBER_COOKIE_NAME, verifyMemberSessionToken } from "@/lib/security/memberSession";
+import { MEMBER_COOKIE_NAME } from "@/lib/security/memberSession";
+import { verifyActiveMemberSession } from "@/lib/security/memberAuth";
 import { getMemberById } from "@/lib/services/memberService";
 import { isServiceRoleConfigured } from "@/lib/supabase/admin";
 
@@ -20,7 +21,7 @@ export async function GET() {
       return NextResponse.json({ authenticated: false, member: null }, { status: 401 });
     }
 
-    const payload = verifyMemberSessionToken(token);
+    const payload = await verifyActiveMemberSession(token);
     if (!payload) {
       return NextResponse.json({ authenticated: false, member: null }, { status: 401 });
     }

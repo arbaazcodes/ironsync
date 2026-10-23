@@ -13,7 +13,7 @@ import {
   Sparkles,
   ExternalLink,
 } from "lucide-react";
-import { getSupabase } from "@/lib/supabase/client";
+
 import { InAppNotification, NotificationAudience } from "@/lib/types/notification";
 
 interface NotificationBellProps {
@@ -70,115 +70,12 @@ export function NotificationBell({ audience, memberUuid }: NotificationBellProps
     fetchNotifications();
   }, [fetchNotifications]);
 
-  // 2. Realtime Listener via Browser Supabase Client (Anon Key)
+  // Custom member cookies are authorized by the API, not anonymous Realtime subscriptions.
   useEffect(() => {
-    let channel: any = null;
-    let pollInterval: NodeJS.Timeout | null = null;
-
-    try {
-      const supabase = getSupabase();
-      if (supabase) {
-        const channelName =
-          audience === "admin"
-            ? "notifications-admin"
-            : `notifications-member-${memberUuid || "all"}`;
-
-        const filter =
-          audience === "admin"
-            ? "audience=eq.admin"
-            : memberUuid
-            ? `member_uuid=eq.${memberUuid}`
-            : "audience=eq.member";
-
-        // Remove any existing duplicate or lingering channels for notifications
-        try {
-          const existingChannels =
-            typeof (supabase as any).getChannels === "function"
-              ? (supabase as any).getChannels()
-              : [];
-          if (Array.isArray(existingChannels)) {
-            existingChannels.forEach((ch: any) => {
-              if (
-                ch?.topic &&
-                (ch.topic.includes("notifications-admin") ||
-                  ch.topic.includes("notifications-member"))
-              ) {
-                supabase.removeChannel(ch);
-              }
-            });
-          }
-        } catch (cleanupErr) {
-          console.warn("[notifications] cleanup before subscribe warning:", cleanupErr);
-        }
-
-        channel = supabase
-          .channel(channelName)
-          .on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "notifications",
-              filter,
-            },
-            (payload) => {
-              try {
-                const row = payload.new as any;
-                if (!row) return;
-                const newNotification: InAppNotification = {
-                  id: row.id,
-                  audience: row.audience as NotificationAudience,
-                  memberUuid: row.member_uuid || null,
-                  memberId: row.member_id || null,
-                  title: row.title,
-                  body: row.body,
-                  link: row.link || null,
-                  type: row.type,
-                  readAt: row.read_at || null,
-                  createdAt: row.created_at,
-                };
-
-                setNotifications((prev) => {
-                  if (prev.some((n) => n.id === newNotification.id)) return prev;
-                  return [newNotification, ...prev].slice(0, 20);
-                });
-                setUnreadCount((prev) => prev + 1);
-              } catch (payloadErr) {
-                console.warn("[notifications] payload error:", payloadErr);
-              }
-            }
-          )
-          .subscribe((status, err) => {
-            if (err) {
-              console.warn("[notifications] subscribe warning:", status, err);
-            }
-          });
-      }
-    } catch (realtimeErr) {
-      console.warn("[notifications] Realtime setup warning (falling back to polling):", realtimeErr);
-    }
-
-    // 3. Fallback Polling every 30s
-    pollInterval = setInterval(() => {
-      fetchNotifications();
-    }, 30000);
-
-    return () => {
-      try {
-        if (channel) {
-          const supabase = getSupabase();
-          if (supabase) {
-            supabase.removeChannel(channel);
-          }
-        }
-      } catch (teardownErr) {
-        console.warn("[notifications] channel teardown warning:", teardownErr);
-      }
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
-    };
-  }, [audience, memberUuid, fetchNotifications]);
+    const timer = setInterval(fetchNotifications, 30000);
+    window.addEventListener("focus", fetchNotifications);
+    return () => { clearInterval(timer); window.removeEventListener("focus", fetchNotifications); };
+  }, [fetchNotifications]);
 
   // 4. Click Outside Listener to close dropdown
   useEffect(() => {

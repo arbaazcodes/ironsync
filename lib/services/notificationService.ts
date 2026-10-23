@@ -110,6 +110,7 @@ export async function getNotifications(params: {
   limit?: number;
 }): Promise<{ notifications: InAppNotification[]; unreadCount: number }> {
   const { audience, memberUuid, limit = 20 } = params;
+  if (audience === "member" && !memberUuid) return { notifications: [], unreadCount: 0 };
   const supabase = createServiceClient();
   let list: InAppNotification[] = [];
 
@@ -163,6 +164,7 @@ export async function markNotificationRead(params: {
   memberUuid?: string | null;
 }): Promise<{ success: boolean }> {
   const { id, all, audience, memberUuid } = params;
+  if (audience === "member" && !memberUuid) return { success: false };
   const now = new Date().toISOString();
   const supabase = createServiceClient();
 
@@ -184,10 +186,12 @@ export async function markNotificationRead(params: {
           console.warn("[NotificationService] Error marking all as read:", error.message);
         }
       } else if (id) {
-        const { error } = await supabase
+        let query = supabase
           .from("notifications")
           .update({ read_at: now })
-          .eq("id", id);
+          .eq("id", id).eq("audience", audience);
+        if (audience === "member") query = query.eq("member_uuid", memberUuid!);
+        const { error } = await query;
 
         if (error) {
           console.warn("[NotificationService] Error marking notification as read:", error.message);
@@ -204,7 +208,7 @@ export async function markNotificationRead(params: {
         if (n.audience === audience && (!memberUuid || n.memberUuid === memberUuid)) {
           if (!n.readAt) n.readAt = now;
         }
-      } else if (id && n.id === id) {
+      } else if (id && n.id === id && n.audience === audience && (audience !== "member" || n.memberUuid === memberUuid)) {
         n.readAt = now;
       }
     }

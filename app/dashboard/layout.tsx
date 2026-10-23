@@ -1,63 +1,16 @@
 "use client";
-
-import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { Button } from "@/components/ui/Button";
-import { Sparkles, ArrowRight } from "lucide-react";
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, activePlan } = useAuth();
   const router = useRouter();
-  const { user, isLoading, activePlan, isConfigured } = useAuth();
-
-  useEffect(() => {
-    // If done loading, no user and no local active plan, redirect to login
-    if (!isLoading && !user && !activePlan) {
-      router.replace("/login?next=/dashboard");
-    }
-  }, [isLoading, user, activePlan, router]);
-
-  if (isLoading) {
-    return <DashboardSkeleton />;
-  }
-
-  // If no user and no plan, return empty placeholder while redirecting
-  if (!user && !activePlan) {
-    return <DashboardSkeleton />;
-  }
-
-  // If authenticated but no plan created yet
-  if (user && !activePlan) {
-    return (
-      <div className="min-h-screen bg-background text-primary flex items-center justify-center p-6 text-center">
-        <div className="max-w-md mx-auto space-y-5 rounded-2xl bg-surface border border-border p-8 shadow-2xl">
-          <div className="w-12 h-12 rounded-2xl bg-surface-elevated border border-accent/40 flex items-center justify-center text-accent mx-auto">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <h2 className="text-2xl font-bold text-primary">No Active Blueprint Yet</h2>
-          <p className="text-xs sm:text-sm text-primary-muted leading-relaxed">
-            You don&apos;t have an active fitness plan configured. Build your personalized 60-second blueprint to unlock your dashboard.
-          </p>
-          <div className="pt-2">
-            <Button
-              href="/member/dashboard"
-              variant="primary"
-              size="md"
-              icon={<ArrowRight className="w-4 h-4" />}
-            >
-              Go to Member Portal
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  const path = usePathname();
+  useEffect(() => { if (!isLoading && !user) router.replace("/auth?mode=signin"); }, [isLoading, user, router]);
+  if (isLoading || !user) return <DashboardSkeleton />;
+  if (!activePlan && path !== "/dashboard/workout") return <DashboardShell><div className="space-y-4 p-6"><h1 className="text-2xl font-bold">Your training starts here</h1><p>Create a blueprint to use this section, or start logging a workout now.</p><div className="flex gap-6"><Link href="/onboarding" className="underline">Create a blueprint</Link><Link href="/dashboard/workout" className="underline">Log a workout</Link></div></div></DashboardShell>;
   return <DashboardShell>{children}</DashboardShell>;
 }

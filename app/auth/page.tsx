@@ -10,7 +10,8 @@ export const metadata = {
   description: "Create your account to unlock the complete workout, nutrition and recovery plan.",
 };
 
-export default function AuthPage() {
+export default async function AuthPage({ searchParams }: { searchParams: Promise<{ mode?: string; next?: string; error?: string }> }) {
+  const params = await searchParams;
   return (
     <div className="min-h-screen bg-background text-primary flex flex-col justify-between selection:bg-accent/20 selection:text-primary relative">
 
@@ -50,13 +51,13 @@ export default function AuthPage() {
           <BlueprintMiniSummary />
 
           {/* 2. Primary Auth Form Card */}
-          <AuthCard />
+          <AuthCard initialMode={params.mode === "signin" ? "signin" : "signup"} next={params.next} callbackError={Boolean(params.error)} />
         </Container>
       </main>
 
       {/* Footer */}
       <footer className="w-full border-t border-border/80 py-4 text-center text-xs font-mono text-primary-dim">
-        <span>IronSync &bull; Row-Level Security Protected &bull; Zero Spam Guarantee</span>
+        <span>IronSync &bull; Your training, saved to your account</span>
       </footer>
     </div>
   );

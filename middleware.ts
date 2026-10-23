@@ -3,181 +3,59 @@ import { NextResponse, type NextRequest } from "next/server";
 import { verifyMemberSessionTokenEdge } from "@/lib/security/memberSessionEdge";
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  const pathname = request.nextUrl.pathname;
-
-  // Check Supabase session (Admin Auth)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const rawKey1 = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-  const rawKey2 = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
-  const supabaseKey =
-    (rawKey1 && (rawKey1.startsWith("eyJ") || rawKey1.startsWith("sb_publishable")) ? rawKey1 : null) ||
-    (rawKey2 && (rawKey2.startsWith("eyJ") || rawKey2.startsWith("sb_publishable")) ? rawKey2 : null);
-
-  let adminUser = null;
-
-  if (supabaseUrl && supabaseKey) {
-    const supabase = createServerClient(supabaseUrl, supabaseKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
+  let response = NextResponse.next({ request });
+  const path = request.nextUrl.pathname;
+  const origin = request.headers.get("origin");
+  if (path.startsWith("/api/") && !["GET", "HEAD", "OPTIONS"].includes(request.method) && origin && origin !== request.nextUrl.origin) {
+    return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
+  }
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  let signedIn = false;
+  let isAdmin = false;
+  if (url && key) {
+    const client = createServerClient(url, key, { cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll: (cookies) => {
+        cookies.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
+        cookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
-    });
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    adminUser = user;
-
-    // Do not treat every Supabase user as admin if gym_admins exists
-    if (adminUser) {
-      try {
-        const { data: gymAdmin, error: adminErr } = await (supabase as any)
-          .from("gym_admins")
-          .select("user_id")
-          .eq("user_id", adminUser.id)
-          .maybeSingle();
-
-        // If gym_admins table exists without query error, user must be present in it
-        if (!adminErr && !gymAdmin) {
-          adminUser = null;
-        }
-      } catch {
-        // gym_admins table doesn't exist, proceed with current admin auth
+    } });
+    try {
+      const { data: { user }, error } = await client.auth.getUser();
+      signedIn = !error && Boolean(user);
+      if (signedIn && user && (path.startsWith("/admin") || request.nextUrl.searchParams.get("tab") === "admin")) {
+        const result = await client.from("gym_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+        isAdmin = !result.error && Boolean(result.data);
       }
-    }
+    } catch { /* Authentication and role lookup fail closed. */ }
   }
-
-  const isUnauthorizedAdmin = Boolean(
-    supabaseUrl && supabaseKey && !adminUser && request.cookies.getAll().some((c) => c.name.startsWith("sb-"))
-  );
-
-  // Member session cookie check (timing-safe HMAC-SHA256 verification)
-  const memberCookie = request.cookies.get("ironsync_member_session")?.value;
-  const memberSession = await verifyMemberSessionTokenEdge(memberCookie);
-  const hasValidMemberSession = memberSession !== null;
-
-  // 1. Guard /admin routes -> Requires Admin Auth
-  if (pathname.startsWith("/admin")) {
-    if (!adminUser) {
-      // If user is a member trying to access /admin, redirect to member dashboard
-      if (hasValidMemberSession) {
-        const memberDashUrl = request.nextUrl.clone();
-        memberDashUrl.pathname = "/member/dashboard";
-        return NextResponse.redirect(memberDashUrl);
-      }
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/login";
-      redirectUrl.searchParams.set("tab", "admin");
-      if (isUnauthorizedAdmin) {
-        redirectUrl.searchParams.set("error", "unauthorized_admin");
-      }
-      redirectUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(redirectUrl);
-    }
+  function redirect(target: string) {
+    const next = NextResponse.redirect(new URL(target, request.url));
+    response.cookies.getAll().forEach((cookie) => next.cookies.set(cookie));
+    return next;
   }
-
-  // 2. Guard /member routes -> Requires valid member cookie
-  if (pathname.startsWith("/member")) {
-    // If admin is hitting /member, redirect to /admin/members
-    if (adminUser) {
-      const adminUrl = request.nextUrl.clone();
-      adminUrl.pathname = "/admin/members";
-      return NextResponse.redirect(adminUrl);
-    }
-    if (!hasValidMemberSession) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/login";
-      redirectUrl.searchParams.set("tab", "member");
-      redirectUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(redirectUrl);
-    }
+  if (path.startsWith("/admin") && !isAdmin) {
+    return redirect("/login?tab=admin&error=unauthorized_admin&next=" + encodeURIComponent(path));
   }
-
-  // 3. Handle /dashboard routes -> Route to Member or Admin dashboard
-  if (pathname.startsWith("/dashboard")) {
-    if (hasValidMemberSession) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/member/dashboard";
-      return NextResponse.redirect(redirectUrl);
-    }
-    if (adminUser) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/admin/members";
-      return NextResponse.redirect(redirectUrl);
-    }
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("tab", "member");
-    return NextResponse.redirect(redirectUrl);
+  if (path.startsWith("/member") || (path === "/login" && request.nextUrl.searchParams.get("tab") === "member")) {
+    const member = await verifyMemberSessionTokenEdge(request.cookies.get("ironsync_member_session")?.value);
+    if (path.startsWith("/member") && !member) return redirect("/login?tab=member&next=" + encodeURIComponent(path));
+    if (path === "/login" && member) return redirect("/member/dashboard");
   }
-
-  // 4. Handle /onboarding route -> Gated, no public self-serve signup funnel
-  if (pathname.startsWith("/onboarding")) {
-    if (hasValidMemberSession) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/member/dashboard";
-      return NextResponse.redirect(redirectUrl);
-    }
-    if (adminUser) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/admin/members";
-      return NextResponse.redirect(redirectUrl);
-    }
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("tab", "member");
-    return NextResponse.redirect(redirectUrl);
+  if (path.startsWith("/dashboard") && !signedIn) {
+    return redirect("/auth?mode=signin&next=" + encodeURIComponent(path + request.nextUrl.search));
   }
-
-  // 5. Handle logged-in user visiting /login
-  if (pathname === "/login") {
+  if (path === "/login") {
     const tab = request.nextUrl.searchParams.get("tab");
-
-    // If logged in member visits /login with tab=member (or default tab):
-    if (hasValidMemberSession && (!tab || tab === "member")) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/member/dashboard";
-      redirectUrl.search = "";
-      return NextResponse.redirect(redirectUrl);
-    }
-
-    // If logged in admin visits /login with tab=admin (or default tab if not a member):
-    if (adminUser && (tab === "admin" || (!tab && !hasValidMemberSession))) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/admin/members";
-      redirectUrl.search = "";
-      return NextResponse.redirect(redirectUrl);
+    if (tab === "admin" && isAdmin) return redirect("/admin/members");
+    if (tab !== "admin" && tab !== "member") {
+      return redirect("/auth?mode=signin&next=" + encodeURIComponent(request.nextUrl.searchParams.get("next") || "/dashboard/workout"));
     }
   }
-
+  // Onboarding and signup are public. APIs authorize their own data access.
+  if (path.startsWith("/dashboard") || path.startsWith("/admin") || path.startsWith("/member")) response.headers.set("Cache-Control", "private, no-store");
   return response;
 }
-
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images, png, jpg, svg, webp, etc.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
-};
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"] };

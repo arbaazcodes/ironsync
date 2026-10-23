@@ -1,12 +1,4 @@
-import { getSupabase } from "@/lib/supabase/client";
-
-/**
- * Determines the post-login destination for an authenticated Supabase user:
- * In IronSync, Supabase Auth is strictly for Admins -> /admin.
- */
-export async function getPostLoginRedirect(
-  userId?: string | null,
-  supabaseClient?: any
-): Promise<string> {
-  return "/admin/members";
+/** Public authentication lands in the consumer app; gym login is explicit. */
+export async function getPostLoginRedirect(_userId?: string | null, _client?: unknown): Promise<string> {
+  return "/dashboard/workout";
 }

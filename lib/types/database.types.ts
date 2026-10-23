@@ -12,6 +12,13 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      gym_admins: { Row: { user_id: string }; Insert: { user_id: string }; Update: { user_id?: string }; Relationships: [] };
+      workout_sessions: {
+        Row: { id: string; user_id: string; status: string; snapshot: Json; revision: number; last_mutation_id: string; started_at: string; completed_at: string | null; updated_at: string };
+        Insert: { id: string; user_id: string; status: string; snapshot: Json; revision: number; last_mutation_id: string; started_at: string; completed_at: string | null; updated_at?: string };
+        Update: Partial<Database["public"]["Tables"]["workout_sessions"]["Insert"]>;
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
@@ -547,7 +554,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      consume_request_limit: { Args: { p_key: string; p_limit: number; p_window_seconds: number }; Returns: { allowed: boolean; remaining: number; retry_after: number }[] };
     };
     Enums: {
       [_ in never]: never;

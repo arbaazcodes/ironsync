@@ -7,11 +7,13 @@ export function isValidSupabaseUrl(url?: string): boolean {
   const targetUrl = url || process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!targetUrl) return false;
   const trimmed = targetUrl.trim();
-  return (
-    trimmed.startsWith("https://") &&
-    trimmed.includes(".supabase.co") &&
-    !trimmed.includes("your-project")
-  );
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.username || parsed.password) return false;
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
+    return (parsed.protocol === "https:" && parsed.hostname.endsWith(".supabase.co") && !parsed.hostname.includes("your-project")) ||
+      (process.env.NODE_ENV !== "production" && local && parsed.protocol === "http:");
+  } catch { return false; }
 }
 
 export function getValidSupabaseKey(): string | null {

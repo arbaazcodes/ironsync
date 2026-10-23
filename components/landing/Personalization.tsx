@@ -263,12 +263,12 @@ export function Personalization() {
         {/* Action Prompt */}
         <div className="mt-12 text-center">
           <Button
-            href="/login"
+            href="/auth?mode=signup"
             variant="primary"
             size="md"
             icon={<ArrowRight className="w-4 h-4" />}
           >
-            Member Portal &rarr;
+            Start Training &rarr;
           </Button>
         </div>
       </Container>
