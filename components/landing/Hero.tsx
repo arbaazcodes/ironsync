@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/Button";
 import { BlueprintPreview } from "@/components/landing/BlueprintPreview";
-import { ArrowRight, ShieldCheck, Zap, Activity, LogIn } from "lucide-react";
+import { ArrowRight, ShieldCheck, Zap, Activity } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/lib/context/AuthContext";
 
@@ -16,7 +16,7 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-28 overflow-hidden">
+    <section aria-labelledby="hero-title" className="relative pt-28 pb-16 sm:pt-40 sm:pb-28 overflow-hidden">
       {/* Ambient Ferrari Red spotlight */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] sm:w-[1000px] h-[500px] bg-accent/[0.08] blur-[160px] rounded-full pointer-events-none" />
 
@@ -34,22 +34,22 @@ export function Hero() {
           {/* Left Column: Copy & Actions */}
           <div className="lg:col-span-7 flex flex-col items-start text-left space-y-7">
             {/* Eyebrow */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent font-mono text-xs font-extrabold tracking-wider uppercase shadow-sm">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/30 text-accent font-mono text-[10px] sm:text-xs font-extrabold tracking-wider uppercase shadow-sm">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
               <span>YOUR WORKOUTS &bull; YOUR PROGRESS</span>
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-primary tracking-tight leading-[1.04] max-w-2xl uppercase">
-              BUILD THE BODY <br />
+            <h1 id="hero-title" className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-primary tracking-tight leading-[1.04] max-w-2xl uppercase">
+              LOG EVERY SET. <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-accent">
-                YOU DESERVE.
+                KEEP GOING.
               </span>
             </h1>
 
             {/* Supporting Copy */}
             <p className="text-base sm:text-lg text-primary-muted max-w-xl leading-relaxed">
-              Build a workout routine, record each set, and pick up where you left off. Your training, saved to your account.
+              Choose your exercises, record weights and reps, and come back to your saved workouts. A training log that keeps up with you.
             </p>
 
             {/* CTAs */}
@@ -65,13 +65,12 @@ export function Hero() {
               </Button>
 
               <Button
-                href={user ? "/dashboard/workout" : "/auth?mode=signin"}
+                href="/#how-it-works"
                 variant="secondary"
                 size="lg"
-                icon={<LogIn className="w-4 h-4 text-accent" />}
                 className="w-full sm:w-auto font-bold text-sm uppercase tracking-wider py-3.5 px-6"
               >
-                {user ? "My Workouts" : "Sign In"}
+                See How It Works
               </Button>
             </div>
 
@@ -79,15 +78,15 @@ export function Hero() {
             <div className="flex flex-wrap items-center gap-6 pt-2 text-xs text-primary-dim font-mono">
               <span className="inline-flex items-center gap-1.5 text-primary">
                 <Zap className="w-4 h-4 text-accent" />
-                Free Community Gym
+                Choose your exercises
               </span>
               <span className="inline-flex items-center gap-1.5 text-primary">
                 <ShieldCheck className="w-4 h-4 text-accent" />
-                Admin-Enrolled Athletes
+                Your own account
               </span>
               <span className="inline-flex items-center gap-1.5 text-primary">
                 <Activity className="w-4 h-4 text-accent" />
-                100% Free Forever
+                Weights in kg or lb
               </span>
             </div>
           </div>

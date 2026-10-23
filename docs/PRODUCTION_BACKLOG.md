@@ -6,6 +6,8 @@ See the [product and architecture plan](D:/Projects/IronSync/PRODUCTION_PLAN.md)
 
 **Implementation follow-up:** Core work for R01, R02, R04, R09, R10, and R11, plus part of R03, is now implemented. The live security migration is applied. Full task acceptance still requires the remaining production checks in the [implementation and rollout guide](IMPLEMENTATION_2026-10-23.md); this does not mark the complete public release as finished.
 
+**Homepage follow-up:** Public workout messaging and metadata now replace gym-management marketing on the homepage. Mobile navigation and responsive browser checks are complete for this page; see the [homepage release report](HOMEPAGE_RELEASE_2026-10-23.md). This is partial work on R19 and R15; exercise publishing, full-site accessibility/SEO, and physical-device acceptance remain open.
+
 ## 1. Sequencing, ownership, and effort
 
 P0 = blocks a safe/useful release. P1 = required for the intended public product. P2 = post-launch experiment. Effort is estimated engineering person-days, including task-level tests and review, excluding exercise filming, trainer/editorial review, recruitment, and legal review. Tasks can overlap where dependencies permit. Estimates must be revised after the first vertical slice and live-schema inventory.

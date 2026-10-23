@@ -4,7 +4,7 @@ This implements the first public-app milestone: authorization fixes, public auth
 
 ## Status
 
-- Application changes are implemented in the local working tree; the updated application has not been deployed.
+- Application release `383191c` was deployed through the existing GitHub-to-Vercel integration and verified at `https://www.ironsync.online`. See the [live release record](RELEASE_2026-10-23.md) for deployment, SMTP, and browser-test results.
 - Migration `20261023043606_public_signup_and_workout_security` was applied transactionally to Supabase project `fdduamdeepiqdytqfwmb` through its authenticated SQL Editor, then recorded and verified in `supabase_migrations.schema_migrations`.
 - Follow-up migration `20261023052640_harden_timestamp_function` fixes the legacy timestamp trigger's mutable search path. Its behavior was checked in PGlite before applying it live and recording migration history.
 - The existing admin account explicitly identified by the owner was added to the allowlist. Public signup never grants admin membership.
@@ -12,7 +12,7 @@ This implements the first public-app milestone: authorization fixes, public auth
 - Live REST checks returned 401 for anonymous access to workouts, gym admins, members, and notifications; the server credential returned 200 for zero-row schema probes.
 - Auth settings responded successfully: email and Google providers enabled, public signup enabled, email confirmation required. This confirms configuration flags, not SMTP delivery or a completed Google OAuth flow.
 - Added and verified exact password-recovery callback URLs for the existing production, backup, and localhost origins. Canonical Site URL remains `https://ironsync.online`.
-- **Public email delivery is blocked until custom SMTP is configured.** The live dashboard currently uses default templates and has no custom SMTP. Supabase's default sender only delivers to project-team addresses; see the [official SMTP setup guide](https://supabase.com/docs/guides/auth/auth-smtp). Configure a verified sending domain and provider credentials inside Supabase, then test signup and reset delivery. No secret credentials need to be pasted into chat.
+- **Custom Gmail SMTP is configured and tested.** The settings persisted after refresh, and a recovery email from the configured IronSync sender arrived at the test inbox at 11:27 AM IST. Its link opened the deployed password-update page. Initial signup confirmation and password update also passed. See the [release record](RELEASE_2026-10-23.md) for scope and evidence. Use a transactional provider and verified domain before broad public launch; the [official SMTP setup guide](https://supabase.com/docs/guides/auth/auth-smtp) explains provider setup.
 
 Local verification screenshots are retained in `docs/evidence/` and excluded from the public repository.
 
@@ -58,7 +58,7 @@ The first implementation uses one versioned JSONB snapshot per workout so all se
 
 The final live security advisor rerun reported **zero errors, one warning, and six informational notices**. The mutable search path on `handle_updated_at` was fixed by the follow-up migration. Leaked-password protection remains disabled: Supabase makes that feature available on Pro plans and above, while this project is on Free. See the [official password-security documentation](https://supabase.com/docs/guides/auth/password-security). No subscription or billing changes were made. The six informational notices are RLS-without-policy notices for tables intentionally restricted to service-role access.
 
-Browser tests use a local Supabase protocol fixture backed by the real migration in PGlite. They do not send real emails or prove production OAuth/SMTP delivery. Android/device QA and a deployed-browser smoke test are still required.
+The automated browser tests above use a local Supabase protocol fixture backed by the real migration in PGlite. They do not send real emails or prove production OAuth/SMTP delivery. Subsequent tests against the deployed site are recorded separately in the [live release record](RELEASE_2026-10-23.md). Physical-device QA and Google OAuth verification remain outstanding.
 
 ## Deployment steps
 
@@ -66,8 +66,8 @@ Browser tests use a local Supabase protocol fixture backed by the real migration
 2. Both new security migrations are already applied to this project. For a separate environment, inspect its existing schema and apply the [workout/security migration](../supabase/migrations/20261023043606_public_signup_and_workout_security.sql) and [timestamp hardening](../supabase/migrations/20261023052640_harden_timestamp_function.sql), then run [verification SQL](../supabase/verify_public_workout_security.sql). Do not replay historical baseline SQL on this live database: old migrations contain permissive policies and the legacy migration history needs reconciliation before an unrestricted `db push`.
 3. Confirm the deployment has matching public Supabase credentials, the server-only service-role key, `MEMBER_SESSION_SECRET` with at least 32 characters, and the correct `NEXT_PUBLIC_SITE_URL`. Never put the service-role key or member secret in `NEXT_PUBLIC_` variables.
 4. Auth Site URL is `https://ironsync.online`. Existing signup callbacks were preserved. Recovery callbacks with `?next=/auth/update-password` were added for `https://www.ironsync.online`, `https://ironsync.online`, `https://ironsync-peach.vercel.app`, and `http://localhost:3000`. Review preview-origin allowlists separately before beta.
-5. Configure custom SMTP in **Supabase → Authentication → Emails → SMTP Settings** with a verified sender/domain, host, port, username, and provider password. Then verify delivery with a real signup, confirmation resend, and password reset. Email confirmation remains required. Complete a Google login test to verify provider credentials and redirect configuration.
-6. Deploy the application changes, then test a public account with no plan: start a workout, add a set, change values, complete the set, refresh, finish, refresh again, and inspect history. Repeat using a second account to check isolation.
+5. Custom Gmail SMTP is now saved in **Supabase → Authentication → Emails → SMTP Settings** and recovery email delivery is verified. When changing providers, configure the verified sender/domain, host, port, username, and provider password, then repeat delivery tests. Email confirmation remains required. Complete a Google login test to verify provider credentials and redirect configuration.
+6. The deployed public-account smoke test passed: a user with no generated plan logged two completed sets, refreshed, finished, refreshed again, and saw the saved workout in history. An independent live database read matched the values. Repeat using a second account to check live account isolation beyond the automated tests.
 7. Verify the approved admin can access `/admin/members`, ordinary users cannot, legacy members can log in, notifications remain scoped, and a PIN reset invalidates the old member session.
 8. Run Supabase advisors, review production errors, verify backups/restore capability, and record release evidence before opening a public beta.
 

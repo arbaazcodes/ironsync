@@ -1,211 +1,66 @@
 "use client";
 
-import React, { useState } from "react";
-import { Badge } from "@/components/ui/Badge";
-import { Calendar, Dumbbell, CheckCircle2, Zap } from "lucide-react";
+import { useState } from "react";
+import { Check, Dumbbell, Timer } from "lucide-react";
 
-type GoalType = "muscle_gain" | "fat_loss" | "recomp";
-
-interface BlueprintData {
-  goalLabel: string;
-  calories: string;
-  protein: string;
-  split: string;
-  schedule: Array<{
-    day: string;
-    focus: string;
-    type: "workout" | "recovery";
-    tag: string;
-  }>;
-}
-
-const BLUEPRINT_PRESETS: Record<GoalType, BlueprintData> = {
-  muscle_gain: {
-    goalLabel: "HYPERTROPHY & MASS",
-    calories: "2,750",
-    protein: "175g",
-    split: "5 DAY",
-    schedule: [
-      { day: "MON", focus: "Incline Press & Pec Flyes", type: "workout", tag: "Push A" },
-      { day: "TUE", focus: "Barbell Rows & Lat Pulldowns", type: "workout", tag: "Pull A" },
-      { day: "WED", focus: "Active Tissue Reset & Mobility", type: "recovery", tag: "Mobility" },
-      { day: "THU", focus: "Overhead Press & Lateral Raises", type: "workout", tag: "Upper B" },
-      { day: "FRI", focus: "Back Squats & Romanian Deadlifts", type: "workout", tag: "Legs A" },
-    ],
-  },
-  fat_loss: {
-    goalLabel: "AGGRESSIVE SHRED",
-    calories: "2,150",
-    protein: "185g",
-    split: "4 DAY",
-    schedule: [
-      { day: "MON", focus: "Upper Kinetic Density", type: "workout", tag: "Upper" },
-      { day: "TUE", focus: "Lower Posterior Chain & Core", type: "workout", tag: "Lower" },
-      { day: "WED", focus: "Zone 2 Cardiovascular Aerobic", type: "recovery", tag: "Zone 2" },
-      { day: "THU", focus: "Full Body Barbell Complex", type: "workout", tag: "Full Body" },
-      { day: "FRI", focus: "Sprint Intervals & Core Lockdown", type: "workout", tag: "Conditioning" },
-    ],
-  },
-  recomp: {
-    goalLabel: "ATHLETIC RECOMP",
-    calories: "2,450",
-    protein: "180g",
-    split: "5 DAY",
-    schedule: [
-      { day: "MON", focus: "Compound Heavy Strength", type: "workout", tag: "Strength" },
-      { day: "TUE", focus: "Volume Pull & Biceps", type: "workout", tag: "Volume" },
-      { day: "WED", focus: "Thoracic & Hip Mobility", type: "recovery", tag: "Recovery" },
-      { day: "THU", focus: "Speed Press & Triceps", type: "workout", tag: "Athletic" },
-      { day: "FRI", focus: "Deadlift Density & Quads", type: "workout", tag: "Legs" },
-    ],
-  },
-};
+const examples = [
+  { label: "Gym session", exercise: "Decline Dumbbell Press", sets: [{ weight: 22.5, reps: 12 }, { weight: 25, reps: 10 }] },
+  { label: "Home session", exercise: "Dumbbell Goblet Squat", sets: [{ weight: 12, reps: 12 }, { weight: 14, reps: 10 }] },
+];
 
 export function BlueprintPreview() {
-  const [activeGoal, setActiveGoal] = useState<GoalType>("muscle_gain");
-  const data = BLUEPRINT_PRESETS[activeGoal];
+  const [selected, setSelected] = useState(0);
+  const example = examples[selected];
+  const reps = example.sets.reduce((total, set) => total + set.reps, 0);
+  const volume = example.sets.reduce((total, set) => total + set.weight * set.reps, 0);
 
   return (
-    <div className="relative w-full max-w-lg lg:max-w-none mx-auto">
-      {/* Ferrari Red outer ambient glow */}
-      <div className="absolute -inset-2 bg-gradient-to-r from-accent/20 via-accent/10 to-transparent rounded-[32px] blur-2xl opacity-50 pointer-events-none" />
-
-      {/* Main Blueprint Terminal Card */}
-      <div className="relative rounded-[28px] bg-card border border-border shadow-card p-5 sm:p-7 overflow-hidden group hover:border-accent/40 transition-colors duration-300">
-        {/* Subtle red corner spotlight */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-accent/5 blur-[60px] pointer-events-none rounded-full" />
-
-        {/* Top bar with system status */}
-        <div className="flex items-center justify-between pb-4 border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-accent shadow-[0_0_8px_rgba(255,30,30,0.9)] animate-pulse" />
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-primary">
-              IRONSYNC TRAINING ENGINE
-            </span>
-          </div>
-          <Badge variant="accent" size="sm" dot>
-            {data.goalLabel}
-          </Badge>
-        </div>
-
-        {/* Goal switcher tabs */}
-        <div className="pt-4 pb-2">
-          <div className="flex items-center gap-1.5 p-1 bg-surface-elevated rounded-2xl border border-border">
-            {(
-              [
-                { id: "muscle_gain", label: "Hypertrophy" },
-                { id: "fat_loss", label: "Shred" },
-                { id: "recomp", label: "Recomp" },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveGoal(tab.id)}
-                className={`flex-1 py-2 text-xs font-mono font-bold rounded-xl transition-all duration-200 ${
-                  activeGoal === tab.id
-                    ? "bg-accent text-white shadow-accent-glow"
-                    : "text-primary-muted hover:text-primary"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 py-5 border-b border-border">
-          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-border text-center">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-primary-dim block">
-              Daily Target
-            </span>
-            <span className="text-xl sm:text-2xl font-extrabold text-primary font-mono block mt-0.5">
-              {data.calories}
-            </span>
-            <span className="text-[10px] font-mono text-accent block mt-0.5 font-bold">
-              KCAL / DAY
-            </span>
-          </div>
-
-          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-border text-center">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-primary-dim block">
-              Protein Intake
-            </span>
-            <span className="text-xl sm:text-2xl font-extrabold text-accent font-mono block mt-0.5">
-              {data.protein}
-            </span>
-            <span className="text-[10px] font-mono text-primary-dim block mt-0.5">
-              1.8 - 2.2g / KG
-            </span>
-          </div>
-
-          <div className="p-3 sm:p-4 rounded-2xl bg-surface-elevated border border-border text-center">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-primary-dim block">
-              Training Split
-            </span>
-            <span className="text-xl sm:text-2xl font-extrabold text-primary font-mono block mt-0.5">
-              {data.split}
-            </span>
-            <span className="text-[10px] font-mono text-primary-dim block mt-0.5">
-              CADENCE
-            </span>
-          </div>
-        </div>
-
-        {/* Weekly Workout Preview Schedule */}
-        <div className="pt-4 space-y-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 text-accent" />
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-primary">
-                Periodized Schedule
-              </span>
-            </div>
-            <span className="text-[11px] font-mono text-accent font-bold">Auto-Adapting</span>
-          </div>
-
-          <div className="space-y-2">
-            {data.schedule.map((item, index) => (
-              <div
-                key={index}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border transition-all ${
-                  item.type === "recovery"
-                    ? "bg-surface-elevated/40 border-border/50 text-primary-muted"
-                    : "bg-surface-elevated border-border hover:border-accent/40 text-primary"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs font-bold text-accent w-8 shrink-0">
-                    {item.day}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {item.type === "workout" ? (
-                      <Dumbbell className="w-3.5 h-3.5 text-primary-dim shrink-0" />
-                    ) : (
-                      <Zap className="w-3.5 h-3.5 text-accent shrink-0" />
-                    )}
-                    <span className="text-xs sm:text-sm font-bold tracking-tight">
-                      {item.focus}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-surface border border-border text-primary-dim">
-                  {item.tag}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Realistic Footer Detail */}
-        <div className="mt-4 pt-3.5 border-t border-border flex items-center justify-between text-[11px] text-primary-dim font-mono">
-          <span className="flex items-center gap-1.5 text-primary">
-            <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
-            Biomechanical Engine Active
+    <section aria-label="Workout log preview" className="relative w-full max-w-lg mx-auto">
+      <div className="absolute -inset-2 bg-accent/10 rounded-[32px] blur-2xl pointer-events-none" />
+      <div className="relative rounded-[28px] bg-card border border-border shadow-card p-4 sm:p-7 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-4">
+          <span className="flex items-center gap-2 text-sm font-bold">
+            <Dumbbell className="h-4 w-4 text-accent" aria-hidden="true" />Your training log
           </span>
-          <span className="text-accent font-bold">Precision v2.4</span>
+          <span className="text-xs font-mono text-primary-muted">Example workout</span>
         </div>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Example sessions">
+          {examples.map((item, index) => (
+            <button key={item.label} type="button" aria-pressed={selected === index} onClick={() => setSelected(index)}
+              className={"min-h-11 rounded-xl border px-2 py-2 text-xs sm:text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
+                (selected === index ? "border-accent bg-accent text-white" : "border-border bg-surface-elevated text-primary-muted")}>
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div aria-live="polite" aria-atomic="true" className="space-y-5">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{example.exercise}</h2>
+          <table className="w-full text-left text-sm">
+            <caption className="sr-only">Example completed sets for {example.exercise}</caption>
+            <thead className="text-xs text-primary-muted">
+              <tr><th scope="col" className="pb-3 font-medium">Set</th><th scope="col" className="pb-3 font-medium">Kg</th><th scope="col" className="pb-3 font-medium">Reps</th><th scope="col" className="pb-3 text-right font-medium">Done</th></tr>
+            </thead>
+            <tbody>
+              {example.sets.map((set, index) => (
+                <tr key={index} className="border-t border-border">
+                  <th scope="row" className="py-4 font-mono font-medium">{index + 1}</th>
+                  <td className="py-4 font-mono font-bold">{set.weight}</td>
+                  <td className="py-4 font-mono font-bold">{set.reps}</td>
+                  <td className="py-4 text-right"><span className="inline-flex rounded-lg bg-accent/10 p-2 text-accent"><Check className="h-4 w-4" aria-hidden="true" /><span className="sr-only">Completed</span></span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <dl className="grid grid-cols-3 gap-2 rounded-2xl bg-surface-elevated p-3 text-center">
+            {[["Sets", example.sets.length], ["Reps", reps], ["Kg lifted", volume]].map(([label, value]) => (
+              <div key={label}><dt className="text-[10px] sm:text-xs text-primary-muted">{label}</dt><dd className="mt-1 text-xl font-bold font-mono">{value}</dd></div>
+            ))}
+          </dl>
+        </div>
+        <p className="flex items-start gap-2 border-t border-border pt-4 text-xs text-primary-muted leading-relaxed">
+          <Timer className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />Log a set. Take a rest. Keep your place for the next one.
+        </p>
       </div>
-    </div>
+    </section>
   );
 }

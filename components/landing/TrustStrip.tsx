@@ -1,28 +1,28 @@
 import React from "react";
 import { Container } from "@/components/layout/Container";
-import { Target, Flame, CalendarClock, Utensils } from "lucide-react";
+import { Dumbbell, ListChecks, Timer, History } from "lucide-react";
 
 export function TrustStrip() {
   const valuePoints = [
     {
-      icon: Target,
-      title: "Built around your goals",
-      description: "Strength, fat loss, or recomposition tailored to your exact starting baseline.",
+      icon: Dumbbell,
+      title: "Choose your exercises",
+      description: "Build each session around the movements you want to train.",
     },
     {
-      icon: Flame,
-      title: "Personalized calories",
-      description: "Metabolic rate and macro allocations calculated for sustainable progression.",
+      icon: ListChecks,
+      title: "Track every set",
+      description: "Keep your actual weights, reps, and completed sets together.",
     },
     {
-      icon: CalendarClock,
-      title: "Fits your schedule",
-      description: "Structured around your actual free days, session lengths, and gym access.",
+      icon: Timer,
+      title: "Rest between sets",
+      description: "Use the built-in timer before your next effort.",
     },
     {
-      icon: Utensils,
-      title: "Food you actually eat",
-      description: "Compatible with your dietary style without forced unpalatable restrictions.",
+      icon: History,
+      title: "Return to your log",
+      description: "Review completed sessions and see what you lifted.",
     },
   ];
 

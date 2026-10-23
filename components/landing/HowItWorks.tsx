@@ -2,49 +2,49 @@ import React from "react";
 import { Container } from "@/components/layout/Container";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { UserCheck, Dumbbell, LogIn } from "lucide-react";
+import { UserCheck, Dumbbell, History } from "lucide-react";
 
 export function HowItWorks() {
   const steps = [
     {
       number: "01",
-      title: "Front Desk Enrollment",
-      subtitle: "Staff creates your member profile & credentials.",
+      title: "Create your account",
+      subtitle: "Sign up with your email.",
       description:
-        "Your gym administrator creates your profile, assigns your training track, and securely issues your unique Member ID and 4-digit security PIN.",
+        "Confirm your email and open your workout log. You can start your first session right away.",
       icon: UserCheck,
     },
     {
       number: "02",
-      title: "Assigned Workout Split",
-      subtitle: "Periodized training tailored to your goals.",
+      title: "Make every set count",
+      subtitle: "Choose exercises. Log what you lift.",
       description:
-        "Follow structured training routines and nutritional guidelines configured specifically for your experience level and gym equipment.",
+        "Add exercises, enter your weights and reps, and mark each set complete. Use the rest timer between sets.",
       icon: Dumbbell,
     },
     {
       number: "03",
-      title: "Member Portal Access",
-      subtitle: "Sign in with your Member ID and PIN.",
+      title: "Pick up where you left off",
+      subtitle: "Your training stays with you.",
       description:
-        "Log into your free member dashboard to view scheduled workout splits, log attendance, and review training progress with zero recurring fees.",
-      icon: LogIn,
+        "Refresh without losing your sets. Finish your workout and revisit its exercises, weights, and reps in your recent sessions.",
+      icon: History,
     },
   ];
 
   return (
-    <section id="how-it-works" className="py-20 sm:py-28 relative scroll-mt-16">
+    <section id="how-it-works" className="py-20 sm:py-28 relative scroll-mt-24">
       <Container>
         {/* Section Header */}
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-16 sm:mb-20 space-y-4">
           <Badge variant="subtle" size="md">
-            PROCESS
+            GET STARTED
           </Badge>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-primary tracking-tight">
             How IronSync Works
           </h2>
           <p className="text-base text-primary-muted leading-relaxed max-w-lg">
-            A frictionless, roster-managed system connecting gym administration with athlete training and attendance.
+            From your first exercise to your last set, keep your training in one place.
           </p>
         </div>
 
@@ -84,9 +84,6 @@ export function HowItWorks() {
 
                 <div className="mt-8 pt-4 border-t border-border-subtle flex items-center justify-between text-xs text-primary-dim font-mono">
                   <span>Step {index + 1} of 3</span>
-                  <span className="text-accent/60 group-hover:text-accent transition-colors">
-                    Phase ready &rarr;
-                  </span>
                 </div>
               </Card>
             );

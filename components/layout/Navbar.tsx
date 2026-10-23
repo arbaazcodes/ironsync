@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight, Activity, LogIn, ShieldCheck, Dumbbell } from "lucide-react";
@@ -13,6 +13,19 @@ export function Navbar() {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [mobileMenuOpen]);
 
   const { user, signOut } = useAuth();
   const [member, setMember] = useState<{ id: string; fullName: string; memberId: string } | null>(null);
@@ -21,7 +34,8 @@ export function Navbar() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -59,15 +73,15 @@ export function Navbar() {
     window.location.href = "/login?tab=member";
   };
 
-  const handleAdminLogout = async () => {
+  const handleAccountLogout = async () => {
     await signOut();
-    window.location.href = "/login?tab=admin";
+    window.location.href = "/auth?mode=signin";
   };
 
   const navLinks = [
     { label: "How it works", href: "/#how-it-works" },
     { label: "Features", href: "/#features" },
-    { label: "Personalization", href: "/#personalization" },
+    { label: "Get started", href: "/#personalization" },
   ];
 
   return (
@@ -96,7 +110,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-primary-muted">
+        <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-8 text-sm font-semibold text-primary-muted">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -109,10 +123,10 @@ export function Navbar() {
         </nav>
 
         {/* Desktop Right CTA + Theme Toggle */}
-        <div className="hidden md:flex items-center gap-3">
-          <ThemeToggle />
+        <div className="hidden lg:flex items-center gap-3">
+          <ThemeToggle className="min-h-11 min-w-11 justify-center" />
 
-          {/* Case 1: Logged-in Admin */}
+          {/* Public account */}
           {user ? (
             <>
               <Link
@@ -123,7 +137,7 @@ export function Navbar() {
                 <span>My Workouts</span>
               </Link>
               <button
-                onClick={handleAdminLogout}
+                onClick={handleAccountLogout}
                 className="text-xs font-mono text-primary-dim hover:text-accent transition-colors px-2 py-1 cursor-pointer"
               >
                 Logout
@@ -171,14 +185,17 @@ export function Navbar() {
         </div>
 
         {/* Mobile Header Controls */}
-        <div className="flex md:hidden items-center gap-2">
-          <ThemeToggle />
+        <div className="flex lg:hidden items-center gap-2">
+          <ThemeToggle className="min-h-11 min-w-11 justify-center" />
 
           <button
+            ref={menuButton}
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl text-primary-muted hover:text-primary hover:bg-surface border border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="min-h-11 min-w-11 flex items-center justify-center p-2 rounded-xl text-primary-muted hover:text-primary hover:bg-surface border border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -187,14 +204,14 @@ export function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-x-0 top-[65px] bg-surface/98 backdrop-blur-xl border-b border-border px-6 py-6 shadow-2xl transition-all duration-200 animate-in fade-in slide-in-from-top-2">
-          <nav className="flex flex-col gap-4">
+        <div id="mobile-navigation" className="lg:hidden absolute inset-x-0 top-full max-h-[calc(100dvh-5.5rem)] overflow-y-auto bg-surface border-b border-border px-6 py-6 shadow-2xl">
+          <nav aria-label="Mobile navigation" className="flex flex-col gap-3">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-base font-semibold text-primary-muted hover:text-primary py-2 border-b border-border/50"
+                className="min-h-11 flex items-center text-base font-semibold text-primary-muted hover:text-primary py-2 border-b border-border/50"
               >
                 {link.label}
               </Link>
@@ -216,7 +233,7 @@ export function Navbar() {
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    handleAdminLogout();
+                    handleAccountLogout();
                   }}
                   className="text-left text-sm font-mono text-primary-dim hover:text-accent py-2 border-b border-border/50 cursor-pointer"
                 >
@@ -248,9 +265,9 @@ export function Navbar() {
               </>
             ) : (
               <Link
-                href="/auth?mode=signup"
+                href="/auth?mode=signin"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-base font-semibold text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
+                className="min-h-11 text-base font-semibold text-primary hover:text-accent py-2 border-b border-border/50 flex items-center justify-between"
               >
                 <span className="flex items-center gap-2">
                   <LogIn className="w-4 h-4 text-accent" />

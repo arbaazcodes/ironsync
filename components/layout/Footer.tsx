@@ -23,11 +23,11 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-primary-muted max-w-sm leading-relaxed pretty-text">
-              Free community gym management, coach-assigned workout tracking,
-              and athlete roster portal. Built for real gym communities.
+              Your exercises, sets, and workout history in one place.
+              Built for people who want to keep track of their training.
             </p>
             <div className="text-xs text-primary-dim">
-              Designed with high-precision athletic wellness standards.
+              Train at your pace. Keep a record of your effort.
             </div>
           </div>
 
@@ -50,7 +50,7 @@ export function Footer() {
                   href="/#features"
                   className="hover:text-primary transition-colors"
                 >
-                  Blueprint Architecture
+                  Workout tools
                 </Link>
               </li>
               <li>
@@ -58,15 +58,15 @@ export function Footer() {
                   href="/#personalization"
                   className="hover:text-primary transition-colors"
                 >
-                  Personalization Engine
+                  Ways to get started
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/login"
+                  href="/auth?mode=signin"
                   className="text-accent hover:text-accent-hover transition-colors font-medium inline-flex items-center gap-1"
                 >
-                  Member Portal &rarr;
+                  Sign in &rarr;
                 </Link>
               </li>
             </ul>
@@ -108,9 +108,9 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-primary-dim">
-          <p>&copy; {new Date().getFullYear()} IronSync Inc. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} IronSync. All rights reserved.</p>
           <p className="font-mono text-[11px]">
-            100% Free Community Gym Management System.
+            Your training. Your progress.
           </p>
         </div>
       </Container>

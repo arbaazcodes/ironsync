@@ -21,19 +21,18 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.ironsync.online"),
   title: {
-    default: "IronSync | Free Community Gym Management",
+    default: "IronSync | Workout Tracker & Training Log",
     template: "%s | IronSync",
   },
   description:
-    "Free community gym management and member workout platform. Streamline member check-in, attendance tracking, daily training workouts, and front-desk floor operations for gyms.",
+    "Choose exercises, log weights and reps, and keep your completed workouts in one place. Start training with your own IronSync account.",
   keywords: [
-    "gym management",
-    "free gym software",
-    "member workout portal",
-    "gym check-in system",
-    "attendance tracking",
+    "workout tracker",
+    "workout log",
+    "exercise tracker",
+    "sets and reps",
+    "workout history",
     "strength training",
-    "athlete management",
     "IronSync",
   ],
   authors: [{ name: "IronSync" }],
@@ -41,9 +40,9 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "IronSync | Free Community Gym Management",
+    title: "IronSync | Workout Tracker & Training Log",
     description:
-      "Free community gym management and member workout platform. Streamline member check-in, attendance tracking, daily training workouts, and front-desk floor operations.",
+      "Choose exercises, log weights and reps, and return to your saved workouts. Your training, in one place.",
     url: "https://www.ironsync.online",
     siteName: "IronSync",
     locale: "en_US",
@@ -51,9 +50,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "IronSync | Free Community Gym Management",
+    title: "IronSync | Workout Tracker & Training Log",
     description:
-      "Free community gym management and member workout platform. Streamline member check-in, attendance tracking, daily training workouts, and front-desk floor operations.",
+      "Choose exercises, log weights and reps, and return to your saved workouts. Your training, in one place.",
   },
 };
 
