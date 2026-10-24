@@ -1,101 +1,72 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { WifiOff } from "lucide-react";
 
 export function CapacitorProvider({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const router = useRouter();
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    // Check if offline
-    if (typeof window !== "undefined") {
-      setIsOffline(!window.navigator.onLine);
+    setIsOffline(!navigator.onLine);
+    const online = () => setIsOffline(false);
+    const offline = () => setIsOffline(true);
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    let cancelled = false;
+    let removeBack: (() => Promise<void>) | undefined;
+    let themeObserver: MutationObserver | undefined;
 
-      const handleOnline = () => setIsOffline(false);
-      const handleOffline = () => setIsOffline(true);
-
-      window.addEventListener("online", handleOnline);
-      window.addEventListener("offline", handleOffline);
-
-      // Dynamically import Capacitor to prevent SSR issues
-      let backButtonListener: { remove: () => void } | null = null;
-
-      async function initCapacitor() {
-        try {
-          const { Capacitor } = await import("@capacitor/core");
-          if (!Capacitor.isNativePlatform()) {
-            return;
-          }
-
-          // Native Android / iOS enhancements
-          const { App } = await import("@capacitor/app");
-          const { StatusBar, Style } = await import("@capacitor/status-bar");
-          const { SplashScreen } = await import("@capacitor/splash-screen");
-
-          // Status bar styling
-          try {
-            await StatusBar.setStyle({ style: Style.Dark });
-            await StatusBar.setBackgroundColor({ color: "#FAFAF8" });
-          } catch (e) {
-            // Non-critical if platform doesn't support status bar coloring
-          }
-
-          // Hide splash screen after client-side hydration
-          try {
-            await SplashScreen.hide();
-          } catch (e) {
-            // Ignore splash screen errors
-          }
-
-          // Hardware back button navigation
-          backButtonListener = await App.addListener("backButton", ({ canGoBack }) => {
-            const isRootPage =
-              pathname === "/" ||
-              pathname === "/mobile" ||
-              pathname === "/dashboard" ||
-              pathname === "/login" ||
-              pathname === "/member/dashboard" ||
-              pathname === "/admin";
-
-            if (isRootPage) {
-              App.exitApp();
-            } else if (canGoBack) {
-              window.history.back();
-            } else if (pathname.startsWith("/admin")) {
-              router.push("/admin");
-            } else {
-              router.push("/dashboard");
-            }
-          });
-        } catch (err) {
-          console.warn("Capacitor initialization skipped or failed:", err);
-        }
-      }
-
-      initCapacitor();
-
-      return () => {
-        window.removeEventListener("online", handleOnline);
-        window.removeEventListener("offline", handleOffline);
-        if (backButtonListener) {
-          backButtonListener.remove();
-        }
+    async function init() {
+      const { Capacitor } = await import("@capacitor/core");
+      if (!Capacitor.isNativePlatform() || cancelled) return;
+      const [{ App }, { StatusBar, Style }, { SplashScreen }] = await Promise.all([
+        import("@capacitor/app"),
+        import("@capacitor/status-bar"),
+        import("@capacitor/splash-screen"),
+      ]);
+      if (cancelled) return;
+      const updateBars = () => {
+        const dark = document.documentElement.classList.contains("dark");
+        void StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light }).catch(() => {});
+        void StatusBar.setBackgroundColor({ color: dark ? "#0C0C0C" : "#F7F7F5" }).catch(() => {});
       };
+      updateBars();
+      themeObserver = new MutationObserver(updateBars);
+      themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+      void SplashScreen.hide().catch(() => {});
+      const listener = await App.addListener("backButton", ({ canGoBack }) => {
+        // Read the current route; initialize once so fast navigation cannot leak listeners.
+        const pathname = window.location.pathname;
+        const dialog = document.querySelector<HTMLDialogElement>("dialog[open]");
+        if (dialog) { dialog.close(); return; }
+        if (["/", "/mobile", "/dashboard", "/auth", "/login", "/admin"].includes(pathname)) {
+          void App.minimizeApp();
+        } else if (canGoBack) {
+          window.history.back();
+        } else {
+          router.replace(pathname.startsWith("/admin") ? "/admin" : "/dashboard");
+        }
+      });
+      if (cancelled) await listener.remove();
+      else removeBack = () => listener.remove();
     }
-  }, [pathname, router]);
+    void init().catch(() => {});
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+      themeObserver?.disconnect();
+      void removeBack?.();
+    };
+  }, [router]);
 
-  return (
-    <>
-      {isOffline && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-rose-600 text-white text-xs font-bold py-2 px-4 flex items-center justify-center gap-2 shadow-md animate-pulse">
-          <WifiOff className="w-4 h-4" />
-          <span>No internet connection. Please check your network.</span>
-        </div>
-      )}
-      {children}
-    </>
-  );
+  return <>
+    {isOffline && <div role="status" className="fixed inset-x-0 top-0 z-[100] flex items-center justify-center gap-2 bg-rose-600 px-4 pb-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-xs font-semibold text-white">
+      <WifiOff className="h-4 w-4 shrink-0" />
+      <span>You’re offline. Pending workout changes will retry when connected.</span>
+    </div>}
+    {children}
+  </>;
 }
